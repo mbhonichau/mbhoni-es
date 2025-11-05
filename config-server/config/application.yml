@@ -1,0 +1,9 @@
+app:
+  company: MBHONI-ES
+  version: 1.0
+feign:
+  client:
+    config:
+      default:
+        connectTimeout: 5000
+        readTimeout: 5000

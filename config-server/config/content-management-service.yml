@@ -1,0 +1,18 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: content-management-service
+  datasource:
+    url: jdbc:mysql://mysql:3306/mbhoni_es?useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: Password@12345
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true

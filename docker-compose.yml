@@ -1,0 +1,100 @@
+version: '3.8'
+
+services:
+  # 1. CONFIG SERVER — STARTS FIRST
+  config-server:
+    build: ./config-server
+    container_name: config-server
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./config-server/config:/app/config
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 2. EUREKA SERVER — STARTS SECOND
+  eureka-server:
+    build: ./eureka-server
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    depends_on:
+      config-server:
+        condition: service_healthy
+    networks:
+      - backend
+
+  # 3. ADMIN SERVICE — STARTS THIRD
+  admin-service:
+    build: ./admin-service
+    container_name: admin-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      config-server:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+      mysql:
+        condition: service_healthy
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # 4. CONTENT SERVICE — STARTS FOURTH
+  content-management-service:
+    build: ./content-management-service
+    container_name: content-management-service
+    ports:
+      - "8080:8080"
+    depends_on:
+      config-server:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+      mysql:
+        condition: service_healthy
+      admin-service:
+        condition: service_healthy
+    networks:
+      - backend
+
+  # 5. MYSQL — STARTS LAST (SLOWEST)
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: Password@12345
+      MYSQL_DATABASE: mbhoni_es
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pPassword@12345"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    networks:
+      - backend
+
+# NETWORK — KEEPS THEM TALKING
+networks:
+  backend:
+    driver: bridge
+
+# VOLUME — SAVES DB DATA
+volumes:
+  mysql-data:

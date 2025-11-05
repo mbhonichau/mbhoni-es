@@ -1,0 +1,16 @@
+# Eclipse
+.metadata/
+.classpath
+.project
+.settings/
+bin/
+target/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# IDE
+.idea/
+*.iml
+*.iws

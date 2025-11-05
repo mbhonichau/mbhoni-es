@@ -1,0 +1,21 @@
+spring:
+  cloud:
+    config:
+      server:
+        native:
+          search-locations: classpath:/config
+
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      group:
+        liveness:
+          include: liveness
+        readiness:
+          include: readiness
+  endpoints:
+    web:
+      exposure:
+        include: health,info,liveness,readiness
