@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: Password@12345
+      MYSQL_DATABASE: mbhoni_es
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pPassword@12345"]
+      interval: 5s
+      retries: 20
+
+  config-server:
+    image: mbhonichau/mbhoni-config-server:latest
+    container_name: config-server
+    ports:
+      - "8888:8888"
+    environment:
+      - SPRING_CLOUD_CONFIG_SERVER_GIT_URI=https://github.com/mbhonichau/mbhoni-es
+      - SPRING_CLOUD_CONFIG_SERVER_GIT_SEARCHPATHS=config
+      - SPRING_CLOUD_CONFIG_SERVER_GIT_CLONEONSTART=true
+      - SPRING_CLOUD_CONFIG_SERVER_GIT_USERNAME=mbhonichau
+      - SPRING_CLOUD_CONFIG_SERVER_GIT_PASSWORD=${GITHUB_PAT}
+      - GITHUB_PAT=ghp_your_token_here
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  eureka-server:
+    image: mbhonichau/mbhoni-eureka-server:latest
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    depends_on:
+      config-server:
+        condition: service_healthy
+
+  admin-service:
+    image: mbhonichau/mbhoni-admin-service:latest
+    container_name: admin-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+
+  content-management-service:
+    image: mbhonichau/mbhoni-content-service:latest
+    container_name: content-management-service
+    ports:
+      - "8080:8080"
+    depends_on:
+      admin-service:
+        condition: service_healthy
+
+volumes:
+  mysql-data:
