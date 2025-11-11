@@ -4,18 +4,15 @@ server:
 spring:
   application:
     name: config-server
-  cloud:
-    config:
-      server:
-       
+  profiles:
+    active: git
+
 eureka:
   client:
     service-url:
       defaultZone: http://eureka-server:8761/eureka/
     register-with-eureka: true
     fetch-registry: true
-  instance:
-    prefer-ip-address: true
 
 management:
   endpoints:
@@ -25,4 +22,4 @@ management:
   endpoint:
     health:
       show-details: always
-      validate-group-membership: false
+      validate-group-membership: false 
