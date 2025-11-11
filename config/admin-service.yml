@@ -1,0 +1,22 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: admin-service
+  datasource:
+    url: jdbc:mysql://mysql:3306/mbhoni_es?useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: Password@12345
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
