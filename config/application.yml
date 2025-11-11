@@ -1,0 +1,10 @@
+spring:
+  jackson:
+    default-property-inclusion: non_null
+  main:
+    allow-bean-definition-overriding: true
+
+logging:
+  level:
+    com.mbhoni_creative: DEBUG
+    org.springframework: INFO
