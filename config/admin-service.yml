@@ -5,18 +5,32 @@ spring:
   application:
     name: admin-service
   datasource:
-    url: jdbc:mysql://mysql:3306/mbhoni_es?useSSL=false&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://mysql:3306/mbhoni_es?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
     username: root
     password: Password@12345
     driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
 
 eureka:
   client:
     service-url:
       defaultZone: http://eureka-server:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
 
 management:
   endpoints:
     web:
       exposure:
-        include: health
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
