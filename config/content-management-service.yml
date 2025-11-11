@@ -5,7 +5,7 @@ spring:
   application:
     name: content-management-service
   datasource:
-    url: jdbc:mysql://mysql:3306/mbhoni_es?useSSL=false&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://mysql:3306/mbhoni_es?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
     username: root
     password: Password@12345
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -19,21 +19,28 @@ eureka:
       defaultZone: http://eureka-server:8761/eureka/
     register-with-eureka: true
     fetch-registry: true
+  instance:
+    prefer-ip-address: true
 
-# Feign Client to call admin-service
-admin-service:
-  ribbon:
-    listOfServers: admin-service:8081
-
+# Feign Client Config
 feign:
   client:
     config:
       default:
         connectTimeout: 5000
         readTimeout: 5000
+        loggerLevel: full
+
+# Load balancing
+admin-service:
+  ribbon:
+    listOfServers: admin-service:8081
 
 management:
   endpoints:
     web:
       exposure:
         include: health,info
+  endpoint:
+    health:
+      show-details: always
