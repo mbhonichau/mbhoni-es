@@ -13,5 +13,13 @@ eureka:
       defaultZone: http://eureka-server:8761/eureka/
   instance:
     hostname: eureka-server
+    prefer-ip-address: true
   server:
     enable-self-preservation: false
+    wait-time-in-ms-when-sync-empty: 0
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
