@@ -1,9 +1,20 @@
 spring:
+  application:
+    name: config-server
   cloud:
     config:
       server:
         native:
-          search-locations: classpath:/config
+          search-locations: file:/app/config
+  profiles:
+    active: native
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
 
 management:
   endpoint:
@@ -15,6 +26,7 @@ management:
           include: liveness
         readiness:
           include: readiness
+      validate-group-membership: false
   endpoints:
     web:
       exposure:
