@@ -3,9 +3,11 @@ name: Build & Push Docker Images
 on:
   push:
     branches: [ main ]
+  schedule:
+    - cron: '0 0 1 * *'   # Monthly: Auto-update GitHub SSL cert
 
 jobs:
-  build:
+  build-and-push:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -17,47 +19,49 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Cache Maven packages
+      - name: Cache Maven
         uses: actions/cache@v3
         with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-maven-
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
 
+      # === AUTO-UPDATE GITHUB SSL CERT (PRODUCTION) ===
+      - name: Update GitHub SSL Certificate
+        run: |
+          mkdir -p config-server/src/main/resources
+          openssl s_client -connect github.com:443 -servername github.com </dev/null 2>/dev/null | openssl x509 -out github-cert.pem
+          keytool -import -alias github -keystore config-server/src/main/resources/github-truststore.jks -file github-cert.pem -storepass changeit -noprompt || echo "Cert already exists"
+          rm github-cert.pem
+
+      # === BUILD ALL SERVICES ===
       - name: Build config-server
-        run: cd config-server && mvn clean package -DskipTests
+        run: cd config-server && mvn -B clean package -DskipTests
 
       - name: Build eureka-server
-        run: cd eureka-server && mvn clean package -DskipTests
+        run: cd eureka-server && mvn -B clean package -DskipTests
 
       - name: Build admin-service
-        run: cd admin-service && mvn clean package -DskipTests
+        run: cd admin-service && mvn -B clean package -DskipTests
 
       - name: Build content-management-service
-        run: cd content-management-service && mvn clean package -DskipTests
+        run: cd content-management-service && mvn -B clean package -DskipTests
 
+      # === LOGIN & PUSH ===
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build & Push config-server
+      - name: Build & Push Images
         run: |
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/mbhoni-config-server:latest ./config-server
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/mbhoni-config-server:latest
+          docker build -t mbhonichau/mbhoni-config-server:latest ./config-server
+          docker build -t mbhonichau/mbhoni-eureka-server:latest ./eureka-server
+          docker build -t mbhonichau/mbhoni-admin-service:latest ./admin-service
+          docker build -t mbhonichau/mbhoni-content-service:latest ./content-management-service
 
-      - name: Build & Push eureka-server
-        run: |
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/mbhoni-eureka-server:latest ./eureka-server
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/mbhoni-eureka-server:latest
-
-      - name: Build & Push admin-service
-        run: |
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/mbhoni-admin-service:latest ./admin-service
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/mbhoni-admin-service:latest
-
-      - name: Build & Push content-management-service
-        run: |
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/mbhoni-content-service:latest ./content-management-service
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/mbhoni-content-service:latest
+          docker push mbhonichau/mbhoni-config-server:latest
+          docker push mbhonichau/mbhoni-eureka-server:latest
+          docker push mbhonichau/mbhoni-admin-service:latest
+          docker push mbhonichau/mbhoni-content-service:latest
