@@ -1,4 +1,11 @@
+server:
+  port: 8888
+
 spring:
+  application:
+    name: config-server
+  profiles:
+    active: git
   cloud:
     config:
       server:
@@ -6,18 +13,27 @@ spring:
           uri: https://github.com/mbhonichau/mbhoni-es
           search-paths: config
           clone-on-start: true
-          skip-ssl-validation: false   # SECURE
+          force-pull: true
           username: mbhonichau
-          password: ${GITHUB_TOKEN}    # Injected via env
-  profiles:
-    active: git
+          password: ${GITHUB_TOKEN}     # Injected securely
+          skip-ssl-validation: false    # PRODUCTION: FULL SSL CHECK
+          timeout: 30
 
 eureka:
   client:
     service-url:
       defaultZone: http://eureka-server:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
 
 management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,refresh
   endpoint:
     health:
+      show-details: always
       validate-group-membership: false
