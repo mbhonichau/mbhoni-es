@@ -40,9 +40,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           
-          git add **/target/*.jar
+          git add -f **/target/*.jar
           git commit -m "chore: add compiled JARs [skip ci]" || echo "No JAR changes to commit"
           
           git push origin main
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # Automatically available
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
