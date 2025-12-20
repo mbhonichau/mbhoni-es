@@ -1,10 +1,8 @@
-# Koyeb Docker Compose Runner
 FROM koyeb/docker-compose
 
-# Copy your entire repo
 COPY . /app
 
 WORKDIR /app
 
-# Run docker-compose
-CMD ["up", "-d"]
+# Koyeb expects the compose file in /app
+# No CMD needed — their image runs docker-compose up automatically
