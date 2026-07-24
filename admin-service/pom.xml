@@ -48,12 +48,6 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
-                <version>8.0.33</version>
-    			<scope>runtime</scope>
-            </dependency>
-            <dependency>
 		        <groupId>com.mysql</groupId>
 		        <artifactId>mysql-connector-j</artifactId>
 		        <scope>runtime</scope>
@@ -75,10 +69,22 @@
 		        <groupId>org.springframework.cloud</groupId>
 		        <artifactId>spring-cloud-starter-openfeign</artifactId>
 		    </dependency>
-		    <dependency>
-			    <groupId>org.springdoc</groupId>
-			    <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-			    <version>2.3.0</version>
+			<dependency>
+			    <groupId>org.springframework.boot</groupId>
+			    <artifactId>spring-boot-starter-thymeleaf</artifactId>
+			</dependency>
+			<dependency>
+			    <groupId>org.springframework.boot</groupId>
+			    <artifactId>spring-boot-devtools</artifactId>
+			    <optional>true</optional>
+			</dependency>
+			<dependency>
+			    <groupId>org.thymeleaf.extras</groupId>
+			    <artifactId>thymeleaf-extras-springsecurity6</artifactId>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-starter-mail</artifactId>
 			</dependency>
         </dependencies>
 
@@ -99,6 +105,9 @@
                 <plugin>
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-maven-plugin</artifactId>
+                    <configuration>
+                        <mainClass>com.mbhoni_creative.AdminServiceApplication</mainClass>
+                    </configuration>
                 </plugin>
             </plugins>
         </build>
