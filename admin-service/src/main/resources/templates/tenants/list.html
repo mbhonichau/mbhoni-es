@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="https://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/head :: head('Tenants')}"></head>
+
+<body>
+<div class="admin-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <main class="admin-content">
+            <div th:if="${successMessage}" class="alert alert-success admin-alert">
+                <i class="bi bi-check-circle"></i>
+                <span th:text="${successMessage}">Success message</span>
+            </div>
+
+            <section class="page-heading">
+                <div>
+                    <p class="eyebrow">Tenant Management</p>
+                    <h2>Tenants</h2>
+                    <p class="text-muted mb-0">Manage client spaces, subscription status, and usage limits.</p>
+                </div>
+
+                <a th:href="@{/tenants/create}"
+                   class="btn btn-primary"
+                   sec:authorize="hasAuthority('TENANT_CREATE')">
+                    <i class="bi bi-building-add"></i>
+                    New Tenant
+                </a>
+            </section>
+
+            <section class="form-panel mb-4">
+                <form th:action="@{/tenants}" method="get">
+                    <div class="form-grid">
+                        <div>
+                            <label class="form-label">Search</label>
+                            <input type="text"
+                                   name="q"
+                                   class="form-control"
+                                   th:value="${q}"
+                                   placeholder="Tenant, industry, plan">
+                        </div>
+
+                        <div>
+                            <label class="form-label">Tenant Status</label>
+                            <select name="status" class="form-select">
+                                <option value="">All</option>
+                                <option value="ACTIVE" th:selected="${status == 'ACTIVE'}">Active</option>
+                                <option value="INACTIVE" th:selected="${status == 'INACTIVE'}">Inactive</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="form-label">Subscription</label>
+                            <select name="subscriptionStatus" class="form-select">
+                                <option value="">All</option>
+                                <option value="ACTIVE" th:selected="${subscriptionStatus == 'ACTIVE'}">Active</option>
+                                <option value="TRIALING" th:selected="${subscriptionStatus == 'TRIALING'}">Trialing</option>
+                                <option value="SUSPENDED" th:selected="${subscriptionStatus == 'SUSPENDED'}">Suspended</option>
+                                <option value="CANCELLED" th:selected="${subscriptionStatus == 'CANCELLED'}">Cancelled</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <a th:href="@{/tenants}" class="btn btn-outline-secondary">Clear</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-search"></i>
+                            Search
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="data-panel">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0 admin-table">
+                        <thead>
+                        <tr>
+                            <th>Tenant</th>
+                            <th>Tenant Status</th>
+                            <th>Plan</th>
+                            <th>Subscription</th>
+                            <th>Users</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                        </thead>
+
+                        <tbody>
+                        <tr th:each="tenant : ${tenants}">
+                            <td>
+                                <div class="entity-cell">
+                                    <span class="entity-icon blue">
+                                        <i class="bi bi-buildings"></i>
+                                    </span>
+                                    <div>
+                                        <strong th:text="${tenant.tenantName}">Tenant Name</strong>
+                                        <small th:if="${tenant.planCode != null}" th:text="${tenant.planCode}">PLAN</small>
+                                        <small th:unless="${tenant.planCode != null}">No plan assigned</small>
+                                        <small th:if="${tenant.industryProfileName != null}" th:text="${tenant.industryProfileName}">
+										    Industry
+										</small>
+										<small th:unless="${tenant.industryProfileName != null}">
+										    No industry profile
+										</small>
+                                    </div>
+                                    
+                                    
+                                </div>
+                            </td>
+
+                            <td>
+                                <span th:if="${tenant.tenantActive}" class="status-pill active">Active</span>
+                                <span th:unless="${tenant.tenantActive}" class="status-pill inactive">Inactive</span>
+                            </td>
+
+                            <td>
+                                <span th:if="${tenant.hasSubscription()}" th:text="${tenant.planName}">Plan</span>
+                                <span th:unless="${tenant.hasSubscription()}" class="text-muted">Unassigned</span>
+                            </td>
+
+                            <td>
+                                <span th:if="${tenant.subscriptionStatus != null}"
+                                      class="status-pill neutral"
+                                      th:text="${tenant.subscriptionStatus}">
+                                    ACTIVE
+                                </span>
+                                <span th:unless="${tenant.subscriptionStatus != null}" class="status-pill inactive">
+                                    Missing
+                                </span>
+                            </td>
+
+                            <td>
+                                <div class="usage-stack">
+                                    <strong th:text="${tenant.userLimitLabel}">0 / Unlimited</strong>
+
+                                    <span th:if="${tenant.atUserLimit}" class="status-pill inactive">
+                                        Limit reached
+                                    </span>
+
+                                    <span th:if="${tenant.nearUserLimit}" class="status-pill warning">
+                                        Near limit
+                                    </span>
+                                </div>
+                            </td>
+
+                            <td class="text-end">
+                                <div class="action-group">
+                                    <form th:action="@{/tenants/edit}"
+                                          method="post"
+                                          class="d-inline"
+                                          sec:authorize="hasAuthority('TENANT_EDIT')">
+                                        <input type="hidden" name="id" th:value="${tenant.tenantId}">
+                                        <button type="submit"
+                                                class="btn btn-sm btn-outline-secondary"
+                                                title="Edit tenant">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                    </form>
+
+                                    <form th:action="@{/tenants/delete}"
+                                          method="post"
+                                          class="d-inline"
+                                          sec:authorize="hasAuthority('TENANT_DELETE')">
+                                        <input type="hidden" name="id" th:value="${tenant.tenantId}">
+                                        <button type="submit"
+                                                class="btn btn-sm btn-outline-danger"
+                                                onclick="return confirm('Delete this tenant?')"
+                                                title="Delete tenant">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <tr th:if="${tenants == null or #lists.isEmpty(tenants)}">
+                            <td colspan="6">
+                                <div class="empty-state">
+                                    <i class="bi bi-buildings"></i>
+                                    <strong>No tenants found</strong>
+                                    <span>Create a tenant to start managing client spaces.</span>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <div class="form-actions" th:if="${page != null and page.totalPages > 1}">
+                <a class="btn btn-outline-secondary"
+                   th:if="${page.hasPrevious}"
+                   th:href="@{/tenants(page=${page.number - 1}, size=${page.size}, q=${q}, status=${status}, subscriptionStatus=${subscriptionStatus})}">
+                    Previous
+                </a>
+
+                <span class="text-muted"
+                      th:text="'Page ' + (${page.number} + 1) + ' of ' + ${page.totalPages}">
+                    Page
+                </span>
+
+                <a class="btn btn-outline-secondary"
+                   th:if="${page.hasNext}"
+                   th:href="@{/tenants(page=${page.number + 1}, size=${page.size}, q=${q}, status=${status}, subscriptionStatus=${subscriptionStatus})}">
+                    Next
+                </a>
+            </div>
+        </main>
+
+        <div th:replace="~{fragments/footer :: footer}"></div>
+    </div>
+</div>
+
+<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/sidebar.js}"></script>
+</body>
+</html>

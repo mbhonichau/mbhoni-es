@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="https://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/head :: head('Tenant Quotas & Limits')}"></head>
+
+<body>
+<div class="admin-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <main class="admin-content">
+            <section class="page-heading d-flex justify-content-between align-items-center">
+                <div>
+                    <p class="eyebrow">Enterprise Governance</p>
+                    <h2>Tenant Quotas & Resource Limits</h2>
+                    <p class="text-muted mb-0">Enforce enterprise tenant quotas for max users, API rate limits, and storage capacity.</p>
+                </div>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newQuotaModal">
+                    <i class="bi bi-plus-lg me-1"></i> Configure Quota
+                </button>
+            </section>
+
+            <div class="card shadow-sm mt-4">
+                <div class="card-body p-0">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                        <tr>
+                            <th>Tenant Name</th>
+                            <th>Isolation Strategy</th>
+                            <th>Primary Region</th>
+                            <th>Max Users</th>
+                            <th>Max Requests / Min</th>
+                            <th>Storage Capacity</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="q : ${quotas}">
+                            <td th:text="${q.tenant != null ? q.tenant.name : 'Unknown'}">Tenant Name</td>
+                            <td><span class="badge bg-secondary" th:text="${q.tenant != null ? q.tenant.isolationStrategy : 'SHARED_DATABASE'}">SHARED_DATABASE</span></td>
+                            <td th:text="${q.tenant != null ? q.tenant.primaryRegion : 'us-east-1'}">us-east-1</td>
+                            <td><strong th:text="${q.maxUsers}">50</strong> Users</td>
+                            <td><strong th:text="${q.maxApiRequestsPerMinute}">1000</strong> req/min</td>
+                            <td><strong th:text="${q.maxStorageGb}">100</strong> GB</td>
+                        </tr>
+                        <tr th:if="${quotas == null or quotas.isEmpty()}">
+                            <td colspan="6" class="text-center text-muted py-4">No tenant quotas configured. Click 'Configure Quota' to set limits.</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+
+        <div th:replace="~{fragments/footer :: footer}"></div>
+    </div>
+</div>
+
+<!-- Modal: Configure Quota -->
+<div class="modal fade" id="newQuotaModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <form th:action="@{/tenants/quotas/save}" method="post" class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Configure Tenant Quota</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Tenant</label>
+                    <select name="tenantId" class="form-select" required>
+                        <option th:each="t : ${tenants}" th:value="${t.id}" th:text="${t.name}">Tenant</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Max Users Limit</label>
+                    <input type="number" name="maxUsers" class="form-control" value="50" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Max API Requests / Minute</label>
+                    <input type="number" name="maxApiRequestsPerMinute" class="form-control" value="1000" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Storage Capacity (GB)</label>
+                    <input type="number" name="maxStorageGb" class="form-control" value="100" required>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary">Save Quota Configuration</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/sidebar.js}"></script>
+</body>
+</html>

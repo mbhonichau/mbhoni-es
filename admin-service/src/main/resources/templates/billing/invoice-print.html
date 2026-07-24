@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${invoice.invoiceNumber}">Invoice</title>
+
+    <link rel="stylesheet" th:href="@{/vendor/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/vendor/bootstrap-icons/bootstrap-icons.css}">
+
+    <style>
+        body {
+            background: #f4f6f8;
+            color: #17202a;
+            font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+        }
+
+        .invoice-page {
+            max-width: 920px;
+            margin: 32px auto;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 40px;
+        }
+
+        .invoice-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 24px;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 24px;
+            margin-bottom: 28px;
+        }
+
+        .brand-mark {
+            width: 42px;
+            height: 42px;
+            border-radius: 8px;
+            display: inline-grid;
+            place-items: center;
+            background: #2563eb;
+            color: #fff;
+            font-weight: 800;
+            margin-right: 10px;
+        }
+
+        .invoice-title {
+            font-size: 30px;
+            font-weight: 850;
+            margin: 0;
+        }
+
+        .muted {
+            color: #6b7280;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+            margin: 24px 0;
+        }
+
+        .summary-card {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 14px;
+        }
+
+        .summary-card small {
+            display: block;
+            color: #6b7280;
+            font-weight: 700;
+        }
+
+        .summary-card strong {
+            font-size: 22px;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            padding: 4px 10px;
+            font-size: 12px;
+            font-weight: 800;
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .status-pill.paid {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-pill.overdue {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .print-actions {
+            max-width: 920px;
+            margin: 24px auto 0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        @media print {
+            body {
+                background: #fff;
+            }
+
+            .invoice-page {
+                margin: 0;
+                max-width: none;
+                border: 0;
+                padding: 0;
+            }
+
+            .print-actions {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<div class="print-actions">
+    <button type="button" class="btn btn-primary" onclick="window.print()">
+        <i class="bi bi-printer"></i>
+        Print / Save PDF
+    </button>
+
+    <form th:action="@{/billing/invoices/view}" method="post" class="d-inline">
+        <input type="hidden" name="id" th:value="${invoice.id}">
+        <button type="submit" class="btn btn-outline-secondary">
+            Back
+        </button>
+    </form>
+</div>
+
+<main class="invoice-page">
+    <section class="invoice-header">
+        <div>
+            <div class="d-flex align-items-center mb-3">
+                <span class="brand-mark">M</span>
+                <div>
+                    <strong>MBHONI Creative Solutions</strong>
+                    <div class="muted">Enterprise Suite Billing</div>
+                </div>
+            </div>
+
+            <h1 class="invoice-title">Invoice</h1>
+            <p class="muted mb-0" th:text="${invoice.invoiceNumber}">INV-000</p>
+        </div>
+
+        <div class="text-end">
+            <span class="status-pill"
+                  th:classappend="${invoice.status.name() == 'PAID' ? ' paid' :
+                                   invoice.status.name() == 'OVERDUE' ? ' overdue' : ''}"
+                  th:text="${invoice.status}">
+                ISSUED
+            </span>
+
+            <div class="mt-3">
+                <div>
+                    <strong>Issued:</strong>
+                    <span th:text="${invoice.issueDate}">2026-01-01</span>
+                </div>
+                <div>
+                    <strong>Due:</strong>
+                    <span th:text="${invoice.dueDate}">2026-01-08</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="row mb-4">
+        <div class="col-md-6">
+            <h5>Bill To</h5>
+            <strong th:text="${invoice.tenant.name}">Tenant Name</strong>
+            <p class="muted mb-0">Tenant account</p>
+        </div>
+
+        <div class="col-md-6 text-md-end">
+            <h5>Subscription</h5>
+            <div th:if="${invoice.subscription != null}">
+                <strong th:text="${invoice.subscription.plan.name}">Plan</strong>
+                <p class="muted mb-0" th:text="${invoice.subscription.billingCycle}">MONTHLY</p>
+            </div>
+            <div th:unless="${invoice.subscription != null}" class="muted">
+                Manual invoice
+            </div>
+        </div>
+    </section>
+
+    <section class="summary-grid">
+        <div class="summary-card">
+            <small>Subtotal</small>
+            <strong th:text="'R ' + ${invoice.subtotal}">R 0.00</strong>
+        </div>
+
+        <div class="summary-card">
+            <small>Tax</small>
+            <strong th:text="'R ' + ${invoice.taxAmount}">R 0.00</strong>
+        </div>
+
+        <div class="summary-card">
+            <small>Total</small>
+            <strong th:text="'R ' + ${invoice.totalAmount}">R 0.00</strong>
+        </div>
+    </section>
+
+    <section class="summary-grid">
+        <div class="summary-card">
+            <small>Amount Paid</small>
+            <strong th:text="'R ' + ${invoice.amountPaid}">R 0.00</strong>
+        </div>
+
+        <div class="summary-card">
+            <small>Balance Due</small>
+            <strong th:text="'R ' + ${invoice.balanceDue}">R 0.00</strong>
+        </div>
+
+        <div class="summary-card">
+            <small>Status</small>
+            <strong th:text="${invoice.status}">ISSUED</strong>
+        </div>
+    </section>
+
+    <section class="mt-4">
+        <h5>Invoice Notes</h5>
+        <p class="muted" th:text="${invoice.notes != null ? invoice.notes : 'No notes captured.'}">
+            No notes captured.
+        </p>
+    </section>
+
+    <section class="mt-4">
+        <h5>Payment History</h5>
+
+        <table class="table table-sm align-middle">
+            <thead>
+            <tr>
+                <th>Date</th>
+                <th>Method</th>
+                <th>Provider</th>
+                <th>Reference</th>
+                <th class="text-end">Amount</th>
+            </tr>
+            </thead>
+
+            <tbody>
+            <tr th:each="payment : ${payments}">
+                <td th:text="${payment.paidAt}">Date</td>
+                <td th:text="${payment.paymentMethod}">EFT</td>
+                <td th:text="${payment.paymentProvider != null ? payment.paymentProvider : 'MANUAL'}">MANUAL</td>
+                <td th:text="${payment.reference != null ? payment.reference : 'No reference'}">Reference</td>
+                <td class="text-end" th:text="'R ' + ${payment.amount}">R 0.00</td>
+            </tr>
+
+            <tr th:if="${payments == null or #lists.isEmpty(payments)}">
+                <td colspan="5" class="text-center muted py-4">
+                    No payments recorded.
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
+</main>
+</body>
+</html>

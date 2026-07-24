@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="https://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/head :: head('Billing Accounts')}"></head>
+
+<body>
+<div class="admin-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <main class="admin-content">
+            <div th:if="${successMessage}" class="alert alert-success admin-alert">
+                <i class="bi bi-check-circle"></i>
+                <span th:text="${successMessage}">Success message</span>
+            </div>
+
+            <section class="page-heading">
+                <div>
+                    <p class="eyebrow">Billing</p>
+                    <h2>Billing Accounts</h2>
+                    <p class="text-muted mb-0">Store tenant billing profiles and invoice contacts.</p>
+                </div>
+
+                <a th:href="@{/billing/invoices}" class="btn btn-outline-secondary">
+                    Invoices
+                </a>
+            </section>
+
+            <section class="form-panel mb-4">
+                <form th:action="@{/billing/accounts}" method="get">
+                    <div class="form-grid">
+                        <div>
+                            <label class="form-label">Search</label>
+                            <input type="text"
+                                   name="q"
+                                   class="form-control"
+                                   th:value="${q}"
+                                   placeholder="Tenant, billing name, email, tax number">
+                        </div>
+
+                        <div>
+                            <label class="form-label">Status</label>
+                            <select name="status" class="form-select">
+                                <option value="">All</option>
+                                <option value="ACTIVE" th:selected="${status == 'ACTIVE'}">Active</option>
+                                <option value="INACTIVE" th:selected="${status == 'INACTIVE'}">Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <a th:href="@{/billing/accounts}" class="btn btn-outline-secondary">Clear</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-search"></i>
+                            Search
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="form-panel mb-4">
+                <form th:action="@{/billing/accounts/save}" th:object="${account}" method="post">
+                    <div class="form-grid">
+                        <div>
+                            <label class="form-label">Tenant</label>
+                            <select name="tenantId" class="form-select" required>
+                                <option value="">Choose tenant</option>
+                                <option th:each="tenant : ${tenants}"
+                                        th:value="${tenant.id}"
+                                        th:text="${tenant.name}">
+                                    Tenant
+                                </option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="form-label">Billing Name</label>
+                            <input type="text" th:field="*{billingName}" class="form-control" required>
+                        </div>
+
+                        <div>
+                            <label class="form-label">Billing Email</label>
+                            <input type="email" th:field="*{billingEmail}" class="form-control" required>
+                        </div>
+
+                        <div>
+                            <label class="form-label">Tax Number</label>
+                            <input type="text" th:field="*{taxNumber}" class="form-control">
+                        </div>
+
+                        <div>
+                            <label class="form-label">Address Line 1</label>
+                            <input type="text" th:field="*{addressLine1}" class="form-control">
+                        </div>
+
+                        <div>
+                            <label class="form-label">Address Line 2</label>
+                            <input type="text" th:field="*{addressLine2}" class="form-control">
+                        </div>
+
+                        <div>
+                            <label class="form-label">City</label>
+                            <input type="text" th:field="*{city}" class="form-control">
+                        </div>
+
+                        <div>
+                            <label class="form-label">Province</label>
+                            <input type="text" th:field="*{province}" class="form-control">
+                        </div>
+
+                        <div>
+                            <label class="form-label">Postal Code</label>
+                            <input type="text" th:field="*{postalCode}" class="form-control">
+                        </div>
+
+                        <div>
+                            <label class="form-label">Country</label>
+                            <input type="text" th:field="*{country}" class="form-control" value="South Africa">
+                        </div>
+
+                        <div>
+                            <label class="form-label">Status</label>
+                            <div class="switch-box">
+                                <input class="form-check-input" type="checkbox" th:field="*{active}" id="accountActive" checked>
+                                <label for="accountActive">Billing account active</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check2"></i>
+                            Save Billing Account
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="data-panel">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0 admin-table">
+                        <thead>
+                        <tr>
+                            <th>Tenant</th>
+                            <th>Billing Contact</th>
+                            <th>Address</th>
+                            <th>Status</th>
+                        </tr>
+                        </thead>
+
+                        <tbody>
+                        <tr th:each="account : ${accounts}">
+                            <td>
+                                <strong th:text="${account.tenant.name}">Tenant</strong>
+                            </td>
+
+                            <td>
+                                <strong th:text="${account.billingName}">Billing Name</strong>
+                                <small class="d-block text-muted" th:text="${account.billingEmail}">email</small>
+                            </td>
+
+                            <td>
+                                <span th:text="${account.city != null ? account.city : 'Not captured'}">City</span>
+                                <small class="d-block text-muted" th:text="${account.country}">Country</small>
+                            </td>
+
+                            <td>
+                                <span th:if="${account.active}" class="status-pill active">Active</span>
+                                <span th:unless="${account.active}" class="status-pill inactive">Inactive</span>
+                            </td>
+                        </tr>
+
+                        <tr th:if="${accounts == null or #lists.isEmpty(accounts)}">
+                            <td colspan="4">
+                                <div class="empty-state">
+                                    <i class="bi bi-cash-coin"></i>
+                                    <strong>No billing accounts found</strong>
+                                    <span>Create a billing profile for a tenant.</span>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <div class="form-actions" th:if="${page != null and page.totalPages > 1}">
+                <a class="btn btn-outline-secondary"
+                   th:if="${page.hasPrevious}"
+                   th:href="@{/billing/accounts(page=${page.number - 1}, size=${page.size}, q=${q}, status=${status})}">
+                    Previous
+                </a>
+
+                <span class="text-muted"
+                      th:text="'Page ' + (${page.number} + 1) + ' of ' + ${page.totalPages}">
+                    Page
+                </span>
+
+                <a class="btn btn-outline-secondary"
+                   th:if="${page.hasNext}"
+                   th:href="@{/billing/accounts(page=${page.number + 1}, size=${page.size}, q=${q}, status=${status})}">
+                    Next
+                </a>
+            </div>
+        </main>
+
+        <div th:replace="~{fragments/footer :: footer}"></div>
+    </div>
+</div>
+
+<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/sidebar.js}"></script>
+</body>
+</html>

@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="https://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/head :: head('Invoices')}"></head>
+
+<body>
+<div class="admin-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <main class="admin-content">
+            <div th:if="${successMessage}" class="alert alert-success admin-alert">
+                <i class="bi bi-check-circle"></i>
+                <span th:text="${successMessage}">Success message</span>
+            </div>
+
+            <section class="page-heading">
+                <div>
+                    <p class="eyebrow">Billing</p>
+                    <h2>Invoices</h2>
+                    <p class="text-muted mb-0">Create invoices and record tenant payments.</p>
+                </div>
+                
+                <form th:action="@{/billing/invoices/refresh-overdue}"
+				      method="post"
+				      class="d-inline"
+				      sec:authorize="hasAuthority('BILLING_EDIT')">
+				    <button type="submit" class="btn btn-outline-danger">
+				        <i class="bi bi-exclamation-circle"></i>
+				        Refresh Overdue
+				    </button>
+				</form>
+				
+				<form th:action="@{/billing/invoices/suspend-overdue}"
+				      method="post"
+				      class="d-inline"
+				      sec:authorize="hasAuthority('BILLING_EDIT')">
+				    <button type="submit"
+				            class="btn btn-outline-danger"
+				            onclick="return confirm('Suspend subscriptions for tenants with overdue invoices?')">
+				        <i class="bi bi-pause-circle"></i>
+				        Suspend Overdue
+				    </button>
+				</form>
+
+                <a th:href="@{/billing/accounts}" class="btn btn-outline-secondary">
+                    Billing Accounts
+                </a>
+            </section>
+
+            <section class="form-panel mb-4">
+                <form th:action="@{/billing/invoices}" method="get">
+                    <div class="form-grid">
+                        <div>
+                            <label class="form-label">Search</label>
+                            <input type="text"
+                                   name="q"
+                                   class="form-control"
+                                   th:value="${q}"
+                                   placeholder="Invoice, tenant, notes">
+                        </div>
+
+                        <div>
+                            <label class="form-label">Tenant</label>
+                            <select name="tenantId" class="form-select">
+                                <option value="">All tenants</option>
+                                <option th:each="tenant : ${tenants}"
+                                        th:value="${tenant.id}"
+                                        th:selected="${selectedTenantId != null and selectedTenantId == tenant.id}"
+                                        th:text="${tenant.name}">
+                                    Tenant
+                                </option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="form-label">Status</label>
+                            <select name="status" class="form-select">
+                                <option value="">All statuses</option>
+                                <option th:each="invoiceStatus : ${invoiceStatuses}"
+                                        th:value="${invoiceStatus}"
+                                        th:selected="${status != null and status == invoiceStatus}"
+                                        th:text="${invoiceStatus}">
+                                    STATUS
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <a th:href="@{/billing/invoices}" class="btn btn-outline-secondary">Clear</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-search"></i>
+                            Search
+                        </button>
+                    </div>
+                </form>
+            </section>
+            
+            <section class="form-panel mb-4" sec:authorize="hasAuthority('BILLING_CREATE')">
+			    <h3 class="panel-title">Generate From Subscription</h3>
+			
+			    <form th:action="@{/billing/invoices/generate}" method="post">
+			        <div class="form-grid">
+			            <div>
+			                <label class="form-label">Tenant</label>
+			                <select name="tenantId" class="form-select" required>
+			                    <option value="">Choose tenant</option>
+			                    <option th:each="tenant : ${tenants}"
+			                            th:value="${tenant.id}"
+			                            th:text="${tenant.name}">
+			                        Tenant
+			                    </option>
+			                </select>
+			            </div>
+			
+			            <div>
+			                <label class="form-label">Issue Date</label>
+			                <input type="date" name="issueDate" class="form-control">
+			            </div>
+			
+			            <div>
+			                <label class="form-label">Due Date</label>
+			                <input type="date" name="dueDate" class="form-control">
+			            </div>
+			        </div>
+			
+			        <div class="mt-4">
+			            <label class="form-label">Notes</label>
+			            <textarea name="notes" class="form-control" rows="2"
+			                      placeholder="Optional invoice note"></textarea>
+			        </div>
+			
+			        <div class="form-actions">
+			            <button type="submit" class="btn btn-primary">
+			                <i class="bi bi-arrow-repeat"></i>
+			                Generate Invoice
+			            </button>
+			        </div>
+			    </form>
+			</section>
+
+            <section class="form-panel mb-4" sec:authorize="hasAuthority('BILLING_CREATE')">
+                <h3 class="panel-title">Create Manual Invoice</h3>
+
+                <form th:action="@{/billing/invoices/create}" method="post">
+                    <div class="form-grid">
+                        <div>
+                            <label class="form-label">Tenant</label>
+                            <select name="tenantId" class="form-select" required>
+                                <option value="">Choose tenant</option>
+                                <option th:each="tenant : ${tenants}"
+                                        th:value="${tenant.id}"
+                                        th:text="${tenant.name}">
+                                    Tenant
+                                </option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="form-label">Subtotal</label>
+                            <input type="number" name="subtotal" class="form-control" min="0" step="0.01" required>
+                        </div>
+
+                        <div>
+                            <label class="form-label">Tax Amount</label>
+                            <input type="number" name="taxAmount" class="form-control" min="0" step="0.01" value="0">
+                        </div>
+
+                        <div>
+                            <label class="form-label">Issue Date</label>
+                            <input type="date" name="issueDate" class="form-control">
+                        </div>
+
+                        <div>
+                            <label class="form-label">Due Date</label>
+                            <input type="date" name="dueDate" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <label class="form-label">Notes</label>
+                        <textarea name="notes" class="form-control" rows="2"></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-receipt"></i>
+                            Create Invoice
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="data-panel">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0 admin-table">
+                        <thead>
+                        <tr>
+                            <th>Invoice</th>
+                            <th>Tenant</th>
+                            <th>Status</th>
+                            <th>Total</th>
+                            <th>Paid</th>
+                            <th>Due</th>
+                            <th class="text-end">Payment</th>
+                        </tr>
+                        </thead>
+
+                        <tbody>
+                        <tr th:each="invoice : ${invoices}">
+                            <td>
+                                <strong th:text="${invoice.invoiceNumber}">INV</strong>
+                                <small class="d-block text-muted"
+                                       th:text="${invoice.issueDate != null ? 'Issued: ' + invoice.issueDate : 'Issued: not set'}">
+                                    Issued
+                                </small>
+                            </td>
+
+                            <td>
+                                <span th:text="${invoice.tenant.name}">Tenant</span>
+                            </td>
+
+                            <td>
+                                <span class="status-pill"
+								      th:classappend="${invoice.status.name() == 'PAID' ? ' active' :
+								                       invoice.status.name() == 'OVERDUE' ? ' inactive' :
+								                       invoice.status.name() == 'PARTIALLY_PAID' ? ' warning' :
+								                       ' neutral'}"
+								      th:text="${invoice.status}">
+								    ISSUED
+								</span>
+                            </td>
+
+                            <td>
+                                <strong th:text="'R ' + ${invoice.totalAmount}">R 0.00</strong>
+                            </td>
+
+                            <td>
+                                <span th:text="'R ' + ${invoice.amountPaid}">R 0.00</span>
+                            </td>
+
+                            <td>
+                                <span th:text="${invoice.dueDate != null ? invoice.dueDate : 'Not set'}">Due</span>
+                            </td>
+
+                            <td class="text-end">
+							    <form th:action="@{/billing/invoices/view}"
+							          method="post"
+							          class="d-inline"
+							          sec:authorize="hasAuthority('BILLING_VIEW')">
+							        <input type="hidden" name="id" th:value="${invoice.id}">
+							        <button type="submit" class="btn btn-sm btn-outline-secondary">
+							            <i class="bi bi-eye"></i>
+							            View
+							        </button>
+							    </form>
+							</td>
+                        </tr>
+
+                        <tr th:if="${invoices == null or #lists.isEmpty(invoices)}">
+                            <td colspan="7">
+                                <div class="empty-state">
+                                    <i class="bi bi-receipt"></i>
+                                    <strong>No invoices found</strong>
+                                    <span>Create an invoice to start tracking billing.</span>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <div class="form-actions" th:if="${page != null and page.totalPages > 1}">
+                <a class="btn btn-outline-secondary"
+                   th:if="${page.hasPrevious}"
+                   th:href="@{/billing/invoices(page=${page.number - 1}, size=${page.size}, q=${q}, status=${status}, tenantId=${selectedTenantId})}">
+                    Previous
+                </a>
+
+                <span class="text-muted"
+                      th:text="'Page ' + (${page.number} + 1) + ' of ' + ${page.totalPages}">
+                    Page
+                </span>
+
+                <a class="btn btn-outline-secondary"
+                   th:if="${page.hasNext}"
+                   th:href="@{/billing/invoices(page=${page.number + 1}, size=${page.size}, q=${q}, status=${status}, tenantId=${selectedTenantId})}">
+                    Next
+                </a>
+            </div>
+        </main>
+
+        <div th:replace="~{fragments/footer :: footer}"></div>
+    </div>
+</div>
+
+<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/sidebar.js}"></script>
+</body>
+</html>

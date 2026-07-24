@@ -1,0 +1,66 @@
+USE mbhoni_es;
+
+CREATE TABLE IF NOT EXISTS subscription_plans (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    code VARCHAR(80) NOT NULL,
+    name VARCHAR(120) NOT NULL,
+    description VARCHAR(500),
+    monthly_price DECIMAL(19, 2) DEFAULT 0.00,
+    annual_price DECIMAL(19, 2) DEFAULT 0.00,
+    max_users INT,
+    max_storage_mb INT,
+    api_access_enabled BIT(1) NOT NULL DEFAULT b'0',
+    branding_enabled BIT(1) NOT NULL DEFAULT b'0',
+    custom_domain_enabled BIT(1) NOT NULL DEFAULT b'0',
+    active BIT(1) NOT NULL DEFAULT b'1',
+    created_at DATETIME(6),
+    created_by VARCHAR(255),
+    updated_at DATETIME(6),
+    updated_by VARCHAR(255),
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_subscription_plans_code (code)
+);
+
+CREATE TABLE IF NOT EXISTS tenant_subscriptions (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    tenant_id BIGINT NOT NULL,
+    plan_id BIGINT NOT NULL,
+    status VARCHAR(40) NOT NULL,
+    billing_cycle VARCHAR(40) NOT NULL,
+    start_date DATE,
+    end_date DATE,
+    trial_ends_at DATE,
+    auto_renew BIT(1) NOT NULL DEFAULT b'1',
+    created_at DATETIME(6),
+    created_by VARCHAR(255),
+    updated_at DATETIME(6),
+    updated_by VARCHAR(255),
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_tenant_subscriptions_tenant (tenant_id),
+    KEY idx_tenant_subscriptions_plan (plan_id),
+    CONSTRAINT fk_tenant_subscriptions_tenant
+        FOREIGN KEY (tenant_id)
+        REFERENCES tenants (id),
+    CONSTRAINT fk_tenant_subscriptions_plan
+        FOREIGN KEY (plan_id)
+        REFERENCES subscription_plans (id)
+);
+
+INSERT INTO subscription_plans
+(code, name, description, monthly_price, annual_price, max_users, max_storage_mb,
+ api_access_enabled, branding_enabled, custom_domain_enabled, active)
+VALUES
+('BASIC', 'Basic', 'Entry plan for small tenants.', 199.00, 1990.00, 5, 1024, b'0', b'0', b'0', b'1'),
+('PRO', 'Pro', 'Growth plan with API and branding.', 499.00, 4990.00, 25, 10240, b'1', b'1', b'0', b'1'),
+('ENTERPRISE', 'Enterprise', 'Advanced plan with full tenant capabilities.', 1499.00, 14990.00, NULL, NULL, b'1', b'1', b'1', b'1')
+ON DUPLICATE KEY UPDATE
+    name = VALUES(name),
+    description = VALUES(description),
+    monthly_price = VALUES(monthly_price),
+    annual_price = VALUES(annual_price),
+    max_users = VALUES(max_users),
+    max_storage_mb = VALUES(max_storage_mb),
+    api_access_enabled = VALUES(api_access_enabled),
+    branding_enabled = VALUES(branding_enabled),
+    custom_domain_enabled = VALUES(custom_domain_enabled),
+    active = VALUES(active);

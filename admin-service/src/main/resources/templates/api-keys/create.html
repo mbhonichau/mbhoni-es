@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Create API Key')}"></head>
+
+<body>
+<div class="admin-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <main class="admin-content">
+            <section class="page-heading">
+                <div>
+                    <p class="eyebrow">Integrations</p>
+                    <h2>Create API Key</h2>
+                    <p class="text-muted mb-0">Create a tenant-scoped key for external systems.</p>
+                </div>
+
+                <a th:href="@{/api-keys}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i>
+                    Back
+                </a>
+            </section>
+
+            <section class="form-panel">
+                <form th:action="@{/api-keys/create}" th:object="${apiKey}" method="post">
+                    <div class="form-grid">
+                        <div th:if="${globalAdmin}">
+                            <label class="form-label">Tenant</label>
+                            <select class="form-select" th:field="*{tenantId}" required>
+                                <option value="">Choose tenant</option>
+                                <option th:each="tenant : ${tenants}"
+                                        th:value="${tenant.id}"
+                                        th:text="${tenant.name}">
+                                    Tenant
+                                </option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="form-label">Name</label>
+                            <input type="text"
+                                   class="form-control"
+                                   th:field="*{name}"
+                                   placeholder="Website integration"
+                                   required>
+                        </div>
+
+                        <div>
+                            <label class="form-label">Expires At</label>
+                            <input type="datetime-local"
+                                   class="form-control"
+                                   th:field="*{expiresAt}">
+                        </div>
+                    </div>
+
+                    <div class="section-divider"></div>
+
+                    <div class="module-grid">
+                        <label class="module-card" th:each="permission : ${permissions}">
+                            <input type="checkbox"
+                                   name="permissionIds"
+                                   th:value="${permission.id}">
+
+                            <span class="module-icon">
+                                <i class="bi bi-key"></i>
+                            </span>
+
+                            <span>
+                                <strong th:text="${permission.name}">PERMISSION</strong>
+                                <small>Permission</small>
+                                <p th:text="${permission.description != null and !#strings.isEmpty(permission.description) ? permission.description : 'No description'}">
+                                    Description
+                                </p>
+                            </span>
+                        </label>
+                    </div>
+
+                    <div class="form-actions">
+                        <a th:href="@{/api-keys}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check2"></i>
+                            Create API Key
+                        </button>
+                    </div>
+                </form>
+            </section>
+        </main>
+
+        <div th:replace="~{fragments/footer :: footer}"></div>
+    </div>
+</div>
+
+<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/sidebar.js}"></script>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<th:block xmlns:th="http://www.thymeleaf.org"
+          xmlns:sec="https://www.thymeleaf.org/extras/spring-security"
+          th:fragment="sidebar">
+
+<aside class="admin-sidebar">
+    <a th:href="@{/dashboard}" class="brand">
+        <span class="brand-mark">M</span>
+        <span class="brand-text">MBHONI</span>
+    </a>
+
+    <nav class="sidebar-nav">
+        <a th:href="@{/dashboard}" class="nav-link">
+            <i class="bi bi-speedometer2"></i>
+            <span>Dashboard</span>
+        </a>
+
+        <a th:href="@{/tenants}" class="nav-link" sec:authorize="hasAuthority('TENANT_VIEW')">
+            <i class="bi bi-buildings"></i>
+            <span>Tenants</span>
+        </a>
+
+        <a th:href="@{/users}" class="nav-link" sec:authorize="hasAuthority('USER_VIEW')">
+            <i class="bi bi-people"></i>
+            <span>Users</span>
+        </a>
+        
+        <a th:href="@{/roles}"
+		   class="nav-link"
+		   sec:authorize="hasAuthority('ROLE_VIEW')">
+		    <i class="bi bi-shield-lock"></i>
+		    <span>Roles</span>
+		</a>
+        
+        <a th:href="@{/subscriptions/plans}"
+		   class="nav-link"
+		   sec:authorize="hasAuthority('SUBSCRIPTION_VIEW')">
+		    <i class="bi bi-credit-card"></i>
+		    <span>Plans</span>
+		</a>
+		
+		<a th:href="@{/subscriptions/tenants}"
+		   class="nav-link"
+		   sec:authorize="hasAuthority('SUBSCRIPTION_VIEW')">
+		    <i class="bi bi-receipt"></i>
+		    <span>Subscriptions</span>
+		</a>
+		<a th:href="@{/billing}"
+		   class="nav-link"
+		   sec:authorize="hasAuthority('BILLING_VIEW')">
+		    <i class="bi bi-cash-coin"></i>
+		    <span>Billing</span>
+		</a>
+		
+		<a th:href="@{/customizations}"
+		   class="nav-link"
+		   sec:authorize="hasAuthority('TENANT_VIEW') and hasAuthority('CUSTOMIZATION_VIEW')">
+		    <i class="bi bi-palette"></i>
+		    <span>Customizations</span>
+		</a>
+		
+		<a th:href="@{/customizations/my}"
+		   class="nav-link"
+		   sec:authorize="!hasAuthority('TENANT_VIEW') and hasAuthority('CUSTOMIZATION_VIEW')">
+		    <i class="bi bi-palette"></i>
+		    <span>Branding</span>
+		</a>
+		
+		<a th:href="@{/modules}"
+		   class="nav-link"
+		   sec:authorize="hasAuthority('MODULE_VIEW')">
+		    <i class="bi bi-grid"></i>
+		    <span>Modules</span>
+		</a>
+
+		<a th:href="@{/api-keys}"
+		   class="nav-link"
+		   sec:authorize="hasAuthority('API_KEY_VIEW') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN')">
+		    <i class="bi bi-key"></i>
+		    <span>API Keys</span>
+		</a>
+		
+		<a th:href="@{/audit-logs}"
+		   class="nav-link"
+		   sec:authorize="hasAuthority('AUDIT_VIEW') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN')">
+		    <i class="bi bi-clipboard-data"></i>
+		    <span>Audit Logs</span>
+		</a>
+
+		<hr style="border-color: rgba(255,255,255,0.1); margin: 8px 16px;">
+
+		<a th:href="@{/master-data}"
+		   class="nav-link">
+		    <i class="bi bi-database-gear"></i>
+		    <span>Master Data</span>
+		</a>
+
+		<a th:href="@{/contracts}"
+		   class="nav-link">
+		    <i class="bi bi-file-earmark-text"></i>
+		    <span>Contracts</span>
+		</a>
+
+		<a th:href="@{/employees}"
+		   class="nav-link">
+		    <i class="bi bi-person-vcard"></i>
+		    <span>Employees</span>
+		</a>
+
+		<a th:href="@{/services}"
+		   class="nav-link">
+		    <i class="bi bi-diagram-3"></i>
+		    <span>Services</span>
+		</a>
+
+		<a th:href="@{/organization}"
+		   class="nav-link">
+		    <i class="bi bi-diagram-2"></i>
+		    <span>Organization</span>
+		</a>
+
+		<a th:href="@{/tenants/quotas}"
+		   class="nav-link">
+		    <i class="bi bi-speedometer"></i>
+		    <span>Quotas</span>
+		</a>
+    </nav>
+</aside>
+
+</th:block>

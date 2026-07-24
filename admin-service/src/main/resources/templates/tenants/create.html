@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Create Tenant')}"></head>
+
+<body>
+<div class="admin-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <main class="admin-content">
+            <section class="page-heading">
+                <div>
+                    <p class="eyebrow">Tenant Management</p>
+                    <h2>Create Tenant</h2>
+                    <p class="text-muted mb-0">Register a new client tenant.</p>
+                </div>
+
+                <a th:href="@{/tenants}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i>
+                    Back
+                </a>
+            </section>
+
+            <section class="form-panel">
+                <form th:action="@{/tenants/create}" th:object="${tenant}" method="post">
+                    <div class="form-grid">
+                        <div>
+                            <label class="form-label">Tenant Name</label>
+                            <input type="text"
+                                   th:field="*{name}"
+                                   class="form-control"
+                                   placeholder="Example: JusAqua"
+                                   required>
+                        </div>
+                        
+                        <div>
+						    <label class="form-label">Industry Profile</label>
+						    <select th:field="*{industryProfileId}" class="form-select">
+						        <option value="">General / Not assigned</option>
+						        <option th:each="profile : ${industryProfiles}"
+						                th:value="${profile.id}"
+						                th:text="${profile.name}">
+						            Industry
+						        </option>
+						    </select>
+						</div>
+
+                        <div>
+                            <label class="form-label">Status</label>
+                            <div class="switch-box">
+                                <input class="form-check-input"
+                                       type="checkbox"
+                                       th:field="*{active}"
+                                       id="activeSwitch"
+                                       checked>
+                                <label for="activeSwitch">Tenant is active</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <a th:href="@{/tenants}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check2"></i>
+                            Create Tenant
+                        </button>
+                    </div>
+                </form>
+            </section>
+        </main>
+
+        <div th:replace="~{fragments/footer :: footer}"></div>
+    </div>
+</div>
+
+<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/sidebar.js}"></script>
+</body>
+</html>

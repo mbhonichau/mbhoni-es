@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Tenant Subscriptions')}"></head>
+
+<body>
+<div class="admin-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <main class="admin-content">
+            <div th:if="${successMessage}" class="alert alert-success admin-alert">
+                <i class="bi bi-check-circle"></i>
+                <span th:text="${successMessage}">Success message</span>
+            </div>
+
+            <section class="page-heading">
+                <div>
+                    <p class="eyebrow">Subscriptions</p>
+                    <h2>Tenant Subscriptions</h2>
+                    <p class="text-muted mb-0">Assign plans and subscription status to tenants.</p>
+                </div>
+
+                <a th:href="@{/subscriptions/plans}" class="btn btn-outline-secondary">
+                    Plans
+                </a>
+            </section>
+
+            <section class="form-panel mb-4">
+                <form th:action="@{/subscriptions/tenants}" method="get">
+                    <div class="form-grid">
+                        <div>
+                            <label class="form-label">Search</label>
+                            <input type="text"
+                                   name="q"
+                                   class="form-control"
+                                   th:value="${q}"
+                                   placeholder="Tenant or plan">
+                        </div>
+
+                        <div>
+                            <label class="form-label">Status</label>
+                            <select name="status" class="form-select">
+                                <option value="">All statuses</option>
+                                <option th:each="status : ${statuses}"
+                                        th:value="${status}"
+                                        th:selected="${selectedStatus != null and selectedStatus == status}"
+                                        th:text="${status}">
+                                    ACTIVE
+                                </option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="form-label">Billing Cycle</label>
+                            <select name="billingCycle" class="form-select">
+                                <option value="">All cycles</option>
+                                <option th:each="cycle : ${billingCycles}"
+                                        th:value="${cycle}"
+                                        th:selected="${selectedBillingCycle != null and selectedBillingCycle == cycle}"
+                                        th:text="${cycle}">
+                                    MONTHLY
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <a th:href="@{/subscriptions/tenants}" class="btn btn-outline-secondary">Clear</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-search"></i>
+                            Search
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="form-panel mb-4">
+                <form th:action="@{/subscriptions/tenants/assign}" method="post">
+                    <div class="form-grid">
+                        <div>
+                            <label class="form-label">Tenant</label>
+                            <select name="tenantId" class="form-select" required>
+                                <option value="">Choose tenant</option>
+                                <option th:each="tenant : ${tenants}"
+                                        th:value="${tenant.id}"
+                                        th:text="${tenant.name}">
+                                    Tenant
+                                </option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="form-label">Plan</label>
+                            <select name="planId" class="form-select" required>
+                                <option value="">Choose plan</option>
+                                <option th:each="plan : ${plans}"
+                                        th:value="${plan.id}"
+                                        th:text="${plan.name}">
+                                    Plan
+                                </option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="form-label">Status</label>
+                            <select name="status" class="form-select" required>
+                                <option th:each="status : ${statuses}"
+                                        th:value="${status}"
+                                        th:text="${status}">
+                                    ACTIVE
+                                </option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="form-label">Billing Cycle</label>
+                            <select name="billingCycle" class="form-select" required>
+                                <option th:each="cycle : ${billingCycles}"
+                                        th:value="${cycle}"
+                                        th:text="${cycle}">
+                                    MONTHLY
+                                </option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="form-label">Start Date</label>
+                            <input type="date" name="startDate" class="form-control">
+                        </div>
+
+                        <div>
+                            <label class="form-label">End Date</label>
+                            <input type="date" name="endDate" class="form-control">
+                        </div>
+
+                        <div>
+                            <label class="form-label">Trial Ends</label>
+                            <input type="date" name="trialEndsAt" class="form-control">
+                        </div>
+
+                        <div>
+                            <label class="form-label">Renewal</label>
+                            <div class="switch-box">
+                                <input class="form-check-input" type="checkbox" name="autoRenew" value="true" id="autoRenew" checked>
+                                <label for="autoRenew">Auto renew</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check2"></i>
+                            Assign Subscription
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="data-panel">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0 admin-table">
+                        <thead>
+                        <tr>
+                            <th>Tenant</th>
+                            <th>Plan</th>
+                            <th>Status</th>
+                            <th>Billing</th>
+                            <th>Dates</th>
+                            <th>Renewal</th>
+                        </tr>
+                        </thead>
+
+                        <tbody>
+                        <tr th:each="subscription : ${subscriptions}">
+                            <td>
+                                <strong th:text="${subscription.tenant.name}">Tenant</strong>
+                            </td>
+
+                            <td>
+                                <span th:text="${subscription.plan.name}">Plan</span>
+                            </td>
+
+                            <td>
+                                <span class="status-pill"
+								      th:classappend="${subscription.status.name() == 'ACTIVE' ? ' active' :
+								                       subscription.status.name() == 'SUSPENDED' ? ' inactive' :
+								                       subscription.status.name() == 'PAST_DUE' ? ' warning' :
+								                       ' neutral'}"
+								      th:text="${subscription.status}">
+								    ACTIVE
+								</span>
+                            </td>
+
+                            <td>
+                                <span th:text="${subscription.billingCycle}">MONTHLY</span>
+                            </td>
+
+                            <td>
+                                <small class="d-block text-muted"
+                                       th:text="${subscription.startDate != null ? 'Start: ' + subscription.startDate : 'Start: not set'}">
+                                    Start
+                                </small>
+                                <small class="d-block text-muted"
+                                       th:text="${subscription.endDate != null ? 'End: ' + subscription.endDate : 'End: not set'}">
+                                    End
+                                </small>
+                            </td>
+
+                            <td>
+                                <span th:if="${subscription.autoRenew}" class="status-pill active">Auto</span>
+                                <span th:unless="${subscription.autoRenew}" class="status-pill inactive">Manual</span>
+                            </td>
+                        </tr>
+
+                        <tr th:if="${subscriptions == null or #lists.isEmpty(subscriptions)}">
+                            <td colspan="6">
+                                <div class="empty-state">
+                                    <i class="bi bi-credit-card"></i>
+                                    <strong>No tenant subscriptions found</strong>
+                                    <span>Assign a plan to a tenant to begin tracking subscriptions.</span>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <div class="form-actions" th:if="${page != null and page.totalPages > 1}">
+                <a class="btn btn-outline-secondary"
+                   th:if="${page.hasPrevious}"
+                   th:href="@{/subscriptions/tenants(page=${page.number - 1}, size=${page.size}, q=${q}, status=${selectedStatus}, billingCycle=${selectedBillingCycle})}">
+                    Previous
+                </a>
+
+                <span class="text-muted"
+                      th:text="'Page ' + (${page.number} + 1) + ' of ' + ${page.totalPages}">
+                    Page
+                </span>
+
+                <a class="btn btn-outline-secondary"
+                   th:if="${page.hasNext}"
+                   th:href="@{/subscriptions/tenants(page=${page.number + 1}, size=${page.size}, q=${q}, status=${selectedStatus}, billingCycle=${selectedBillingCycle})}">
+                    Next
+                </a>
+            </div>
+        </main>
+
+        <div th:replace="~{fragments/footer :: footer}"></div>
+    </div>
+</div>
+
+<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/sidebar.js}"></script>
+</body>
+</html>

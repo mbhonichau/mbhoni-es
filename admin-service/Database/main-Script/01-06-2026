@@ -1,0 +1,359 @@
+-- =========================================================
+-- MULTI-TENANT RBAC DATABASE STRUCTURE
+-- Spring Boot + Thymeleaf Architecture
+-- =========================================================
+
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- =========================================================
+-- DROP OLD TABLES
+-- =========================================================
+
+DROP TABLE IF EXISTS role_permissions;
+DROP TABLE IF EXISTS user_roles;
+
+DROP TABLE IF EXISTS permissions;
+DROP TABLE IF EXISTS roles;
+
+DROP TABLE IF EXISTS product_image_urls;
+DROP TABLE IF EXISTS products;
+
+DROP TABLE IF EXISTS tenant_content;
+DROP TABLE IF EXISTS tenant_metrics;
+DROP TABLE IF EXISTS website_content;
+
+DROP TABLE IF EXISTS users;
+
+DROP TABLE IF EXISTS tenants;
+
+DROP TABLE IF EXISTS person;
+DROP TABLE IF EXISTS persons;
+
+SET FOREIGN_KEY_CHECKS = 1;
+
+-- =========================================================
+-- CREATE TENANTS
+-- =========================================================
+
+CREATE TABLE tenants (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+
+    name VARCHAR(255) NOT NULL,
+
+    active BOOLEAN DEFAULT TRUE,
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- =========================================================
+-- CREATE USERS
+-- =========================================================
+
+CREATE TABLE users (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+
+    username VARCHAR(255) NOT NULL UNIQUE,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+
+    first_name VARCHAR(255),
+    last_name VARCHAR(255),
+
+    tenant_id BIGINT NULL,
+
+    is_global_admin BOOLEAN DEFAULT FALSE,
+    active BOOLEAN DEFAULT TRUE,
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_users_tenant
+        FOREIGN KEY (tenant_id)
+        REFERENCES tenants(id)
+        ON DELETE SET NULL
+);
+
+-- =========================================================
+-- CREATE ROLES
+-- =========================================================
+
+CREATE TABLE roles (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+
+    name VARCHAR(255) NOT NULL,
+
+    tenant_id BIGINT NULL,
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_roles_tenant
+        FOREIGN KEY (tenant_id)
+        REFERENCES tenants(id)
+        ON DELETE CASCADE
+);
+
+-- =========================================================
+-- CREATE PERMISSIONS
+-- =========================================================
+
+CREATE TABLE permissions (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+
+    name VARCHAR(255) NOT NULL UNIQUE,
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =========================================================
+-- CREATE USER ROLES
+-- =========================================================
+
+CREATE TABLE user_roles (
+    user_id BIGINT NOT NULL,
+    role_id BIGINT NOT NULL,
+
+    PRIMARY KEY (user_id, role_id),
+
+    CONSTRAINT fk_user_roles_user
+        FOREIGN KEY (user_id)
+        REFERENCES users(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_user_roles_role
+        FOREIGN KEY (role_id)
+        REFERENCES roles(id)
+        ON DELETE CASCADE
+);
+
+-- =========================================================
+-- CREATE ROLE PERMISSIONS
+-- =========================================================
+
+CREATE TABLE role_permissions (
+    role_id BIGINT NOT NULL,
+    permission_id BIGINT NOT NULL,
+
+    PRIMARY KEY (role_id, permission_id),
+
+    CONSTRAINT fk_role_permissions_role
+        FOREIGN KEY (role_id)
+        REFERENCES roles(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_role_permissions_permission
+        FOREIGN KEY (permission_id)
+        REFERENCES permissions(id)
+        ON DELETE CASCADE
+);
+
+-- =========================================================
+-- CREATE PRODUCTS
+-- =========================================================
+
+CREATE TABLE products (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+
+    tenant_id BIGINT NOT NULL,
+
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+
+    price DOUBLE DEFAULT 0,
+
+    image_url VARCHAR(255),
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_products_tenant
+        FOREIGN KEY (tenant_id)
+        REFERENCES tenants(id)
+        ON DELETE CASCADE
+);
+
+-- =========================================================
+-- CREATE PRODUCT IMAGE URLS
+-- =========================================================
+
+CREATE TABLE product_image_urls (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+
+    product_id BIGINT NOT NULL,
+
+    image_url VARCHAR(255),
+
+    CONSTRAINT fk_product_images_product
+        FOREIGN KEY (product_id)
+        REFERENCES products(id)
+        ON DELETE CASCADE
+);
+
+-- =========================================================
+-- CREATE TENANT CONTENT
+-- =========================================================
+
+CREATE TABLE tenant_content (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+
+    tenant_id BIGINT NOT NULL,
+
+    content_name VARCHAR(255),
+    content_type VARCHAR(100),
+
+    content_value TEXT,
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_tenant_content_tenant
+        FOREIGN KEY (tenant_id)
+        REFERENCES tenants(id)
+        ON DELETE CASCADE
+);
+
+-- =========================================================
+-- CREATE TENANT METRICS
+-- =========================================================
+
+CREATE TABLE tenant_metrics (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+
+    tenant_id BIGINT NOT NULL,
+
+    metric_type VARCHAR(100),
+    metric_value DOUBLE,
+
+    recorded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_tenant_metrics_tenant
+        FOREIGN KEY (tenant_id)
+        REFERENCES tenants(id)
+        ON DELETE CASCADE
+);
+
+-- =========================================================
+-- CREATE WEBSITE CONTENT
+-- =========================================================
+
+CREATE TABLE website_content (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+
+    tenant_id BIGINT NULL,
+
+    page_name VARCHAR(255),
+    content_key VARCHAR(255),
+
+    title VARCHAR(255),
+
+    content_text TEXT,
+    content_value VARCHAR(255),
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_website_content_tenant
+        FOREIGN KEY (tenant_id)
+        REFERENCES tenants(id)
+        ON DELETE CASCADE
+);
+
+-- =========================================================
+-- INSERT DEFAULT PERMISSIONS
+-- =========================================================
+
+INSERT INTO permissions (name) VALUES
+('USER_CREATE'),
+('USER_UPDATE'),
+('USER_DELETE'),
+('USER_VIEW'),
+
+('ROLE_CREATE'),
+('ROLE_UPDATE'),
+('ROLE_DELETE'),
+('ROLE_ASSIGN'),
+
+('PRODUCT_CREATE'),
+('PRODUCT_UPDATE'),
+('PRODUCT_DELETE'),
+('PRODUCT_VIEW'),
+
+('CONTENT_CREATE'),
+('CONTENT_UPDATE'),
+('CONTENT_DELETE'),
+('CONTENT_VIEW'),
+
+('TENANT_CREATE'),
+('TENANT_UPDATE'),
+('TENANT_DELETE'),
+('TENANT_VIEW'),
+
+('SYSTEM_ADMIN');
+
+-- =========================================================
+-- INSERT DEFAULT TENANT
+-- =========================================================
+
+INSERT INTO tenants (
+    name,
+    active
+)
+VALUES (
+    'System Tenant',
+    TRUE
+);
+
+-- =========================================================
+-- INSERT DEFAULT GLOBAL ADMIN ROLE
+-- =========================================================
+
+INSERT INTO roles (
+    name,
+    tenant_id
+)
+VALUES (
+    'SUPER_ADMIN',
+    NULL
+);
+
+-- =========================================================
+-- INSERT DEFAULT TENANT ADMIN ROLE
+-- =========================================================
+
+INSERT INTO roles (
+    name,
+    tenant_id
+)
+VALUES (
+    'TENANT_ADMIN',
+    1
+);
+
+-- =========================================================
+-- INSERT DEFAULT MANAGER ROLE
+-- =========================================================
+
+INSERT INTO roles (
+    name,
+    tenant_id
+)
+VALUES (
+    'MANAGER',
+    1
+);
+
+-- =========================================================
+-- INSERT DEFAULT USER ROLE
+-- =========================================================
+
+INSERT INTO roles (
+    name,
+    tenant_id
+)
+VALUES (
+    'USER',
+    1
+);

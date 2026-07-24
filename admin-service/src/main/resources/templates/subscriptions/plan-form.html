@@ -1,0 +1,77 @@
+<th:block xmlns:th="http://www.thymeleaf.org" th:fragment="fields">
+
+<div class="form-grid">
+    <div>
+        <label class="form-label">Plan Code</label>
+        <input type="text" th:field="*{code}" class="form-control" placeholder="BASIC" required>
+    </div>
+
+    <div>
+        <label class="form-label">Plan Name</label>
+        <input type="text" th:field="*{name}" class="form-control" placeholder="Basic" required>
+    </div>
+
+    <div>
+        <label class="form-label">Monthly Price</label>
+        <input type="number" th:field="*{monthlyPrice}" class="form-control" min="0" step="0.01">
+    </div>
+
+    <div>
+        <label class="form-label">Annual Price</label>
+        <input type="number" th:field="*{annualPrice}" class="form-control" min="0" step="0.01">
+    </div>
+
+    <div>
+        <label class="form-label">Max Users</label>
+        <input type="number" th:field="*{maxUsers}" class="form-control" min="0" placeholder="Leave blank for unlimited">
+    </div>
+
+    <div>
+        <label class="form-label">Max Storage MB</label>
+        <input type="number" th:field="*{maxStorageMb}" class="form-control" min="0" placeholder="Leave blank for unlimited">
+    </div>
+</div>
+
+<div class="mt-4">
+    <label class="form-label">Description</label>
+    <textarea th:field="*{description}" class="form-control" rows="3"></textarea>
+</div>
+
+<div class="mt-4">
+    <label class="form-label">Features</label>
+
+    <div class="role-options">
+        <label class="role-option">
+            <input type="checkbox" th:field="*{apiAccessEnabled}">
+            <span>
+                <strong>API Access</strong>
+                <small>Allow tenant API integrations.</small>
+            </span>
+        </label>
+
+        <label class="role-option">
+            <input type="checkbox" th:field="*{brandingEnabled}">
+            <span>
+                <strong>Branding</strong>
+                <small>Allow tenant branding options.</small>
+            </span>
+        </label>
+
+        <label class="role-option">
+            <input type="checkbox" th:field="*{customDomainEnabled}">
+            <span>
+                <strong>Custom Domain</strong>
+                <small>Allow tenant domain configuration.</small>
+            </span>
+        </label>
+    </div>
+</div>
+
+<div class="mt-4">
+    <div class="switch-box">
+        <input class="form-check-input" type="checkbox" th:field="*{active}" id="activeSwitch">
+        <label for="activeSwitch">Plan is active</label>
+    </div>
+</div>
+
+</th:block>

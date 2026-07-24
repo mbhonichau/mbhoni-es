@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="https://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/head :: head('Invoice Detail')}"></head>
+
+<body>
+<div class="admin-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <main class="admin-content">
+            <section class="page-heading">
+                <div>
+                    <p class="eyebrow">Billing</p>
+                    <h2 th:text="${invoice.invoiceNumber}">Invoice</h2>
+                    <p class="text-muted mb-0" th:text="${invoice.tenant.name}">Tenant</p>
+                </div>
+
+				<form th:action="@{/billing/invoices/print}"
+				      method="post"
+				      class="d-inline"
+				      sec:authorize="hasAuthority('BILLING_VIEW')">
+				    <input type="hidden" name="id" th:value="${invoice.id}">
+				    <button type="submit" class="btn btn-outline-secondary">
+				        <i class="bi bi-printer"></i>
+				        Print
+				    </button>
+				</form>
+				
+                <a th:href="@{/billing/invoices}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i>
+                    Back
+                </a>
+            </section>
+
+            <section class="metric-grid">
+                <div class="metric-card">
+                    <span class="metric-icon blue">
+                        <i class="bi bi-receipt"></i>
+                    </span>
+                    <div>
+                        <small>Status</small>
+                        <strong th:text="${invoice.status}">ISSUED</strong>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <span class="metric-icon green">
+                        <i class="bi bi-cash"></i>
+                    </span>
+                    <div>
+                        <small>Total</small>
+                        <strong th:text="'R ' + ${invoice.totalAmount}">R 0.00</strong>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <span class="metric-icon amber">
+                        <i class="bi bi-wallet2"></i>
+                    </span>
+                    <div>
+                        <small>Balance Due</small>
+                        <strong th:text="'R ' + ${invoice.balanceDue}">R 0.00</strong>
+                    </div>
+                </div>
+            </section>
+
+            <section class="form-panel mb-4" sec:authorize="hasAuthority('BILLING_EDIT')"
+                     th:if="${invoice.status.name() != 'PAID'}">
+                <h3 class="panel-title">Record Payment</h3>
+
+                <form th:action="@{/billing/payments/create}" method="post">
+                    <input type="hidden" name="invoiceId" th:value="${invoice.id}">
+
+                    <div class="form-grid">
+                        <div>
+                            <label class="form-label">Amount</label>
+                            <input type="number"
+                                   name="amount"
+                                   class="form-control"
+                                   min="0.01"
+                                   step="0.01"
+                                   required>
+                        </div>
+
+                        <div>
+                            <label class="form-label">Payment Method</label>
+                            <select name="paymentMethod" class="form-select" required>
+                                <option th:each="method : ${paymentMethods}"
+                                        th:value="${method}"
+                                        th:text="${method}">
+                                    EFT
+                                </option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="form-label">Reference</label>
+                            <input type="text" name="reference" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <label class="form-label">Notes</label>
+                        <textarea name="notes" class="form-control" rows="2"></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check2"></i>
+                            Record Payment
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="data-panel">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0 admin-table">
+                        <thead>
+                        <tr>
+                            <th>Paid At</th>
+                            <th>Method</th>
+                            <th>Status</th>
+                            <th>Reference</th>
+                            <th>Amount</th>
+                        </tr>
+                        </thead>
+
+                        <tbody>
+                        <tr th:each="payment : ${payments}">
+                            <td th:text="${payment.paidAt}">Date</td>
+                            <td th:text="${payment.paymentMethod}">EFT</td>
+                            <td>
+                                <span class="status-pill active" th:text="${payment.status}">
+                                    SUCCESSFUL
+                                </span>
+                            </td>
+                            <td th:text="${payment.reference != null ? payment.reference : 'No reference'}">
+                                Reference
+                            </td>
+                            <td>
+                                <strong th:text="'R ' + ${payment.amount}">R 0.00</strong>
+                            </td>
+                        </tr>
+
+                        <tr th:if="${payments == null or #lists.isEmpty(payments)}">
+                            <td colspan="5">
+                                <div class="empty-state">
+                                    <i class="bi bi-cash"></i>
+                                    <strong>No payments recorded</strong>
+                                    <span>Payments for this invoice will appear here.</span>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+
+        <div th:replace="~{fragments/footer :: footer}"></div>
+    </div>
+</div>
+
+<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/sidebar.js}"></script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Edit Role')}"></head>
+
+<body>
+<div class="admin-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <main class="admin-content">
+            <section class="page-heading">
+                <div>
+                    <p class="eyebrow">Access Control</p>
+                    <h2>Edit Role</h2>
+                    <p class="text-muted mb-0">Update role permissions.</p>
+                </div>
+
+                <a th:href="@{/roles}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i>
+                    Back
+                </a>
+            </section>
+
+            <section class="form-panel">
+                <form th:action="@{/roles/update}" th:object="${role}" method="post">
+                    <input type="hidden" name="id" th:value="${role.id}">
+
+                    <div class="form-grid">
+                        <div>
+                            <label class="form-label">Role Name</label>
+                            <input type="text"
+                                   class="form-control"
+                                   th:field="*{name}"
+                                   required>
+                        </div>
+
+                        <div>
+                            <label class="form-label">Tenant</label>
+                            <input type="text"
+                                   class="form-control"
+                                   th:value="${role.tenantName != null ? role.tenantName : 'Global'}"
+                                   disabled>
+                        </div>
+
+                        <div>
+                            <label class="form-label">Description</label>
+                            <input type="text"
+                                   class="form-control"
+                                   th:field="*{description}">
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div class="module-grid">
+                        <label class="module-card" th:each="permission : ${permissions}">
+                            <input type="checkbox"
+                                   name="permissionIds"
+                                   th:value="${permission.id}"
+                                   th:checked="${role.permissionIds.contains(permission.id)}">
+
+                            <span class="module-icon">
+                                <i class="bi bi-key"></i>
+                            </span>
+
+                            <span>
+                                <strong th:text="${permission.name}">PERMISSION</strong>
+                                <small>Permission</small>
+                                <p th:text="${permission.description != null and !#strings.isEmpty(permission.description) ? permission.description : 'No description'}">
+                                    Description
+                                </p>
+                            </span>
+                        </label>
+                    </div>
+
+                    <div class="form-actions">
+                        <a th:href="@{/roles}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check2"></i>
+                            Save Role
+                        </button>
+                    </div>
+                </form>
+            </section>
+        </main>
+
+        <div th:replace="~{fragments/footer :: footer}"></div>
+    </div>
+</div>
+
+<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/sidebar.js}"></script>
+</body>
+</html>

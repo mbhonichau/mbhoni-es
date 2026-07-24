@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="https://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/head :: head('Roles')}"></head>
+
+<body>
+<div class="admin-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <main class="admin-content">
+            <div th:if="${successMessage}" class="alert alert-success admin-alert">
+                <i class="bi bi-check-circle"></i>
+                <span th:text="${successMessage}">Success message</span>
+            </div>
+
+            <div th:if="${errorMessage}" class="alert alert-danger admin-alert">
+                <i class="bi bi-exclamation-triangle"></i>
+                <span th:text="${errorMessage}">Error message</span>
+            </div>
+
+            <section class="page-heading">
+                <div>
+                    <p class="eyebrow">Access Control</p>
+                    <h2>Roles</h2>
+                    <p class="text-muted mb-0">Manage tenant roles and permission sets.</p>
+                </div>
+
+                <a th:href="@{/roles/create}"
+                   class="btn btn-primary"
+                   sec:authorize="hasAuthority('ROLE_CREATE')">
+                    <i class="bi bi-shield-plus"></i>
+                    New Role
+                </a>
+            </section>
+
+            <section class="form-panel mb-4">
+                <form th:action="@{/roles}" method="get">
+                    <div class="form-grid">
+                        <div>
+                            <label class="form-label">Search</label>
+                            <input type="text"
+                                   name="q"
+                                   class="form-control"
+                                   th:value="${q}"
+                                   placeholder="Role, tenant, permission">
+                        </div>
+
+                        <div>
+                            <label class="form-label">Type</label>
+                            <select name="type" class="form-select">
+                                <option value="">All</option>
+                                <option value="SYSTEM" th:selected="${type == 'SYSTEM'}">System</option>
+                                <option value="CUSTOM" th:selected="${type == 'CUSTOM'}">Custom</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <a th:href="@{/roles}" class="btn btn-outline-secondary">Clear</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-search"></i>
+                            Search
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="data-panel">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0 admin-table">
+                        <thead>
+                        <tr>
+                            <th>Role</th>
+                            <th>Tenant</th>
+                            <th>Type</th>
+                            <th>Permissions</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                        </thead>
+
+                        <tbody>
+                        <tr th:each="role : ${roles}">
+                            <td>
+                                <div class="entity-cell">
+                                    <span class="avatar">
+                                        <i class="bi bi-shield-lock"></i>
+                                    </span>
+                                    <div>
+                                        <strong th:text="${role.name}">ROLE</strong>
+                                        <small th:text="${role.description != null and !#strings.isEmpty(role.description) ? role.description : 'No description'}">
+                                            Description
+                                        </small>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td>
+                                <span th:if="${role.tenantName != null}" class="status-pill neutral"
+                                      th:text="${role.tenantName}">
+                                    Tenant
+                                </span>
+                                <span th:unless="${role.tenantName != null}" class="status-pill global">
+                                    Global
+                                </span>
+                            </td>
+
+                            <td>
+                                <span class="status-pill active" th:if="${role.systemRole}">System</span>
+                                <span class="status-pill inactive" th:unless="${role.systemRole}">Custom</span>
+                            </td>
+
+                            <td>
+                                <div class="role-list">
+                                    <span th:each="permission : ${role.permissions}"
+                                          class="role-pill"
+                                          th:text="${permission}">
+                                        PERMISSION
+                                    </span>
+                                </div>
+                            </td>
+
+                            <td class="text-end">
+                                <div class="action-group">
+                                    <form th:action="@{/roles/edit}"
+                                          method="post"
+                                          class="d-inline"
+                                          sec:authorize="hasAuthority('ROLE_EDIT')">
+                                        <input type="hidden" name="id" th:value="${role.id}">
+                                        <button type="submit"
+                                                class="btn btn-sm btn-outline-secondary"
+                                                th:disabled="${role.systemRole}"
+                                                title="Edit role">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                    </form>
+
+                                    <form th:action="@{/roles/delete}"
+                                          method="post"
+                                          class="d-inline"
+                                          sec:authorize="hasAuthority('ROLE_DELETE')">
+                                        <input type="hidden" name="id" th:value="${role.id}">
+                                        <button type="submit"
+                                                class="btn btn-sm btn-outline-danger"
+                                                th:disabled="${role.systemRole}"
+                                                onclick="return confirm('Delete this role?')"
+                                                title="Delete role">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <tr th:if="${roles == null or #lists.isEmpty(roles)}">
+                            <td colspan="5">
+                                <div class="empty-state">
+                                    <i class="bi bi-shield-lock"></i>
+                                    <strong>No roles found</strong>
+                                    <span>Create a role to start managing access.</span>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <div class="form-actions" th:if="${page != null and page.totalPages > 1}">
+                <a class="btn btn-outline-secondary"
+                   th:if="${page.hasPrevious}"
+                   th:href="@{/roles(page=${page.number - 1}, size=${page.size}, q=${q}, type=${type})}">
+                    Previous
+                </a>
+
+                <span class="text-muted"
+                      th:text="'Page ' + (${page.number} + 1) + ' of ' + ${page.totalPages}">
+                    Page
+                </span>
+
+                <a class="btn btn-outline-secondary"
+                   th:if="${page.hasNext}"
+                   th:href="@{/roles(page=${page.number + 1}, size=${page.size}, q=${q}, type=${type})}">
+                    Next
+                </a>
+            </div>
+        </main>
+
+        <div th:replace="~{fragments/footer :: footer}"></div>
+    </div>
+</div>
+
+<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/sidebar.js}"></script>
+</body>
+</html>

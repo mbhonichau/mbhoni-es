@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="https://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/head :: head('Modules')}"></head>
+
+<body>
+<div class="admin-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <main class="admin-content">
+            <div th:if="${successMessage}" class="alert alert-success admin-alert">
+                <i class="bi bi-check-circle"></i>
+                <span th:text="${successMessage}">Success message</span>
+            </div>
+
+            <section class="page-heading">
+                <div>
+                    <p class="eyebrow">Platform</p>
+                    <h2>Modules</h2>
+                    <p class="text-muted mb-0">Enable or disable reusable platform modules per tenant.</p>
+                </div>
+            </section>
+
+            <section class="form-panel mb-4">
+                <form th:action="@{/modules/tenant}" method="post">
+                    <div class="form-grid">
+                        <div>
+                            <label class="form-label">Tenant</label>
+                            <select name="tenantId" class="form-select" required>
+                                <option value="">Choose tenant</option>
+                                <option th:each="tenant : ${tenants}"
+                                        th:value="${tenant.id}"
+                                        th:selected="${selectedTenantId != null and selectedTenantId == tenant.id}"
+                                        th:text="${tenant.name}">
+                                    Tenant
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-search"></i>
+                            Load Modules
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="form-panel" th:if="${modules != null}">
+                <form th:action="@{/modules/tenant/update}" method="post">
+                    <input type="hidden" name="tenantId" th:value="${selectedTenantId}">
+
+                    <div class="module-grid">
+                        <label class="module-card" th:each="module : ${modules}">
+						    <input type="checkbox"
+						           name="enabledModuleIds"
+						           th:value="${module.moduleId}"
+						           th:checked="${module.enabled}"
+						           th:disabled="${!module.allowedByPlan}"
+						           sec:authorize="hasAuthority('MODULE_EDIT')">
+						
+						    <span class="module-icon">
+						        <i class="bi bi-grid"></i>
+						    </span>
+						
+						    <span>
+						        <strong th:text="${module.name}">Module</strong>
+						        <small th:text="${module.category}">Category</small>
+						        <p th:text="${module.description}">Description</p>
+						
+						        <em th:if="${module.allowedByPlan and module.enabled}" class="status-pill active">
+						            Enabled
+						        </em>
+						
+						        <em th:if="${module.allowedByPlan and !module.enabled}" class="status-pill inactive">
+						            Disabled
+						        </em>
+						
+						        <em th:unless="${module.allowedByPlan}" class="status-pill inactive">
+						            Not in plan
+						        </em>
+						    </span>
+						</label>
+                    </div>
+
+                    <div class="form-actions" sec:authorize="hasAuthority('MODULE_EDIT')">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check2"></i>
+                            Save Modules
+                        </button>
+                    </div>
+                </form>
+            </section>
+        </main>
+
+        <div th:replace="~{fragments/footer :: footer}"></div>
+    </div>
+</div>
+
+<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/sidebar.js}"></script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Something Went Wrong')}"></head>
+
+<body>
+<div class="admin-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <main class="admin-content">
+            <section class="denied-panel">
+                <div class="quick-icon amber">
+                    <i class="bi bi-exclamation-triangle"></i>
+                </div>
+
+                <h2>Something Went Wrong</h2>
+                <p th:text="${errorMessage != null ? errorMessage : 'The request could not be completed.'}">
+                    The request could not be completed.
+                </p>
+
+                <a th:href="@{/dashboard}" class="btn btn-primary">Back to Dashboard</a>
+            </section>
+        </main>
+
+        <div th:replace="~{fragments/footer :: footer}"></div>
+    </div>
+</div>
+</body>
+</html>

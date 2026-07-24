@@ -1,0 +1,28 @@
+<th:block xmlns:th="http://www.thymeleaf.org" th:fragment="navbar">
+
+<header class="admin-topbar">
+    <button class="icon-button d-lg-none" id="mobileSidebarToggle" type="button">
+        <i class="bi bi-list"></i>
+    </button>
+
+    <div>
+        <p class="eyebrow mb-0">Administration</p>
+        <h1 class="page-shell-title mb-0">Enterprise Suite</h1>
+    </div>
+
+    <div class="topbar-user">
+        <div class="user-badge">
+            <i class="bi bi-person-circle"></i>
+            <span th:text="${username != null ? username : 'User'}">User</span>
+        </div>
+
+        <form th:action="@{/logout}" method="post">
+            <button class="btn btn-outline-danger btn-sm" type="submit">
+                <i class="bi bi-box-arrow-right"></i>
+                Logout
+            </button>
+        </form>
+    </div>
+</header>
+
+</th:block>

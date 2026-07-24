@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Audit Logs')}"></head>
+
+<body>
+<div class="admin-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <main class="admin-content">
+            <section class="page-heading">
+                <div>
+                    <p class="eyebrow">Security</p>
+                    <h2>Audit Logs</h2>
+                    <p class="text-muted mb-0">Review important platform activity and access changes.</p>
+                </div>
+            </section>
+            
+			<section class="form-panel mb-4">
+			    <form th:action="@{/audit-logs}" method="get">
+			        <div class="form-grid">
+			            <div>
+			                <label class="form-label">Search</label>
+			                <input type="text" name="q" class="form-control" th:value="${q}" placeholder="User, resource ID, description">
+			            </div>
+			
+			            <div>
+			                <label class="form-label">Action</label>
+			                <input type="text" name="action" class="form-control" th:value="${action}" placeholder="USER_CREATED">
+			            </div>
+			
+			            <div>
+			                <label class="form-label">Actor Type</label>
+			                <select name="actorType" class="form-select">
+			                    <option value="">All</option>
+			                    <option value="GLOBAL_ADMIN" th:selected="${actorType == 'GLOBAL_ADMIN'}">Global Admin</option>
+			                    <option value="TENANT_USER" th:selected="${actorType == 'TENANT_USER'}">Tenant User</option>
+			                    <option value="API_KEY" th:selected="${actorType == 'API_KEY'}">API Key</option>
+			                    <option value="SYSTEM" th:selected="${actorType == 'SYSTEM'}">System</option>
+			                </select>
+			            </div>
+			
+			            <div>
+			                <label class="form-label">Resource</label>
+			                <input type="text" name="resourceType" class="form-control" th:value="${resourceType}" placeholder="USER">
+			            </div>
+			        </div>
+			
+			        <div class="form-actions">
+			            <a th:href="@{/audit-logs}" class="btn btn-outline-secondary">Clear</a>
+			            <button type="submit" class="btn btn-primary">
+			                <i class="bi bi-search"></i>
+			                Search
+			            </button>
+			        </div>
+			    </form>
+			</section>
+			
+            <section class="data-panel">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0 admin-table">
+                        <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Actor</th>
+                            <th>Action</th>
+                            <th>Resource</th>
+                            <th>Description</th>
+                            <th>IP</th>
+                        </tr>
+                        </thead>
+
+                        <tbody>
+                        <tr th:each="log : ${auditLogs.content}">
+                            <td th:text="${log.occurredAt}">2026-01-01</td>
+                            <td>
+                                <strong th:text="${log.username}">user</strong>
+                                <small class="d-block text-muted" th:text="${log.actorType}">actor</small>
+                            </td>
+                            <td>
+                                <span class="status-pill neutral" th:text="${log.action}">ACTION</span>
+                            </td>
+                            <td>
+                                <strong th:text="${log.resourceType}">Resource</strong>
+                                <small class="d-block text-muted" th:text="${log.resourceId}">ID</small>
+                            </td>
+                            <td th:text="${log.description}">Description</td>
+                            <td th:text="${log.ipAddress}">IP</td>
+                        </tr>
+
+                        <tr th:if="${auditLogs == null or #lists.isEmpty(auditLogs.content)}">
+                            <td colspan="6">
+                                <div class="empty-state">
+                                    <i class="bi bi-shield-check"></i>
+                                    <strong>No audit logs found</strong>
+                                    <span>Important activity will appear here.</span>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                    <div class="form-actions" th:if="${auditLogs.totalPages > 1}">
+					    <a class="btn btn-outline-secondary"
+					       th:if="${auditLogs.hasPrevious()}"
+					       th:href="@{/audit-logs(page=${auditLogs.number - 1}, q=${q}, action=${action}, actorType=${actorType}, resourceType=${resourceType})}">
+					        Previous
+					    </a>
+					
+					    <span class="text-muted"
+					          th:text="'Page ' + (${auditLogs.number} + 1) + ' of ' + ${auditLogs.totalPages}">
+					        Page
+					    </span>
+					
+					    <a class="btn btn-outline-secondary"
+					       th:if="${auditLogs.hasNext()}"
+					       th:href="@{/audit-logs(page=${auditLogs.number + 1}, q=${q}, action=${action}, actorType=${actorType}, resourceType=${resourceType})}">
+					        Next
+					    </a>
+					</div>
+                </div>
+            </section>
+        </main>
+
+        <div th:replace="~{fragments/footer :: footer}"></div>
+    </div>
+</div>
+
+<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/sidebar.js}"></script>
+</body>
+</html>

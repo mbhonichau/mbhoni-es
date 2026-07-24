@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Tenant Branding')}"></head>
+
+<body>
+<div class="admin-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <main class="admin-content">
+            <div th:if="${successMessage}" class="alert alert-success admin-alert">
+                <i class="bi bi-check-circle"></i>
+                <span th:text="${successMessage}">Success message</span>
+            </div>
+
+            <section class="page-heading">
+                <div>
+                    <p class="eyebrow">Tenant Settings</p>
+                    <h2>Branding</h2>
+                    <p class="text-muted mb-0" th:text="${customization.tenant.name}">Tenant</p>
+                </div>
+
+                <a th:href="@{/customizations}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i>
+                    Back
+                </a>
+            </section>
+
+            <div th:unless="${brandingAllowed}" class="alert alert-warning admin-alert">
+                <i class="bi bi-exclamation-triangle"></i>
+                <span>Branding is not enabled for this tenant's subscription plan.</span>
+            </div>
+
+            <section class="customization-layout">
+                <form th:action="@{${saveAction}}" th:object="${customization}" method="post" class="form-panel">
+                    <input type="hidden" name="tenantId" th:value="${customization.tenant.id}">
+
+                    <div class="form-grid">
+                        <div>
+                            <label class="form-label">Display Name</label>
+                            <input type="text" th:field="*{displayName}" class="form-control">
+                        </div>
+
+                        <div>
+                            <label class="form-label">Logo URL</label>
+                            <input type="url" th:field="*{logoUrl}" class="form-control">
+                        </div>
+
+                        <div>
+                            <label class="form-label">Primary Color</label>
+                            <input type="color" th:field="*{primaryColor}" class="form-control form-control-color">
+                        </div>
+
+                        <div>
+                            <label class="form-label">Secondary Color</label>
+                            <input type="color" th:field="*{secondaryColor}" class="form-control form-control-color">
+                        </div>
+
+                        <div>
+                            <label class="form-label">Support Email</label>
+                            <input type="email" th:field="*{supportEmail}" class="form-control">
+                        </div>
+
+                        <div>
+                            <label class="form-label">Support Phone</label>
+                            <input type="text" th:field="*{supportPhone}" class="form-control">
+                        </div>
+
+                        <div>
+                            <label class="form-label">Custom Domain</label>
+                            <input type="text" th:field="*{customDomain}" class="form-control">
+                        </div>
+
+                        <div>
+                            <label class="form-label">Theme</label>
+                            <select th:field="*{themeMode}" class="form-select">
+                                <option th:each="mode : ${themeModes}"
+                                        th:value="${mode}"
+                                        th:text="${mode}">
+                                    SYSTEM
+                                </option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="form-label">Timezone</label>
+                            <input type="text" th:field="*{timezone}" class="form-control">
+                        </div>
+
+                        <div>
+                            <label class="form-label">Country</label>
+                            <input type="text" th:field="*{country}" class="form-control">
+                        </div>
+
+                        <div>
+                            <label class="form-label">Currency</label>
+                            <input type="text" th:field="*{currency}" class="form-control">
+                        </div>
+
+                        <div>
+                            <label class="form-label">Language</label>
+                            <input type="text" th:field="*{language}" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <label class="form-label">Footer Text</label>
+                        <input type="text" th:field="*{footerText}" class="form-control">
+                    </div>
+
+                    <div class="mt-4">
+                        <div class="switch-box">
+                            <input class="form-check-input" type="checkbox" th:field="*{active}" id="activeCustomization">
+                            <label for="activeCustomization">Customization is active</label>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit"
+                                class="btn btn-primary"
+                                th:disabled="${!brandingAllowed}">
+                            <i class="bi bi-check2"></i>
+                            Save Branding
+                        </button>
+                    </div>
+                </form>
+
+                <aside class="brand-preview"
+                       th:style="'--preview-primary:' + ${customization.primaryColor != null ? customization.primaryColor : '#2563eb'} + '; --preview-secondary:' + ${customization.secondaryColor != null ? customization.secondaryColor : '#16a34a'}">
+                    <div class="preview-header">
+                        <div class="preview-logo">
+                            <img th:if="${customization.logoUrl != null and !#strings.isEmpty(customization.logoUrl)}"
+                                 th:src="${customization.logoUrl}"
+                                 alt="Logo">
+                            <span th:unless="${customization.logoUrl != null and !#strings.isEmpty(customization.logoUrl)}">
+                                M
+                            </span>
+                        </div>
+
+                        <div>
+                            <strong th:text="${customization.displayName != null ? customization.displayName : customization.tenant.name}">
+                                Tenant Brand
+                            </strong>
+                            <small th:text="${customization.customDomain != null ? customization.customDomain : 'Default domain'}">
+                                Default domain
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="preview-card">
+                        <span class="preview-pill">Primary</span>
+                        <h3>Client Portal</h3>
+                        <p>Brand colors and tenant identity preview.</p>
+                        <button type="button">Sample Action</button>
+                    </div>
+
+                    <div class="preview-footer">
+                        <span th:text="${customization.footerText != null ? customization.footerText : customization.tenant.name}">
+                            Footer
+                        </span>
+                        <small th:text="${customization.supportEmail != null ? customization.supportEmail : 'No support email'}">
+                            Support email
+                        </small>
+                    </div>
+                </aside>
+            </section>
+        </main>
+
+        <div th:replace="~{fragments/footer :: footer}"></div>
+    </div>
+</div>
+
+<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/sidebar.js}"></script>
+</body>
+</html>

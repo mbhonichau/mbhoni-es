@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="https://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/head :: head('Edit Tenant')}"></head>
+
+<body>
+<div class="admin-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <main class="admin-content">
+            <section class="page-heading">
+                <div>
+                    <p class="eyebrow">Tenant Management</p>
+                    <h2>Edit Tenant</h2>
+                    <p class="text-muted mb-0" th:text="${tenant.name}">Tenant name</p>
+                </div>
+
+                <a th:href="@{/tenants}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i>
+                    Back
+                </a>
+            </section>
+
+            <section class="form-panel">
+                <form th:action="@{/tenants/update}" th:object="${tenant}" method="post">
+                    <input type="hidden" name="id" th:value="${tenant.id}">
+
+                    <div class="form-grid">
+                        <div>
+                            <label class="form-label">Tenant Name</label>
+                            <input type="text" th:field="*{name}" class="form-control" required>
+                        </div>
+                        
+                        <div>
+						    <label class="form-label">Industry Profile</label>
+						    <select th:field="*{industryProfileId}" class="form-select">
+						        <option value="">General / Not assigned</option>
+						        <option th:each="profile : ${industryProfiles}"
+						                th:value="${profile.id}"
+						                th:text="${profile.name}">
+						            Industry
+						        </option>
+						    </select>
+						</div>
+
+                        <div>
+                            <label class="form-label">Status</label>
+                            <div class="switch-box">
+                                <input class="form-check-input" type="checkbox" th:field="*{active}" id="activeSwitch">
+                                <label for="activeSwitch">Tenant is active</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <a th:href="@{/tenants}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check2"></i>
+                            Save Changes
+                        </button>
+                    </div>
+                </form>
+                <form th:action="@{/tenants/apply-template}"
+				      method="post"
+				      class="d-inline">
+				    <input type="hidden" name="id" th:value="${tenant.id}">
+				    <button type="submit"
+				            class="btn btn-outline-secondary"
+				            onclick="return confirm('Apply this industry template modules to the tenant?')">
+				        <i class="bi bi-magic"></i>
+				        Apply Template
+				    </button>
+				</form>
+            </section>
+        </main>
+
+        <div th:replace="~{fragments/footer :: footer}"></div>
+    </div>
+</div>
+
+<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/sidebar.js}"></script>
+</body>
+</html>

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="https://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/head :: head('Billing Dashboard')}"></head>
+
+<body>
+<div class="admin-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <main class="admin-content">
+            <section class="page-heading">
+                <div>
+                    <p class="eyebrow">Billing</p>
+                    <h2>Billing Dashboard</h2>
+                    <p class="text-muted mb-0">Track revenue, collections, and overdue risk.</p>
+                </div>
+
+                <div class="action-group">
+                    <a th:href="@{/billing/invoices}" class="btn btn-primary">
+                        <i class="bi bi-receipt"></i>
+                        Invoices
+                    </a>
+
+                    <a th:href="@{/billing/accounts}" class="btn btn-outline-secondary">
+                        Accounts
+                    </a>
+                </div>
+            </section>
+
+            <section class="metric-grid">
+                <div class="metric-card">
+                    <span class="metric-icon blue">
+                        <i class="bi bi-receipt"></i>
+                    </span>
+                    <div>
+                        <small>Total Invoiced</small>
+                        <strong th:text="'R ' + ${billing.totalInvoiced}">R 0.00</strong>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <span class="metric-icon green">
+                        <i class="bi bi-cash"></i>
+                    </span>
+                    <div>
+                        <small>Total Paid</small>
+                        <strong th:text="'R ' + ${billing.totalPaid}">R 0.00</strong>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <span class="metric-icon amber">
+                        <i class="bi bi-wallet2"></i>
+                    </span>
+                    <div>
+                        <small>Outstanding</small>
+                        <strong th:text="'R ' + ${billing.outstandingBalance}">R 0.00</strong>
+                    </div>
+                </div>
+            </section>
+
+            <section class="metric-grid">
+                <div class="metric-card">
+                    <span class="metric-icon amber">
+                        <i class="bi bi-hourglass-split"></i>
+                    </span>
+                    <div>
+                        <small>Issued</small>
+                        <strong th:text="${billing.issuedInvoices}">0</strong>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <span class="metric-icon blue">
+                        <i class="bi bi-pie-chart"></i>
+                    </span>
+                    <div>
+                        <small>Partially Paid</small>
+                        <strong th:text="${billing.partiallyPaidInvoices}">0</strong>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <span class="metric-icon green">
+                        <i class="bi bi-check-circle"></i>
+                    </span>
+                    <div>
+                        <small>Paid Invoices</small>
+                        <strong th:text="${billing.paidInvoices}">0</strong>
+                    </div>
+                </div>
+            </section>
+
+            <section class="data-panel mt-4">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0 admin-table">
+                        <thead>
+                        <tr>
+                            <th>Risk Area</th>
+                            <th>Count</th>
+                            <th>Amount</th>
+                            <th>Action</th>
+                        </tr>
+                        </thead>
+
+                        <tbody>
+                        <tr>
+                            <td>
+                                <div class="entity-cell">
+                                    <span class="entity-icon blue">
+                                        <i class="bi bi-file-earmark-text"></i>
+                                    </span>
+                                    <div>
+                                        <strong>Total Invoices</strong>
+                                        <small>All billing documents</small>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td th:text="${billing.totalInvoices}">0</td>
+                            <td th:text="'R ' + ${billing.totalInvoiced}">R 0.00</td>
+
+                            <td>
+                                <a th:href="@{/billing/invoices}" class="btn btn-sm btn-outline-secondary">
+                                    View
+                                </a>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td>
+                                <div class="entity-cell">
+                                    <span class="entity-icon blue">
+                                        <i class="bi bi-exclamation-triangle"></i>
+                                    </span>
+                                    <div>
+                                        <strong>Overdue Invoices</strong>
+                                        <small>Needs follow-up</small>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td th:text="${billing.overdueInvoices}">0</td>
+                            <td th:text="'R ' + ${billing.overdueBalance}">R 0.00</td>
+
+                            <td>
+                                <a th:href="@{/billing/invoices}" class="btn btn-sm btn-outline-danger">
+                                    Review
+                                </a>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+
+        <div th:replace="~{fragments/footer :: footer}"></div>
+    </div>
+</div>
+
+<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/sidebar.js}"></script>
+</body>
+</html>
