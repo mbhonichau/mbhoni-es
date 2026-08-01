@@ -63,3 +63,6 @@ management:
 
 app:
   admin-email: creativembhoni@gmail.com
+
+server:
+  port: 8080
