@@ -17,6 +17,8 @@ public class UserDto {
 
     private Long tenantId;
 
+    private String tenantName;
+
     private Set<String> roles;
 
     private Set<Long> roleIds = new HashSet<>();
@@ -63,6 +65,14 @@ public class UserDto {
 
     public void setTenantId(Long tenantId) {
         this.tenantId = tenantId;
+    }
+
+    public String getTenantName() {
+        return tenantName;
+    }
+
+    public void setTenantName(String tenantName) {
+        this.tenantName = tenantName;
     }
 
     public Set<String> getRoles() {

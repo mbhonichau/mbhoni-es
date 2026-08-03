@@ -10,13 +10,13 @@
         <h1 class="page-shell-title mb-0">Enterprise Suite</h1>
     </div>
 
-    <div class="topbar-user">
-        <div class="user-badge">
-            <i class="bi bi-person-circle"></i>
-            <span th:text="${username != null ? username : 'User'}">User</span>
-        </div>
+    <div class="topbar-user d-flex align-items-center gap-2">
+        <a th:href="@{/profile}" class="btn btn-outline-secondary btn-sm text-decoration-none">
+            <i class="bi bi-person-circle me-1"></i>
+            <span th:text="${username != null ? username : 'My Profile'}">My Profile</span>
+        </a>
 
-        <form th:action="@{/logout}" method="post">
+        <form th:action="@{/logout}" method="post" class="mb-0">
             <button class="btn btn-outline-danger btn-sm" type="submit">
                 <i class="bi bi-box-arrow-right"></i>
                 Logout

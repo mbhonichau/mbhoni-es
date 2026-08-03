@@ -1,6 +1,8 @@
 package com.mbhoni_creative.config;
 
+import java.math.BigDecimal;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.springframework.boot.CommandLineRunner;
@@ -8,13 +10,25 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.mbhoni_creative.adminentity.BillingCycle;
 import com.mbhoni_creative.adminentity.Permission;
+import com.mbhoni_creative.adminentity.PlatformModule;
 import com.mbhoni_creative.adminentity.Role;
+import com.mbhoni_creative.adminentity.SubscriptionPlan;
+import com.mbhoni_creative.adminentity.SubscriptionPlanModule;
+import com.mbhoni_creative.adminentity.SubscriptionStatus;
 import com.mbhoni_creative.adminentity.Tenant;
+import com.mbhoni_creative.adminentity.TenantModule;
+import com.mbhoni_creative.adminentity.TenantSubscription;
 import com.mbhoni_creative.adminentity.User;
 import com.mbhoni_creative.adminrepository.PermissionRepository;
+import com.mbhoni_creative.adminrepository.PlatformModuleRepository;
 import com.mbhoni_creative.adminrepository.RoleRepository;
+import com.mbhoni_creative.adminrepository.SubscriptionPlanModuleRepository;
+import com.mbhoni_creative.adminrepository.SubscriptionPlanRepository;
+import com.mbhoni_creative.adminrepository.TenantModuleRepository;
 import com.mbhoni_creative.adminrepository.TenantRepository;
+import com.mbhoni_creative.adminrepository.TenantSubscriptionRepository;
 import com.mbhoni_creative.adminrepository.UserRepository;
 
 @Component
@@ -24,6 +38,11 @@ public class DataInitializer implements CommandLineRunner {
     private final RoleRepository roleRepository;
     private final TenantRepository tenantRepository;
     private final PermissionRepository permissionRepository;
+    private final PlatformModuleRepository platformModuleRepository;
+    private final SubscriptionPlanRepository subscriptionPlanRepository;
+    private final SubscriptionPlanModuleRepository subscriptionPlanModuleRepository;
+    private final TenantSubscriptionRepository tenantSubscriptionRepository;
+    private final TenantModuleRepository tenantModuleRepository;
     private final PasswordEncoder passwordEncoder;
 
     public DataInitializer(
@@ -31,12 +50,22 @@ public class DataInitializer implements CommandLineRunner {
             RoleRepository roleRepository,
             TenantRepository tenantRepository,
             PermissionRepository permissionRepository,
+            PlatformModuleRepository platformModuleRepository,
+            SubscriptionPlanRepository subscriptionPlanRepository,
+            SubscriptionPlanModuleRepository subscriptionPlanModuleRepository,
+            TenantSubscriptionRepository tenantSubscriptionRepository,
+            TenantModuleRepository tenantModuleRepository,
             PasswordEncoder passwordEncoder) {
 
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.tenantRepository = tenantRepository;
         this.permissionRepository = permissionRepository;
+        this.platformModuleRepository = platformModuleRepository;
+        this.subscriptionPlanRepository = subscriptionPlanRepository;
+        this.subscriptionPlanModuleRepository = subscriptionPlanModuleRepository;
+        this.tenantSubscriptionRepository = tenantSubscriptionRepository;
+        this.tenantModuleRepository = tenantModuleRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -86,66 +115,105 @@ public class DataInitializer implements CommandLineRunner {
         
         Permission auditView = getOrCreatePermission("AUDIT_VIEW");
 
+        Permission employeeView = getOrCreatePermission("EMPLOYEE_VIEW");
+        Permission employeeEdit = getOrCreatePermission("EMPLOYEE_EDIT");
+
+        Permission orgView = getOrCreatePermission("ORG_VIEW");
+        Permission orgEdit = getOrCreatePermission("ORG_EDIT");
+
+        Permission contractView = getOrCreatePermission("CONTRACT_VIEW");
+        Permission contractEdit = getOrCreatePermission("CONTRACT_EDIT");
+
+        Permission masterDataView = getOrCreatePermission("MASTER_DATA_VIEW");
+        Permission masterDataEdit = getOrCreatePermission("MASTER_DATA_EDIT");
+
+        Permission serviceView = getOrCreatePermission("SERVICE_VIEW");
+        Permission serviceEdit = getOrCreatePermission("SERVICE_EDIT");
+
         adminRole.setPermissions(new HashSet<>(Set.of(
-                tenantCreate,
-                tenantEdit,
-                tenantDelete,
-                tenantView,
-                userCreate,
-                userEdit,
-                userDelete,
-                userView,
-                subscriptionCreate,
-                subscriptionEdit,
-                subscriptionDelete,
-                subscriptionView,
-                billingView,
-                billingCreate,
-                billingEdit,
-                billingDelete,
-                customizationView,
-                customizationEdit,
-                moduleView,
-                moduleEdit,
-                roleView,
-                roleCreate,
-                roleEdit,
-                roleDelete,
-                apiKeyView,
-                apiKeyCreate,
-                apiKeyEdit,
-                apiKeyDelete,
-                auditView
-                
+                tenantCreate, tenantEdit, tenantDelete, tenantView,
+                userCreate, userEdit, userDelete, userView,
+                subscriptionCreate, subscriptionEdit, subscriptionDelete, subscriptionView,
+                billingView, billingCreate, billingEdit, billingDelete,
+                customizationView, customizationEdit,
+                moduleView, moduleEdit,
+                roleView, roleCreate, roleEdit, roleDelete,
+                apiKeyView, apiKeyCreate, apiKeyEdit, apiKeyDelete,
+                auditView,
+                employeeView, employeeEdit,
+                orgView, orgEdit,
+                contractView, contractEdit,
+                masterDataView, masterDataEdit,
+                serviceView, serviceEdit
         )));
 
         tenantAdminRole.setPermissions(new HashSet<>(Set.of(
-                userCreate,
-                userEdit,
-                userDelete,
-                userView,
-                customizationView,
-                customizationEdit,
+                userCreate, userEdit, userDelete, userView,
+                customizationView, customizationEdit,
                 moduleView,
-                roleView,
-                roleCreate,
-                roleEdit,
-                roleDelete,
-                apiKeyView,
-                apiKeyCreate,
-                apiKeyEdit,
-                apiKeyDelete,
-                auditView
+                roleView, roleCreate, roleEdit, roleDelete,
+                apiKeyView, apiKeyCreate, apiKeyEdit, apiKeyDelete,
+                auditView,
+                employeeView, employeeEdit,
+                orgView, orgEdit,
+                contractView, contractEdit,
+                masterDataView, masterDataEdit,
+                serviceView, serviceEdit
         )));
 
         userRole.setPermissions(new HashSet<>(Set.of(
-                userView
+                userView,
+                employeeView,
+                orgView,
+                contractView,
+                masterDataView,
+                serviceView
         )));
 
         roleRepository.save(adminRole);
         roleRepository.save(tenantAdminRole);
         roleRepository.save(userRole);
 
+        // Seed Platform Modules
+        PlatformModule employeeModule = getOrCreateModule("EMPLOYEE", "Employee Directory & HCM", "HCM & Payroll", "Personnel records, job titles, department assignments, and employment status.");
+        PlatformModule orgModule = getOrCreateModule("ORG", "Organization Units", "Business Modules", "Departments, divisions, cost centers, and hierarchy.");
+        PlatformModule contractModule = getOrCreateModule("CONTRACT", "Contract Management", "Business Modules", "Vendor, customer, and employment contract tracking.");
+        PlatformModule masterDataModule = getOrCreateModule("MASTER_DATA", "Master Data & Lookups", "System Setup", "System reference codes and lookup categories.");
+        PlatformModule serviceModule = getOrCreateModule("SERVICE", "Service Catalog", "Business Modules", "Service catalog and SLA management.");
+
+        List<PlatformModule> allModules = List.of(employeeModule, orgModule, contractModule, masterDataModule, serviceModule);
+
+        // Seed Default Subscription Plan
+        SubscriptionPlan defaultPlan = subscriptionPlanRepository.findByCode("ENTERPRISE")
+                .orElseGet(() -> {
+                    SubscriptionPlan plan = new SubscriptionPlan();
+                    plan.setCode("ENTERPRISE");
+                    plan.setName("Enterprise Tier");
+                    plan.setDescription("Full featured enterprise platform suite");
+                    plan.setMonthlyPrice(new BigDecimal("299.00"));
+                    plan.setAnnualPrice(new BigDecimal("2990.00"));
+                    plan.setMaxUsers(500);
+                    plan.setMaxStorageMb(50000);
+                    plan.setApiAccessEnabled(true);
+                    plan.setBrandingEnabled(true);
+                    plan.setCustomDomainEnabled(true);
+                    plan.setActive(true);
+                    return subscriptionPlanRepository.save(plan);
+                });
+
+        // Allow all modules for the default plan
+        for (PlatformModule module : allModules) {
+            subscriptionPlanModuleRepository.findByPlanAndModule(defaultPlan, module)
+                    .orElseGet(() -> {
+                        SubscriptionPlanModule pm = new SubscriptionPlanModule();
+                        pm.setPlan(defaultPlan);
+                        pm.setModule(module);
+                        pm.setAllowed(true);
+                        return subscriptionPlanModuleRepository.save(pm);
+                    });
+        }
+
+        // Seed Default Tenant
         Tenant jusaquaTenant = tenantRepository.findByName("JusAqua")
                 .orElseGet(() -> {
                     Tenant tenant = new Tenant();
@@ -154,6 +222,31 @@ public class DataInitializer implements CommandLineRunner {
                     return tenantRepository.save(tenant);
                 });
 
+        // Assign Subscription to Tenant
+        tenantSubscriptionRepository.findByTenant(jusaquaTenant)
+                .orElseGet(() -> {
+                    TenantSubscription sub = new TenantSubscription();
+                    sub.setTenant(jusaquaTenant);
+                    sub.setPlan(defaultPlan);
+                    sub.setStatus(SubscriptionStatus.ACTIVE);
+                    sub.setBillingCycle(BillingCycle.MONTHLY);
+                    sub.setAutoRenew(true);
+                    return tenantSubscriptionRepository.save(sub);
+                });
+
+        // Enable all modules for Default Tenant
+        for (PlatformModule module : allModules) {
+            tenantModuleRepository.findByTenantAndModule(jusaquaTenant, module)
+                    .orElseGet(() -> {
+                        TenantModule tm = new TenantModule();
+                        tm.setTenant(jusaquaTenant);
+                        tm.setModule(module);
+                        tm.setEnabled(true);
+                        return tenantModuleRepository.save(tm);
+                    });
+        }
+
+        // Seed Users
         User superAdmin = userRepository.findByUsername("mbuso")
                 .orElseGet(User::new);
 
@@ -188,13 +281,10 @@ public class DataInitializer implements CommandLineRunner {
 
         userRepository.save(tenantAdmin);
 
-        System.out.println(">> Default security data reconciled");
-        
-        
+        System.out.println(">> Default security data and platform modules initialized");
     }
 
     private Role getOrCreateRole(String name) {
-
         Role role = roleRepository.findByNameAndTenantIsNull(name)
                 .orElseGet(() -> {
                     Role newRole = new Role();
@@ -210,12 +300,24 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private Permission getOrCreatePermission(String name) {
-
         return permissionRepository.findByName(name)
                 .orElseGet(() -> {
                     Permission permission = new Permission();
                     permission.setName(name);
                     return permissionRepository.save(permission);
+                });
+    }
+
+    private PlatformModule getOrCreateModule(String code, String name, String category, String description) {
+        return platformModuleRepository.findByCode(code)
+                .orElseGet(() -> {
+                    PlatformModule module = new PlatformModule();
+                    module.setCode(code);
+                    module.setName(name);
+                    module.setCategory(category);
+                    module.setDescription(description);
+                    module.setActive(true);
+                    return platformModuleRepository.save(module);
                 });
     }
 }

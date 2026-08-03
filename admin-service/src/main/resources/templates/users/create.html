@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Create User')}"></head>
+
+<body>
+<div class="admin-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <main class="admin-content">
+            <section class="page-heading">
+                <div>
+                    <p class="eyebrow">User Management</p>
+                    <h2>Create User</h2>
+                    <p class="text-muted mb-0">Create an account and assign its access level.</p>
+                </div>
+
+                <a th:href="@{/users}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i>
+                    Back
+                </a>
+            </section>
+
+            <section class="form-panel">
+                <form th:action="@{/users/create}" th:object="${user}" method="post">
+                    <div class="form-grid">
+                        <div>
+                            <label class="form-label">Username</label>
+                            <input type="text" th:field="*{username}" class="form-control" required>
+                        </div>
+
+                        <div>
+                            <label class="form-label">Email</label>
+                            <input type="email" th:field="*{email}" class="form-control" required>
+                        </div>
+
+                        <div>
+                            <label class="form-label">Password</label>
+                            <div class="input-group">
+                                <input type="password" th:field="*{password}" class="form-control" id="passwordField" minlength="6">
+                                <button type="button" class="btn btn-outline-secondary" onclick="generatePassword()">
+                                    <i class="bi bi-magic"></i> Auto Generate
+                                </button>
+                            </div>
+                            <small class="text-muted">Leave blank to email the user a password setup link.</small>
+                        </div>
+
+                        <div th:if="${globalAdmin}">
+                            <label class="form-label">Tenant</label>
+                            <select th:field="*{tenantId}" class="form-select">
+                                <option value="">Global user</option>
+                                <option th:each="tenant : ${tenants}"
+                                        th:value="${tenant.id}"
+                                        th:text="${tenant.name}">
+                                    Tenant
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <label class="form-label">Roles</label>
+
+                        <div class="module-grid">
+                            <label class="module-card" th:each="role : ${availableRoles}">
+                                <input type="checkbox"
+                                       name="roleIds"
+                                       th:value="${role.id}">
+
+                                <span class="module-icon">
+                                    <i class="bi bi-shield-check"></i>
+                                </span>
+
+                                <span>
+                                    <strong th:text="${role.name}">ROLE</strong>
+                                    <small th:text="${role.tenant != null ? role.tenant.name : 'Global'}">Tenant</small>
+                                    <p th:text="${role.description != null and !#strings.isEmpty(role.description) ? role.description : 'No description'}">
+                                        Description
+                                    </p>
+                                </span>
+                            </label>
+                        </div>
+
+                        <div class="empty-state" th:if="${availableRoles == null or #lists.isEmpty(availableRoles)}">
+                            <i class="bi bi-shield-lock"></i>
+                            <strong>No roles available</strong>
+                            <span>Create roles first, then assign them to users.</span>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <a th:href="@{/users}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-person-plus"></i>
+                            Create User
+                        </button>
+                    </div>
+                </form>
+            </section>
+        </main>
+
+        <div th:replace="~{fragments/footer :: footer}"></div>
+    </div>
+</div>
+
+<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/sidebar.js}"></script>
+<script>
+function generatePassword() {
+    fetch('/users/generate-password')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('passwordField').value = data.password;
+        })
+        .catch(error => {
+            console.error('Error generating password:', error);
+            alert('Failed to generate password. Please try again.');
+        });
+}
+</script>
+</body>
+</html>

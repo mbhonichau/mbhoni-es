@@ -26,6 +26,7 @@ import com.mbhoni_creative.adminrepository.TenantRepository;
 import com.mbhoni_creative.adminrepository.TenantSubscriptionRepository;
 import com.mbhoni_creative.adminservice.BillingService;
 import com.mbhoni_creative.adminservice.NotificationService;
+import com.mbhoni_creative.config.TenantSecurityService;
 
 @Service
 public class BillingServiceImpl implements BillingService {
@@ -36,6 +37,7 @@ public class BillingServiceImpl implements BillingService {
     private final TenantRepository tenantRepository;
     private final TenantSubscriptionRepository tenantSubscriptionRepository;
     private final NotificationService notificationService;
+    private final TenantSecurityService tenantSecurityService;
 
     public BillingServiceImpl(
             BillingAccountRepository billingAccountRepository,
@@ -43,7 +45,8 @@ public class BillingServiceImpl implements BillingService {
             PaymentRepository paymentRepository,
             TenantRepository tenantRepository,
             TenantSubscriptionRepository tenantSubscriptionRepository,
-            NotificationService notificationService) {
+            NotificationService notificationService,
+            TenantSecurityService tenantSecurityService) {
 
         this.billingAccountRepository = billingAccountRepository;
         this.invoiceRepository = invoiceRepository;
@@ -51,17 +54,30 @@ public class BillingServiceImpl implements BillingService {
         this.tenantRepository = tenantRepository;
         this.tenantSubscriptionRepository = tenantSubscriptionRepository;
         this.notificationService = notificationService;
+        this.tenantSecurityService = tenantSecurityService;
     }
 
     @Override
     public List<BillingAccount> getAllBillingAccounts() {
-        return billingAccountRepository.findAll();
+        if (tenantSecurityService.isGlobalAdmin()) {
+            return billingAccountRepository.findAll();
+        }
+        Long tenantId = tenantSecurityService.getCurrentTenantId();
+        if (tenantId == null) {
+            return List.of();
+        }
+        return billingAccountRepository.findByTenantId(tenantId)
+                .map(List::of)
+                .orElseGet(List::of);
     }
 
     @Override
     public BillingAccount getBillingAccountById(Long id) {
-        return billingAccountRepository.findById(id)
+        BillingAccount account = billingAccountRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Billing account not found"));
+
+        enforceTenantAccess(account.getTenant());
+        return account;
     }
 
     @Override
@@ -91,13 +107,23 @@ public class BillingServiceImpl implements BillingService {
 
     @Override
     public List<Invoice> getAllInvoices() {
-        return invoiceRepository.findAll();
+        if (tenantSecurityService.isGlobalAdmin()) {
+            return invoiceRepository.findAll();
+        }
+        Long tenantId = tenantSecurityService.getCurrentTenantId();
+        if (tenantId == null) {
+            return List.of();
+        }
+        return invoiceRepository.findByTenantId(tenantId);
     }
 
     @Override
     public Invoice getInvoiceById(Long id) {
-        return invoiceRepository.findById(id)
+        Invoice invoice = invoiceRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Invoice not found"));
+
+        enforceTenantAccess(invoice.getTenant());
+        return invoice;
     }
 
     @Override
@@ -323,7 +349,13 @@ public class BillingServiceImpl implements BillingService {
     @Override
     public BillingDashboardView getBillingDashboard() {
 
-        List<Invoice> invoices = invoiceRepository.findAll();
+        List<Invoice> invoices;
+        if (tenantSecurityService.isGlobalAdmin()) {
+            invoices = invoiceRepository.findAll();
+        } else {
+            Long tenantId = tenantSecurityService.getCurrentTenantId();
+            invoices = tenantId != null ? invoiceRepository.findByTenantId(tenantId) : List.of();
+        }
 
         BillingDashboardView dashboard = new BillingDashboardView();
 
@@ -379,5 +411,15 @@ public class BillingServiceImpl implements BillingService {
         dashboard.setPartiallyPaidInvoices(partiallyPaidCount);
 
         return dashboard;
+    }
+
+    private void enforceTenantAccess(Tenant tenant) {
+        if (tenantSecurityService.isGlobalAdmin()) {
+            return;
+        }
+        Long currentTenantId = tenantSecurityService.getCurrentTenantId();
+        if (currentTenantId == null || tenant == null || !tenant.getId().equals(currentTenantId)) {
+            throw new RuntimeException("Access denied");
+        }
     }
 }

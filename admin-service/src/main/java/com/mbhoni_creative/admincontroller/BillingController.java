@@ -12,12 +12,14 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.mbhoni_creative.admindto.PageMeta;
+import com.mbhoni_creative.admindto.TenantDto;
 import com.mbhoni_creative.adminentity.BillingAccount;
 import com.mbhoni_creative.adminentity.Invoice;
 import com.mbhoni_creative.adminentity.InvoiceStatus;
 import com.mbhoni_creative.adminentity.PaymentMethod;
 import com.mbhoni_creative.adminservice.BillingService;
 import com.mbhoni_creative.adminservice.TenantService;
+import com.mbhoni_creative.config.TenantSecurityService;
 
 @Controller
 @RequestMapping("/billing")
@@ -25,13 +27,16 @@ public class BillingController {
 
     private final BillingService billingService;
     private final TenantService tenantService;
+    private final TenantSecurityService tenantSecurityService;
 
     public BillingController(
             BillingService billingService,
-            TenantService tenantService) {
+            TenantService tenantService,
+            TenantSecurityService tenantSecurityService) {
 
         this.billingService = billingService;
         this.tenantService = tenantService;
+        this.tenantSecurityService = tenantSecurityService;
     }
 
     @GetMapping("/accounts")
@@ -63,7 +68,7 @@ public class BillingController {
         ));
         model.addAttribute("q", q);
         model.addAttribute("status", status);
-        model.addAttribute("tenants", tenantService.getAllTenants());
+        model.addAttribute("tenants", getAccessibleTenants());
         model.addAttribute("account", new BillingAccount());
 
         return "billing/accounts";
@@ -92,12 +97,18 @@ public class BillingController {
             @RequestParam(defaultValue = "25") int size,
             Model model) {
 
+        Long activeTenantFilter = tenantId;
+        if (!tenantSecurityService.isGlobalAdmin()) {
+            activeTenantFilter = tenantSecurityService.getCurrentTenantId();
+        }
+
+        final Long effectiveTenantId = activeTenantFilter;
         List<Invoice> invoices = billingService.getAllInvoices()
                 .stream()
                 .filter(invoice -> matchesInvoiceSearch(invoice, q))
                 .filter(invoice -> status == null || invoice.getStatus() == status)
-                .filter(invoice -> tenantId == null
-                        || (invoice.getTenant() != null && tenantId.equals(invoice.getTenant().getId())))
+                .filter(invoice -> effectiveTenantId == null
+                        || (invoice.getTenant() != null && effectiveTenantId.equals(invoice.getTenant().getId())))
                 .toList();
 
         int safeSize = Math.min(Math.max(size, 1), 100);
@@ -114,9 +125,9 @@ public class BillingController {
         ));
         model.addAttribute("q", q);
         model.addAttribute("status", status);
-        model.addAttribute("selectedTenantId", tenantId);
+        model.addAttribute("selectedTenantId", effectiveTenantId);
         model.addAttribute("invoiceStatuses", InvoiceStatus.values());
-        model.addAttribute("tenants", tenantService.getAllTenants());
+        model.addAttribute("tenants", getAccessibleTenants());
         model.addAttribute("paymentMethods", PaymentMethod.values());
 
         return "billing/invoices";
@@ -256,6 +267,21 @@ public class BillingController {
         model.addAttribute("payments", billingService.getPaymentsForInvoice(id));
 
         return "billing/invoice-print";
+    }
+
+    private List<TenantDto> getAccessibleTenants() {
+        if (tenantSecurityService.isGlobalAdmin()) {
+            return tenantService.getAllTenants();
+        }
+        Long tenantId = tenantSecurityService.getCurrentTenantId();
+        if (tenantId == null) {
+            return List.of();
+        }
+        try {
+            return List.of(tenantService.getTenantById(tenantId));
+        } catch (Exception e) {
+            return List.of();
+        }
     }
 
     private boolean matchesAccountSearch(BillingAccount account, String q) {

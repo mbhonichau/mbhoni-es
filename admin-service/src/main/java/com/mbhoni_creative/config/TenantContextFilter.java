@@ -35,6 +35,16 @@ public class TenantContextFilter extends OncePerRequestFilter {
                 TenantContext.setTenantId(principal.getTenantId());
             }
 
+            if (TenantContext.getTenantId() == null) {
+                String tenantHeader = request.getHeader("X-Tenant-ID");
+                if (tenantHeader != null && !tenantHeader.isBlank()) {
+                    try {
+                        TenantContext.setTenantId(Long.parseLong(tenantHeader.trim()));
+                    } catch (NumberFormatException ignored) {
+                    }
+                }
+            }
+
             filterChain.doFilter(request, response);
 
         } finally {

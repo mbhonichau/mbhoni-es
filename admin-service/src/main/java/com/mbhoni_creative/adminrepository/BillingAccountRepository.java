@@ -9,4 +9,5 @@ import com.mbhoni_creative.adminentity.Tenant;
 
 public interface BillingAccountRepository extends JpaRepository<BillingAccount, Long> {
     Optional<BillingAccount> findByTenant(Tenant tenant);
+    Optional<BillingAccount> findByTenantId(Long tenantId);
 }

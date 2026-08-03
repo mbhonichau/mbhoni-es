@@ -40,6 +40,7 @@ public TenantServiceImpl(
 // =====================================================
 
 @Override
+@Transactional(readOnly = true)
 public List<TenantDto> getAllTenants() {
 
     assertGlobalAdmin();
@@ -55,6 +56,7 @@ public List<TenantDto> getAllTenants() {
 // =====================================================
 
 @Override
+@Transactional(readOnly = true)
 public TenantDto getTenantById(Long id) {
 
     Tenant tenant = tenantRepository.findById(id)

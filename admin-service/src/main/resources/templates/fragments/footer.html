@@ -1,5 +1,9 @@
 <th:block xmlns:th="http://www.thymeleaf.org" th:fragment="footer">
-<footer class="admin-footer">
-    <span>MBHONI Creative Solutions</span>
+<footer class="admin-footer d-flex align-items-center justify-content-between px-4 py-3 border-top">
+    <div class="d-flex align-items-center gap-2">
+        <img th:src="@{/images/logo.png}" alt="Mbhoni Creative" style="height: 20px; width: 20px; border-radius: 4px; object-fit: cover;">
+        <span class="text-muted small">MBHONI Creative Enterprise Solutions &copy; 2026</span>
+    </div>
+    <span class="text-muted small">v1.0.0</span>
 </footer>
 </th:block>

@@ -258,6 +258,7 @@ public class UserServiceImpl implements UserService {
 
         if (user.getTenant() != null) {
             dto.setTenantId(user.getTenant().getId());
+            dto.setTenantName(user.getTenant().getName());
         }
 
         dto.setRoles(

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="https://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/head :: head('Users')}"></head>
+
+<body>
+<div class="admin-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+		<div th:if="${successMessage}" class="alert alert-success admin-alert">
+		    <i class="bi bi-check-circle"></i>
+		    <span th:text="${successMessage}">Success message</span>
+		</div>
+		
+        <main class="admin-content">
+            <section class="page-heading">
+                <div>
+                    <p class="eyebrow">User Management</p>
+                    <h2>Users</h2>
+                    <p class="text-muted mb-0">Manage admin users, tenant users, and account access.</p>
+                </div>
+
+                <a th:href="@{/users/create}"
+                   class="btn btn-primary"
+                   sec:authorize="hasAuthority('USER_CREATE')">
+                    <i class="bi bi-person-plus"></i>
+                    New User
+                </a>
+            </section>
+
+            <section class="form-panel mb-4">
+                <form th:action="@{/users}" method="get">
+                    <div class="form-grid">
+                        <div>
+                            <label class="form-label">Search</label>
+                            <input type="text"
+                                   name="q"
+                                   class="form-control"
+                                   th:value="${q}"
+                                   placeholder="Username, email, role">
+                        </div>
+
+                        <div>
+                            <label class="form-label">Status</label>
+                            <select name="status" class="form-select">
+                                <option value="">All</option>
+                                <option value="ACTIVE" th:selected="${status == 'ACTIVE'}">Active</option>
+                                <option value="INACTIVE" th:selected="${status == 'INACTIVE'}">Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <a th:href="@{/users}" class="btn btn-outline-secondary">Clear</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-search"></i>
+                            Search
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="data-panel">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0 admin-table">
+                        <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Email</th>
+                            <th>Tenant</th>
+                            <th>Roles</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                        </thead>
+
+                        <tbody>
+                        <tr th:each="user : ${users}">
+                            <td>
+                                <div class="entity-cell">
+                                    <span class="avatar"
+                                          th:text="${user.username != null and !#strings.isEmpty(user.username) ? #strings.substring(user.username, 0, 1).toUpperCase() : 'U'}">
+                                        U
+                                    </span>
+                                    <div>
+                                        <strong th:text="${user.username}">username</strong>
+                                        <small th:text="'ID: ' + ${user.id}">ID: 1</small>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td>
+                                <span th:text="${user.email != null ? user.email : 'No email'}">email@example.com</span>
+                            </td>
+
+                            <td>
+                                <span th:if="${user.tenantId != null}" class="status-pill neutral"
+                                      th:text="${user.tenantName != null ? user.tenantName : ('Tenant ' + user.tenantId)}">
+                                    Tenant 1
+                                </span>
+                                <span th:unless="${user.tenantId != null}" class="status-pill global">
+                                    Global
+                                </span>
+                            </td>
+
+                            <td>
+                                <div class="role-list">
+                                    <span th:each="role : ${user.roles}"
+                                          class="role-pill"
+                                          th:text="${#strings.replace(role, 'ROLE_', '')}">
+                                        ADMIN
+                                    </span>
+                                </div>
+                            </td>
+
+                            <td class="text-end">
+                                <div class="action-group">
+								    <form th:action="@{/users/reset-password}"
+								          method="post"
+								          class="d-inline"
+								          sec:authorize="hasAuthority('USER_EDIT')">
+								        <input type="hidden" name="id" th:value="${user.id}">
+								        <button type="submit"
+								                class="btn btn-sm btn-outline-secondary"
+								                title="Reset password">
+								            <i class="bi bi-key"></i>
+								        </button>
+								    </form>
+								    
+								    <form th:action="@{/users/roles}" method="post" class="d-inline" sec:authorize="hasAuthority('USER_EDIT')">
+									    <input type="hidden" name="id" th:value="${user.id}">
+									    <button type="submit" class="btn btn-sm btn-outline-secondary" title="Assign roles">
+									        <i class="bi bi-person-check"></i>
+									    </button>
+									</form>
+								
+								    <form th:action="@{/users/edit}"
+								          method="post"
+								          class="d-inline"
+								          sec:authorize="hasAuthority('USER_EDIT')">
+								        <input type="hidden" name="id" th:value="${user.id}">
+								        <button type="submit"
+								                class="btn btn-sm btn-outline-secondary"
+								                title="Edit user">
+								            <i class="bi bi-pencil"></i>
+								        </button>
+								    </form>
+								
+								    <form th:action="@{/users/delete}"
+								          method="post"
+								          class="d-inline"
+								          sec:authorize="hasAuthority('USER_DELETE')">
+								        <input type="hidden" name="id" th:value="${user.id}">
+								        <button type="submit"
+								                class="btn btn-sm btn-outline-danger"
+								                onclick="return confirm('Delete this user?')"
+								                title="Delete user">
+								            <i class="bi bi-trash"></i>
+								        </button>
+								    </form>
+								</div>
+                            </td>
+                        </tr>
+
+                        <tr th:if="${users == null or #lists.isEmpty(users)}">
+                            <td colspan="5">
+                                <div class="empty-state">
+                                    <i class="bi bi-people"></i>
+                                    <strong>No users found</strong>
+                                    <span>Create a user to start managing access.</span>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <div class="form-actions" th:if="${page != null and page.totalPages > 1}">
+                <a class="btn btn-outline-secondary"
+                   th:if="${page.hasPrevious}"
+                   th:href="@{/users(page=${page.number - 1}, size=${page.size}, q=${q}, status=${status})}">
+                    Previous
+                </a>
+
+                <span class="text-muted"
+                      th:text="'Page ' + (${page.number} + 1) + ' of ' + ${page.totalPages}">
+                    Page
+                </span>
+
+                <a class="btn btn-outline-secondary"
+                   th:if="${page.hasNext}"
+                   th:href="@{/users(page=${page.number + 1}, size=${page.size}, q=${q}, status=${status})}">
+                    Next
+                </a>
+            </div>
+        </main>
+
+        <div th:replace="~{fragments/footer :: footer}"></div>
+    </div>
+</div>
+
+<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/sidebar.js}"></script>
+</body>
+</html>

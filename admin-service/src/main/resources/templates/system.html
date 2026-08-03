@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="https://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/head :: head('System Status')}"></head>
+
+<body>
+<div class="admin-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <main class="admin-content">
+            <section class="page-heading">
+                <div>
+                    <p class="eyebrow">Governance & Monitoring</p>
+                    <h2>System Status & APIs</h2>
+                    <p class="text-muted mb-0">Platform health, JVM environment metrics, and REST API documentation.</p>
+                </div>
+
+                <a th:href="@{${swaggerUrl}}" target="_blank" class="btn btn-primary">
+                    <i class="bi bi-code-slash"></i>
+                    Open API Docs (Swagger)
+                </a>
+            </section>
+
+            <section class="metric-grid">
+                <div class="metric-card">
+                    <span class="metric-icon blue">
+                        <i class="bi bi-buildings"></i>
+                    </span>
+                    <div>
+                        <small>Total Provisioned Tenants</small>
+                        <strong th:text="${totalTenants}">0</strong>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <span class="metric-icon green">
+                        <i class="bi bi-check-circle"></i>
+                    </span>
+                    <div>
+                        <small>Active Tenants</small>
+                        <strong th:text="${activeTenants}">0</strong>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <span class="metric-icon amber">
+                        <i class="bi bi-people"></i>
+                    </span>
+                    <div>
+                        <small>Total Platform Users</small>
+                        <strong th:text="${totalUsers}">0</strong>
+                    </div>
+                </div>
+            </section>
+
+            <section class="data-panel mt-4">
+                <div class="p-4">
+                    <h4 class="mb-3"><i class="bi bi-cpu me-2"></i> Runtime Environment & System Health</h4>
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0 admin-table">
+                            <tbody>
+                            <tr>
+                                <th style="width: 30%;">Java Version</th>
+                                <td><span class="badge bg-secondary" th:text="${systemMetrics.javaVersion}">21</span> (<span th:text="${systemMetrics.javaVendor}">Vendor</span>)</td>
+                            </tr>
+                            <tr>
+                                <th>Operating System</th>
+                                <td th:text="${systemMetrics.osName}">OS</td>
+                            </tr>
+                            <tr>
+                                <th>System Uptime</th>
+                                <td th:text="${systemMetrics.uptimeMinutes + ' Minutes'}">0 Minutes</td>
+                            </tr>
+                            <tr>
+                                <th>Available CPU Cores</th>
+                                <td th:text="${systemMetrics.availableProcessors}">4</td>
+                            </tr>
+                            <tr>
+                                <th>JVM Memory Usage</th>
+                                <td>
+                                    <span th:text="${systemMetrics.usedMemoryMb + ' MB / ' + systemMetrics.maxMemoryMb + ' MB'}">0 MB</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Active Spring Profiles</th>
+                                <td th:text="${systemMetrics.activeProfiles}">default</td>
+                            </tr>
+                            <tr>
+                                <th>Admin REST API Swagger Docs</th>
+                                <td>
+                                    <a th:href="@{/swagger-ui/index.html}" target="_blank" class="text-decoration-none">
+                                        <code>/swagger-ui/index.html</code> <i class="bi bi-box-arrow-up-right ms-1"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>OpenAPI JSON Schema</th>
+                                <td>
+                                    <a th:href="@{/v3/api-docs}" target="_blank" class="text-decoration-none">
+                                        <code>/v3/api-docs</code> <i class="bi bi-box-arrow-up-right ms-1"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <div th:replace="~{fragments/footer :: footer}"></div>
+    </div>
+</div>
+
+<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/sidebar.js}"></script>
+</body>
+</html>

@@ -21,8 +21,8 @@
                 </div>
             </section>
 
-            <section class="metric-grid" th:if="${globalAdmin}">
-                <div class="metric-card">
+            <section class="metric-grid masonry-grid" th:if="${globalAdmin}">
+                <div class="metric-card masonry-card">
                     <span class="metric-icon blue">
                         <i class="bi bi-buildings"></i>
                     </span>
@@ -32,7 +32,7 @@
                     </div>
                 </div>
 
-                <div class="metric-card">
+                <div class="metric-card masonry-card">
                     <span class="metric-icon green">
                         <i class="bi bi-check-circle"></i>
                     </span>
@@ -42,7 +42,7 @@
                     </div>
                 </div>
 
-                <div class="metric-card">
+                <div class="metric-card masonry-card">
                     <span class="metric-icon amber">
                         <i class="bi bi-people"></i>
                     </span>
@@ -53,8 +53,8 @@
                 </div>
             </section>
 
-            <section class="metric-grid" th:unless="${globalAdmin}">
-                <div class="metric-card">
+            <section class="metric-grid masonry-grid" th:unless="${globalAdmin}">
+                <div class="metric-card masonry-card">
                     <span class="metric-icon blue">
                         <i class="bi bi-building"></i>
                     </span>
@@ -64,7 +64,7 @@
                     </div>
                 </div>
 
-                <div class="metric-card">
+                <div class="metric-card masonry-card">
                     <span class="metric-icon green">
                         <i class="bi bi-people"></i>
                     </span>
@@ -75,9 +75,9 @@
                 </div>
             </section>
 
-            <section class="quick-grid mt-4">
+            <section class="quick-grid masonry-grid mt-4">
                 <a th:href="@{/tenants}"
-                   class="quick-card"
+                   class="quick-card masonry-card"
                    sec:authorize="hasAuthority('TENANT_VIEW')">
                     <div class="quick-icon blue">
                         <i class="bi bi-buildings"></i>
@@ -88,11 +88,11 @@
                         <p>View and manage client tenant records.</p>
                     </div>
 
-                    <i class="bi bi-arrow-right-short"></i>
+                    <i class="bi bi-arrow-right-short fs-4"></i>
                 </a>
 
                 <a th:href="@{/users}"
-                   class="quick-card"
+                   class="quick-card masonry-card"
                    sec:authorize="hasAuthority('USER_VIEW')">
                     <div class="quick-icon green">
                         <i class="bi bi-people"></i>
@@ -103,12 +103,12 @@
                         <p>Manage admins and tenant users.</p>
                     </div>
 
-                    <i class="bi bi-arrow-right-short"></i>
+                    <i class="bi bi-arrow-right-short fs-4"></i>
                 </a>
 
                 <a href="http://localhost:8761"
                    target="_blank"
-                   class="quick-card"
+                   class="quick-card masonry-card"
                    sec:authorize="hasAuthority('TENANT_VIEW')">
                     <div class="quick-icon amber">
                         <i class="bi bi-hdd-network"></i>
@@ -119,7 +119,7 @@
                         <p>Open Eureka service discovery.</p>
                     </div>
 
-                    <i class="bi bi-box-arrow-up-right"></i>
+                    <i class="bi bi-box-arrow-up-right fs-5"></i>
                 </a>
             </section>
         </main>
@@ -130,5 +130,6 @@
 
 <script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
 <script th:src="@{/js/sidebar.js}"></script>
+<script th:src="@{/js/admin.js}"></script>
 </body>
 </html>
