@@ -13,13 +13,12 @@
             <section class="page-heading">
                 <div>
                     <p class="eyebrow">User Management</p>
-                    <h2>Edit User</h2>
+                    <h2>Edit User Profile</h2>
                     <p class="text-muted mb-0" th:text="${user.username}">username</p>
                 </div>
 
                 <a th:href="@{/users}" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left"></i>
-                    Back
+                    <i class="bi bi-arrow-left"></i> Back
                 </a>
             </section>
 
@@ -27,20 +26,41 @@
                 <form th:action="@{/users/update}" th:object="${user}" method="post">
                     <input type="hidden" name="id" th:value="${user.id}">
 
-                    <div class="form-grid">
+                    <h6 class="fw-bold mb-3"><i class="bi bi-person text-primary me-1"></i> Account & Identity Information</h6>
+                    <div class="form-grid mb-4">
                         <div>
                             <label class="form-label">Username</label>
                             <input type="text" th:field="*{username}" class="form-control" required>
                         </div>
 
                         <div>
-                            <label class="form-label">Email</label>
+                            <label class="form-label">Email Address</label>
                             <input type="email" th:field="*{email}" class="form-control" required>
                         </div>
 
+                        <div>
+                            <label class="form-label">Department / Division</label>
+                            <input type="text" th:field="*{department}" class="form-control" placeholder="e.g. Engineering, Finance, HCM">
+                        </div>
+
+                        <div>
+                            <label class="form-label">Job Title</label>
+                            <input type="text" th:field="*{jobTitle}" class="form-control" placeholder="e.g. Senior Architect, Lead Accountant">
+                        </div>
+
+                        <div>
+                            <label class="form-label">Time Zone</label>
+                            <select th:field="*{timeZone}" class="form-select">
+                                <option value="Africa/Johannesburg">Africa/Johannesburg (GMT+2)</option>
+                                <option value="UTC">UTC (GMT+0)</option>
+                                <option value="Europe/London">Europe/London (GMT+1)</option>
+                                <option value="America/New_York">America/New_York (GMT-5)</option>
+                            </select>
+                        </div>
+
                         <div th:if="${globalAdmin}">
-                            <label class="form-label">Tenant</label>
-                            <select th:field="*{tenantId}" class="form-select">
+                            <label class="form-label">Tenant Workspace</label>
+                            <select th:field="*{tenantId}" class="form-select" id="tenantSelect">
                                 <option value="">Global user</option>
                                 <option th:each="tenant : ${tenants}"
                                         th:value="${tenant.id}"
@@ -51,28 +71,90 @@
                         </div>
                     </div>
 
-                    <div class="mt-4">
-                        <label class="form-label">Roles</label>
-
-                        <div class="module-grid">
-                            <label class="module-card" th:each="role : ${availableRoles}">
-                                <input type="checkbox"
-                                       name="roleIds"
-                                       th:value="${role.id}"
-                                       th:checked="${user.roleIds != null and user.roleIds.contains(role.id)}">
-
-                                <span class="module-icon">
-                                    <i class="bi bi-shield-check"></i>
-                                </span>
-
-                                <span>
-                                    <strong th:text="${role.name}">ROLE</strong>
-                                    <small th:text="${role.tenant != null ? role.tenant.name : 'Global'}">Tenant</small>
-                                    <p th:text="${role.description != null and !#strings.isEmpty(role.description) ? role.description : 'No description'}">
-                                        Description
-                                    </p>
-                                </span>
+                    <h6 class="fw-bold mb-3"><i class="bi bi-sliders text-primary me-1"></i> Integration Process Controls (Admin Toggles)</h6>
+                    <div class="perm-group-card mb-4">
+                        <div class="perm-group-body">
+                            <label class="perm-checkbox-item">
+                                <input type="checkbox" th:field="*{mfaEnforced}">
+                                <div>
+                                    <strong>Enforce Multi-Factor Authentication (MFA)</strong>
+                                    <p>Requires mandatory 2FA passcode during login across downstream services.</p>
+                                </div>
                             </label>
+
+                            <label class="perm-checkbox-item">
+                                <input type="checkbox" th:field="*{ssoEnforced}">
+                                <div>
+                                    <strong>Enforce Single Sign-On (SSO)</strong>
+                                    <p>Blocks local password login, requiring OAuth2 / SAML SSO identity provider.</p>
+                                </div>
+                            </label>
+
+                            <label class="perm-checkbox-item">
+                                <input type="checkbox" th:field="*{apiAccessAllowed}">
+                                <div>
+                                    <strong>Allow REST/GraphQL API Access</strong>
+                                    <p>Grants privilege to consume external service endpoints using API keys or JWT.</p>
+                                </div>
+                            </label>
+
+                            <label class="perm-checkbox-item">
+                                <input type="checkbox" th:field="*{auditExtended}">
+                                <div>
+                                    <strong>Enable Extended Security Audit Trail</strong>
+                                    <p>Logs granular request payloads and field-level change history for compliance.</p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <h6 class="fw-bold mb-0"><i class="bi bi-shield-check text-primary me-1"></i> Assigned Security Roles</h6>
+                            <span class="badge bg-secondary" id="rolesCountBadge" th:text="${availableRoles != null ? availableRoles.size() : 0} + ' Available Roles'">0 Roles</span>
+                        </div>
+
+                        <div class="module-hub-grid" th:if="${availableRoles != null and !#lists.isEmpty(availableRoles)}">
+                            <div class="module-card-v2"
+                                 th:each="role : ${availableRoles}"
+                                 th:attr="data-role-tenant-id=${role.tenant != null ? role.tenant.id : ''}">
+                                <div>
+                                    <div class="module-card-header">
+                                        <div class="module-icon-box" th:classappend="${role.systemRole ? '' : 'green'}">
+                                            <i th:class="${role.systemRole ? 'bi bi-shield-lock-fill' : 'bi bi-person-gear'}"></i>
+                                        </div>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input"
+                                                   type="checkbox"
+                                                   name="roleIds"
+                                                   th:value="${role.id}"
+                                                   th:checked="${user.roleIds != null and user.roleIds.contains(role.id)}">
+                                        </div>
+                                    </div>
+
+                                    <div class="module-card-body">
+                                        <h6 th:text="${role.name}">ROLE_NAME</h6>
+                                        <span class="badge bg-secondary mb-2" th:text="${role.tenant != null ? role.tenant.name : 'Global System Role'}">Scope</span>
+                                        <p th:text="${role.description != null and !#strings.isEmpty(role.description) ? role.description : 'Standard security role entitlements.'}">
+                                            Description
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div class="module-card-footer">
+                                    <div>
+                                        <span th:if="${role.systemRole}" class="badge bg-success">System Level</span>
+                                        <span th:unless="${role.systemRole}" class="badge bg-info">Custom Role</span>
+                                    </div>
+
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-secondary"
+                                            data-bs-toggle="modal"
+                                            th:attr="data-bs-target='#rolePermModal-' + ${role.id}">
+                                        <i class="bi bi-shield-lock text-primary me-1"></i> View Matrix
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="empty-state" th:if="${availableRoles == null or #lists.isEmpty(availableRoles)}">
@@ -85,12 +167,44 @@
                     <div class="form-actions">
                         <a th:href="@{/users}" class="btn btn-outline-secondary">Cancel</a>
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-check2"></i>
-                            Save Changes
+                            <i class="bi bi-check2 me-1"></i> Save User Profile
                         </button>
                     </div>
                 </form>
             </section>
+
+            <!-- Top-Level Modals for Role Permission Previews -->
+            <div th:if="${availableRoles != null}">
+                <div class="modal fade" th:each="role : ${availableRoles}" th:id="'rolePermModal-' + ${role.id}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title d-flex align-items-center gap-2">
+                                    <i class="bi bi-shield-check text-success"></i>
+                                    <span th:text="${role.name} + ' - Permission Matrix'">Role Permissions</span>
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body text-start">
+                                <p class="text-muted small mb-3" th:text="${role.description != null and !#strings.isEmpty(role.description) ? role.description : 'Permissions granted to users assigned this role:'}"></p>
+                                
+                                <div class="category-summary-list" th:if="${role.permissions != null and !#lists.isEmpty(role.permissions)}">
+                                    <span th:each="perm : ${role.permissions}" class="category-badge py-2 px-3 m-1">
+                                        <i class="bi bi-check-circle-fill text-success me-1"></i>
+                                        <strong th:text="${perm.name != null ? perm.name : perm}">PERM</strong>
+                                    </span>
+                                </div>
+                                <div th:unless="${role.permissions != null and !#lists.isEmpty(role.permissions)}" class="text-center py-4 text-muted">
+                                    No explicit permissions assigned to this role.
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </main>
 
         <div th:replace="~{fragments/footer :: footer}"></div>
@@ -99,5 +213,45 @@
 
 <script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
 <script th:src="@{/js/sidebar.js}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const tenantSelect = document.getElementById('tenantSelect');
+    if (!tenantSelect) return;
+
+    function filterRolesByTenant() {
+        const selectedTenantId = tenantSelect.value;
+        const roleCards = document.querySelectorAll('.module-card-v2[data-role-tenant-id]');
+        let visibleCount = 0;
+
+        roleCards.forEach(card => {
+            const cardTenantId = card.getAttribute('data-role-tenant-id');
+            
+            if (selectedTenantId === '') {
+                if (cardTenantId === '') {
+                    card.style.display = 'flex';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            } else {
+                if (cardTenantId === '' || cardTenantId === selectedTenantId) {
+                    card.style.display = 'flex';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            }
+        });
+
+        const countBadge = document.getElementById('rolesCountBadge');
+        if (countBadge) {
+            countBadge.textContent = visibleCount + ' Applicable Roles';
+        }
+    }
+
+    tenantSelect.addEventListener('change', filterRolesByTenant);
+    filterRolesByTenant();
+});
+</script>
 </body>
 </html>

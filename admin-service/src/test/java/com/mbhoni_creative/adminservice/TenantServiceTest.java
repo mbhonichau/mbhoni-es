@@ -52,6 +52,12 @@ class TenantServiceTest {
     private TenantSecurityService tenantSecurityService;
 
     @Mock
+    private jakarta.persistence.EntityManager entityManager;
+
+    @Mock
+    private jakarta.persistence.Query query;
+
+    @Mock
     private AuditLogService auditLogService;
 
     @InjectMocks
@@ -117,5 +123,18 @@ class TenantServiceTest {
         assertNotNull(result);
         assertEquals("New Corp", result.getName());
         verify(tenantRepository).save(any(Tenant.class));
+    }
+
+    @Test
+    void testDeleteTenant_Success() {
+        when(tenantSecurityService.isGlobalAdmin()).thenReturn(true);
+        when(tenantRepository.findById(1L)).thenReturn(Optional.of(tenant));
+        when(entityManager.createQuery(any(String.class))).thenReturn(query);
+        when(entityManager.createNativeQuery(any(String.class))).thenReturn(query);
+        when(query.setParameter(any(String.class), any())).thenReturn(query);
+
+        tenantService.deleteTenant(1L);
+
+        verify(tenantRepository).delete(tenant);
     }
 }

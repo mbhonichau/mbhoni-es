@@ -18,4 +18,6 @@ public interface ModuleService {
     void updateTenantModules(Long tenantId, Set<Long> enabledModuleIds);
 
     boolean isModuleEnabled(Long tenantId, String moduleCode);
+
+    PlatformModule createModule(PlatformModule module);
 }

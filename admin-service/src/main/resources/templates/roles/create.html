@@ -14,17 +14,16 @@
                 <div>
                     <p class="eyebrow">Access Control</p>
                     <h2>Create Role</h2>
-                    <p class="text-muted mb-0">Create a tenant role and assign permissions.</p>
+                    <p class="text-muted mb-0">Define a tenant role and select domain permissions.</p>
                 </div>
 
                 <a th:href="@{/roles}" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left"></i>
-                    Back
+                    <i class="bi bi-arrow-left"></i> Back
                 </a>
             </section>
 
-            <section class="form-panel">
-                <form th:action="@{/roles/create}" th:object="${role}" method="post">
+            <form th:action="@{/roles/create}" th:object="${role}" method="post">
+                <section class="form-panel mb-4">
                     <div class="form-grid">
                         <div th:if="${globalAdmin}">
                             <label class="form-label">Tenant</label>
@@ -43,7 +42,7 @@
                             <input type="text"
                                    class="form-control"
                                    th:field="*{name}"
-                                   placeholder="NURSE"
+                                   placeholder="e.g. HCM_ADMIN"
                                    required>
                         </div>
 
@@ -52,42 +51,97 @@
                             <input type="text"
                                    class="form-control"
                                    th:field="*{description}"
-                                   placeholder="Role description">
+                                   placeholder="Role description & scope">
                         </div>
                     </div>
-                    <hr>
+                </section>
 
-                    <div class="section-divider"></div>
+                <h5 class="fw-bold mb-3">Permissions Matrix</h5>
 
-                    <div class="module-grid">
-                        <label class="module-card" th:each="permission : ${permissions}">
-                            <input type="checkbox"
-                                   name="permissionIds"
-                                   th:value="${permission.id}">
-
-                            <span class="module-icon">
-                                <i class="bi bi-key"></i>
-                            </span>
-
-                            <span>
-                                <strong th:text="${permission.name}">PERMISSION</strong>
-                                <small>Permission</small>
-                                <p th:text="${permission.description != null and !#strings.isEmpty(permission.description) ? permission.description : 'No description'}">
-                                    Description
-                                </p>
-                            </span>
+                <!-- Categorized Permission Domain Cards -->
+                <div class="perm-group-card">
+                    <div class="perm-group-header">
+                        <span class="perm-group-title">
+                            <i class="bi bi-shield-lock"></i>
+                            Access & User Security
+                        </span>
+                        <span class="badge bg-secondary">Security & IAM</span>
+                    </div>
+                    <div class="perm-group-body">
+                        <label class="perm-checkbox-item" th:each="p : ${permissions}" th:if="${p.name.startsWith('USER_') or p.name.startsWith('ROLE_') or p.name.startsWith('API_KEY_')}">
+                            <input type="checkbox" name="permissionIds" th:value="${p.id}">
+                            <div>
+                                <strong th:text="${p.name}">USER_VIEW</strong>
+                                <p th:text="${p.description != null ? p.description : 'Access control'}">Description</p>
+                            </div>
                         </label>
                     </div>
+                </div>
 
-                    <div class="form-actions">
-                        <a th:href="@{/roles}" class="btn btn-outline-secondary">Cancel</a>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-check2"></i>
-                            Create Role
-                        </button>
+                <div class="perm-group-card">
+                    <div class="perm-group-header">
+                        <span class="perm-group-title">
+                            <i class="bi bi-person-vcard"></i>
+                            Human Capital & Organization
+                        </span>
+                        <span class="badge bg-secondary">HCM</span>
                     </div>
-                </form>
-            </section>
+                    <div class="perm-group-body">
+                        <label class="perm-checkbox-item" th:each="p : ${permissions}" th:if="${p.name.startsWith('EMPLOYEE_') or p.name.startsWith('ORG_')}">
+                            <input type="checkbox" name="permissionIds" th:value="${p.id}">
+                            <div>
+                                <strong th:text="${p.name}">EMPLOYEE_VIEW</strong>
+                                <p th:text="${p.description != null ? p.description : 'HCM management'}">Description</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="perm-group-card">
+                    <div class="perm-group-header">
+                        <span class="perm-group-title">
+                            <i class="bi bi-cash-coin"></i>
+                            Commercial & Billing
+                        </span>
+                        <span class="badge bg-secondary">Finance</span>
+                    </div>
+                    <div class="perm-group-body">
+                        <label class="perm-checkbox-item" th:each="p : ${permissions}" th:if="${p.name.startsWith('CONTRACT_') or p.name.startsWith('BILLING_') or p.name.startsWith('SUBSCRIPTION_')}">
+                            <input type="checkbox" name="permissionIds" th:value="${p.id}">
+                            <div>
+                                <strong th:text="${p.name}">CONTRACT_VIEW</strong>
+                                <p th:text="${p.description != null ? p.description : 'Financial operations'}">Description</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="perm-group-card">
+                    <div class="perm-group-header">
+                        <span class="perm-group-title">
+                            <i class="bi bi-cpu"></i>
+                            Platform & Governance
+                        </span>
+                        <span class="badge bg-secondary">Platform</span>
+                    </div>
+                    <div class="perm-group-body">
+                        <label class="perm-checkbox-item" th:each="p : ${permissions}" th:if="${!p.name.startsWith('USER_') and !p.name.startsWith('ROLE_') and !p.name.startsWith('API_KEY_') and !p.name.startsWith('EMPLOYEE_') and !p.name.startsWith('ORG_') and !p.name.startsWith('CONTRACT_') and !p.name.startsWith('BILLING_') and !p.name.startsWith('SUBSCRIPTION_')}">
+                            <input type="checkbox" name="permissionIds" th:value="${p.id}">
+                            <div>
+                                <strong th:text="${p.name}">TENANT_VIEW</strong>
+                                <p th:text="${p.description != null ? p.description : 'System administration'}">Description</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <a th:href="@{/roles}" class="btn btn-outline-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check2 me-1"></i> Create Role
+                    </button>
+                </div>
+            </form>
         </main>
 
         <div th:replace="~{fragments/footer :: footer}"></div>

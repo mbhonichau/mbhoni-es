@@ -1,6 +1,8 @@
 package com.mbhoni_creative.adminservice.impl;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -11,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.mbhoni_creative.admindto.PasswordChangeRequest;
+import com.mbhoni_creative.admindto.ProcessTogglesUpdateRequest;
 import com.mbhoni_creative.admindto.UserProfileResponse;
 import com.mbhoni_creative.admindto.UserProfileUpdateRequest;
 import com.mbhoni_creative.adminentity.Permission;
@@ -39,6 +42,14 @@ public class UserProfileServiceImpl implements UserProfileService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public UserProfileResponse getUserProfileById(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+        return mapToProfileResponse(user);
+    }
+
+    @Override
     @Transactional
     public UserProfileResponse updateUserProfile(UserProfileUpdateRequest request) {
         User user = resolveAuthenticatedUser();
@@ -63,6 +74,32 @@ public class UserProfileServiceImpl implements UserProfileService {
                 }
                 user.setEmail(newEmail);
             }
+        }
+
+        userRepository.save(user);
+        return mapToProfileResponse(user);
+    }
+
+    @Override
+    @Transactional
+    public UserProfileResponse updateUserProcessToggles(Long userId, ProcessTogglesUpdateRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+
+        if (request.getMfaEnforced() != null) {
+            user.setMfaEnforced(request.getMfaEnforced());
+        }
+        if (request.getSsoEnforced() != null) {
+            user.setSsoEnforced(request.getSsoEnforced());
+        }
+        if (request.getApiAccessAllowed() != null) {
+            user.setApiAccessAllowed(request.getApiAccessAllowed());
+        }
+        if (request.getAuditExtended() != null) {
+            user.setAuditExtended(request.getAuditExtended());
+        }
+        if (request.getPasswordChangeRequired() != null) {
+            user.setPasswordChangeRequired(request.getPasswordChangeRequired());
         }
 
         userRepository.save(user);
@@ -117,9 +154,17 @@ public class UserProfileServiceImpl implements UserProfileService {
         response.setLastName(user.getLastName());
         response.setPhoneNumber(user.getPhoneNumber());
         response.setAvatarUrl(user.getAvatarUrl());
+        response.setDepartment(user.getDepartment() != null ? user.getDepartment() : "General");
+        response.setJobTitle(user.getJobTitle() != null ? user.getJobTitle() : "Enterprise User");
+        response.setTimeZone(user.getTimeZone() != null ? user.getTimeZone() : "Africa/Johannesburg");
         response.setAuthProvider(user.getAuthProvider() != null ? user.getAuthProvider() : "LOCAL");
         response.setGlobalAdmin(user.isGlobalAdmin());
         response.setActive(user.isActive());
+        response.setPasswordChangeRequired(user.isPasswordChangeRequired());
+        response.setMfaEnforced(user.isMfaEnforced());
+        response.setSsoEnforced(user.isSsoEnforced());
+        response.setApiAccessAllowed(user.isApiAccessAllowed());
+        response.setAuditExtended(user.isAuditExtended());
 
         if (user.getTenant() != null) {
             response.setTenantId(user.getTenant().getId());
@@ -140,6 +185,16 @@ public class UserProfileServiceImpl implements UserProfileService {
             }
         }
         response.setPermissions(permissions);
+
+        // Dynamic Process & Action Toggles Map for API & Integration Consumers
+        Map<String, Boolean> toggles = new HashMap<>();
+        toggles.put("mfaEnforced", user.isMfaEnforced());
+        toggles.put("ssoEnforced", user.isSsoEnforced());
+        toggles.put("apiAccessAllowed", user.isApiAccessAllowed());
+        toggles.put("auditExtended", user.isAuditExtended());
+        toggles.put("passwordChangeRequired", user.isPasswordChangeRequired());
+        toggles.put("active", user.isActive());
+        response.setProcessToggles(toggles);
 
         return response;
     }

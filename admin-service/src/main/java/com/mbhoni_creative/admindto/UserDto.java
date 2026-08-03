@@ -15,6 +15,20 @@ public class UserDto {
 
     private String email;
 
+    private String department;
+
+    private String jobTitle;
+
+    private String timeZone;
+
+    private boolean mfaEnforced;
+
+    private boolean ssoEnforced;
+
+    private boolean apiAccessAllowed = true;
+
+    private boolean auditExtended;
+
     private Long tenantId;
 
     private String tenantName;
@@ -57,6 +71,62 @@ public class UserDto {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getDepartment() {
+        return department;
+    }
+
+    public void setDepartment(String department) {
+        this.department = department;
+    }
+
+    public String getJobTitle() {
+        return jobTitle;
+    }
+
+    public void setJobTitle(String jobTitle) {
+        this.jobTitle = jobTitle;
+    }
+
+    public String getTimeZone() {
+        return timeZone;
+    }
+
+    public void setTimeZone(String timeZone) {
+        this.timeZone = timeZone;
+    }
+
+    public boolean isMfaEnforced() {
+        return mfaEnforced;
+    }
+
+    public void setMfaEnforced(boolean mfaEnforced) {
+        this.mfaEnforced = mfaEnforced;
+    }
+
+    public boolean isSsoEnforced() {
+        return ssoEnforced;
+    }
+
+    public void setSsoEnforced(boolean ssoEnforced) {
+        this.ssoEnforced = ssoEnforced;
+    }
+
+    public boolean isApiAccessAllowed() {
+        return apiAccessAllowed;
+    }
+
+    public void setApiAccessAllowed(boolean apiAccessAllowed) {
+        this.apiAccessAllowed = apiAccessAllowed;
+    }
+
+    public boolean isAuditExtended() {
+        return auditExtended;
+    }
+
+    public void setAuditExtended(boolean auditExtended) {
+        this.auditExtended = auditExtended;
     }
 
     public Long getTenantId() {

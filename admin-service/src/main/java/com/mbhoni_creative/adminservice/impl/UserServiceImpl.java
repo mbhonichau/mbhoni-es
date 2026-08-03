@@ -106,6 +106,14 @@ public class UserServiceImpl implements UserService {
 
         user.setUsername(dto.getUsername());
         user.setEmail(dto.getEmail());
+        user.setDepartment(dto.getDepartment());
+        user.setJobTitle(dto.getJobTitle());
+        if (dto.getTimeZone() != null) user.setTimeZone(dto.getTimeZone());
+
+        user.setMfaEnforced(dto.isMfaEnforced());
+        user.setSsoEnforced(dto.isSsoEnforced());
+        user.setApiAccessAllowed(dto.isApiAccessAllowed());
+        user.setAuditExtended(dto.isAuditExtended());
 
         boolean passwordProvided = dto.getPassword() != null && !dto.getPassword().isBlank();
 
@@ -171,6 +179,14 @@ public class UserServiceImpl implements UserService {
 
         user.setUsername(dto.getUsername());
         user.setEmail(dto.getEmail());
+        user.setDepartment(dto.getDepartment());
+        user.setJobTitle(dto.getJobTitle());
+        if (dto.getTimeZone() != null) user.setTimeZone(dto.getTimeZone());
+
+        user.setMfaEnforced(dto.isMfaEnforced());
+        user.setSsoEnforced(dto.isSsoEnforced());
+        user.setApiAccessAllowed(dto.isApiAccessAllowed());
+        user.setAuditExtended(dto.isAuditExtended());
 
         if (tenantSecurityService.isGlobalAdmin()) {
             Tenant newTenant = resolveTenant(dto);
@@ -254,6 +270,13 @@ public class UserServiceImpl implements UserService {
         dto.setId(user.getId());
         dto.setUsername(user.getUsername());
         dto.setEmail(user.getEmail());
+        dto.setDepartment(user.getDepartment());
+        dto.setJobTitle(user.getJobTitle());
+        dto.setTimeZone(user.getTimeZone());
+        dto.setMfaEnforced(user.isMfaEnforced());
+        dto.setSsoEnforced(user.isSsoEnforced());
+        dto.setApiAccessAllowed(user.isApiAccessAllowed());
+        dto.setAuditExtended(user.isAuditExtended());
         dto.setActive(user.isActive());
 
         if (user.getTenant() != null) {
@@ -482,7 +505,5 @@ public class UserServiceImpl implements UserService {
         );
         
         return true;
-        
-        
     }
 }

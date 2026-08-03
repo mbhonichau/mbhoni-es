@@ -14,13 +14,12 @@
             <section class="page-heading">
                 <div>
                     <p class="eyebrow">Subscriptions</p>
-                    <h2>Plan Modules</h2>
-                    <p class="text-muted mb-0" th:text="${plan.name}">Plan</p>
+                    <h2>Plan Modules Entitlement</h2>
+                    <p class="text-muted mb-0" th:text="'Configure modules licensed for plan: ' + ${plan.name}">Plan</p>
                 </div>
 
                 <a th:href="@{/subscriptions/plans}" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left"></i>
-                    Back
+                    <i class="bi bi-arrow-left"></i> Back
                 </a>
             </section>
 
@@ -28,32 +27,42 @@
                 <form th:action="@{/subscriptions/plans/modules/update}" method="post">
                     <input type="hidden" name="id" th:value="${plan.id}">
 
-                    <div class="module-grid">
-                        <label class="module-card" th:each="module : ${modules}">
-                            <input type="checkbox"
-                                   name="allowedModuleIds"
-                                   th:value="${module.moduleId}"
-                                   th:checked="${module.allowed}">
+                    <div class="module-hub-grid mb-4">
+                        <div class="module-card-v2" th:each="module : ${modules}">
+                            <div>
+                                <div class="module-card-header">
+                                    <div class="module-icon-box" th:classappend="${module.allowed ? 'green' : ''}">
+                                        <i class="bi bi-boxes"></i>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input"
+                                               type="checkbox"
+                                               name="allowedModuleIds"
+                                               th:value="${module.moduleId}"
+                                               th:checked="${module.allowed}">
+                                    </div>
+                                </div>
 
-                            <span class="module-icon">
-                                <i class="bi bi-grid"></i>
-                            </span>
+                                <div class="module-card-body">
+                                    <h6 th:text="${module.name}">Module Name</h6>
+                                    <span class="badge bg-secondary mb-2" th:text="${module.category}">Category</span>
+                                    <p th:text="${module.description != null ? module.description : 'Commercial tier module capability.'}">Description</p>
+                                </div>
+                            </div>
 
-                            <span>
-                                <strong th:text="${module.name}">Module</strong>
-                                <small th:text="${module.category}">Category</small>
-                                <p th:text="${module.description}">Description</p>
-
-                                <em th:if="${module.allowed}" class="status-pill active">Allowed</em>
-                                <em th:unless="${module.allowed}" class="status-pill inactive">Blocked</em>
-                            </span>
-                        </label>
+                            <div class="module-card-footer">
+                                <div>
+                                    <span th:if="${module.allowed}" class="badge bg-success">Licensed</span>
+                                    <span th:unless="${module.allowed}" class="badge bg-secondary">Blocked</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="form-actions">
+                        <a th:href="@{/subscriptions/plans}" class="btn btn-outline-secondary">Cancel</a>
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-check2"></i>
-                            Save Plan Modules
+                            <i class="bi bi-check2 me-1"></i> Save Plan Module Entitlements
                         </button>
                     </div>
                 </form>

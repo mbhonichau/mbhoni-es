@@ -71,7 +71,7 @@
                             <th>Plan</th>
                             <th>Pricing</th>
                             <th>Limits</th>
-                            <th>Features</th>
+                            <th>Features Matrix</th>
                             <th>Status</th>
                             <th class="text-end">Actions</th>
                         </tr>
@@ -107,35 +107,66 @@
                             </td>
 
                             <td>
-                                <div class="role-list">
-                                    <span class="role-pill" th:if="${plan.apiAccessEnabled}">API</span>
-                                    <span class="role-pill" th:if="${plan.brandingEnabled}">Branding</span>
-                                    <span class="role-pill" th:if="${plan.customDomainEnabled}">Domain</span>
-                                    <span class="text-muted"
-                                          th:if="${!plan.apiAccessEnabled and !plan.brandingEnabled and !plan.customDomainEnabled}">
-                                        Basic
-                                    </span>
+                                <button class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1"
+                                        data-bs-toggle="modal"
+                                        th:attr="data-bs-target='#planFeaturesModal-' + ${plan.id}">
+                                    <i class="bi bi-sliders text-primary"></i>
+                                    <span>Plan Features</span>
+                                </button>
+
+                                <!-- Modal: Commercial Plan Feature Matrix -->
+                                <div class="modal fade" th:id="'planFeaturesModal-' + ${plan.id}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title d-flex align-items-center gap-2">
+                                                    <i class="bi bi-credit-card text-primary"></i>
+                                                    <span th:text="${plan.name} + ' - Feature Matrix'">Plan Features</span>
+                                                </h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body text-start">
+                                                <p class="text-muted small mb-3">Entitlements and system capabilities enabled for this commercial plan tier:</p>
+                                                <div class="category-summary-list">
+                                                    <span class="category-badge py-2 px-3 m-1" th:if="${plan.apiAccessEnabled}">
+                                                        <i class="bi bi-check-circle-fill text-success me-1"></i> <strong>API Access</strong>
+                                                    </span>
+                                                    <span class="category-badge py-2 px-3 m-1" th:if="${plan.brandingEnabled}">
+                                                        <i class="bi bi-check-circle-fill text-success me-1"></i> <strong>Custom Branding</strong>
+                                                    </span>
+                                                    <span class="category-badge py-2 px-3 m-1" th:if="${plan.customDomainEnabled}">
+                                                        <i class="bi bi-check-circle-fill text-success me-1"></i> <strong>Custom Domain</strong>
+                                                    </span>
+                                                    <span class="category-badge py-2 px-3 m-1 text-muted" th:if="${!plan.apiAccessEnabled and !plan.brandingEnabled and !plan.customDomainEnabled}">
+                                                        <i class="bi bi-info-circle me-1"></i> <strong>Basic Tier Standard Entitlements</strong>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </td>
 
                             <td>
-                                <span th:if="${plan.active}" class="status-pill active">Active</span>
-                                <span th:unless="${plan.active}" class="status-pill inactive">Inactive</span>
+                                <span th:if="${plan.active}" class="badge bg-success">Active</span>
+                                <span th:unless="${plan.active}" class="badge bg-secondary">Inactive</span>
                             </td>
 
                             <td class="text-end">
                                 <div class="action-group">
-                                
-                                	<form th:action="@{/subscriptions/plans/modules}"
-									      method="post"
-									      class="d-inline"
-									      sec:authorize="hasAuthority('SUBSCRIPTION_EDIT')">
-									    <input type="hidden" name="id" th:value="${plan.id}">
-									    <button type="submit" class="btn btn-sm btn-outline-secondary" title="Plan modules">
-									        <i class="bi bi-grid"></i>
-									    </button>
-									</form>
-									
+                                    <form th:action="@{/subscriptions/plans/modules}"
+                                          method="post"
+                                          class="d-inline"
+                                          sec:authorize="hasAuthority('SUBSCRIPTION_EDIT')">
+                                        <input type="hidden" name="id" th:value="${plan.id}">
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary" title="Plan modules">
+                                            <i class="bi bi-grid"></i>
+                                        </button>
+                                    </form>
+                                    
                                     <form th:action="@{/subscriptions/plans/edit}"
                                           method="post"
                                           class="d-inline"

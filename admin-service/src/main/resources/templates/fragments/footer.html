@@ -6,4 +6,30 @@
     </div>
     <span class="text-muted small">v1.0.0</span>
 </footer>
+
+<!-- Global CRUD Operation Confirmation Modal -->
+<div class="modal fade" id="globalConfirmModal" tabindex="-1" aria-labelledby="globalConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header border-bottom-0 pb-0" id="globalConfirmHeader">
+                <h5 class="modal-title d-flex align-items-center gap-2" id="globalConfirmModalLabel">
+                    <i class="bi bi-exclamation-triangle-fill text-warning fs-4" id="globalConfirmIcon"></i>
+                    <span id="globalConfirmTitle">Confirm Operation</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body py-3">
+                <div class="alert alert-warning d-flex align-items-start gap-2 mb-3 py-2 px-3" id="globalConfirmWarningBanner" style="display: none;">
+                    <i class="bi bi-shield-lock-fill me-1 mt-1"></i>
+                    <span id="globalConfirmWarningText" class="small">Warning: This operation may affect system operations.</span>
+                </div>
+                <p id="globalConfirmMessage" class="mb-0 text-secondary fs-6">Are you sure you want to proceed with this action?</p>
+            </div>
+            <div class="modal-footer border-top-0 pt-0">
+                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger px-4" id="globalConfirmSubmitBtn">Confirm &amp; Proceed</button>
+            </div>
+        </div>
+    </div>
+</div>
 </th:block>
