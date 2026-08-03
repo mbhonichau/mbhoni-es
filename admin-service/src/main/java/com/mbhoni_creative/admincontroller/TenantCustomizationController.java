@@ -31,7 +31,7 @@ public class TenantCustomizationController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAuthority('CUSTOMIZATION_VIEW')")
+    @PreAuthorize("@tenantEntitlementService.isFeatureEnabled('BRANDING') and hasAuthority('CUSTOMIZATION_VIEW')")
     public String list(Model model) {
 
         if (!tenantSecurityService.isGlobalAdmin()) {
@@ -44,7 +44,7 @@ public class TenantCustomizationController {
     }
 
     @PostMapping("/edit")
-    @PreAuthorize("hasAuthority('CUSTOMIZATION_VIEW')")
+    @PreAuthorize("@tenantEntitlementService.isFeatureEnabled('BRANDING') and hasAuthority('CUSTOMIZATION_VIEW')")
     public String edit(
             @RequestParam Long tenantId,
             Model model) {
@@ -58,7 +58,7 @@ public class TenantCustomizationController {
     }
 
     @PostMapping("/update")
-    @PreAuthorize("hasAuthority('CUSTOMIZATION_EDIT')")
+    @PreAuthorize("@tenantEntitlementService.isFeatureEnabled('BRANDING') and hasAuthority('CUSTOMIZATION_EDIT')")
     public String update(
             @RequestParam Long tenantId,
             @ModelAttribute TenantCustomization customization,
@@ -71,7 +71,7 @@ public class TenantCustomizationController {
     }
 
     @GetMapping("/my")
-    @PreAuthorize("hasAuthority('CUSTOMIZATION_VIEW')")
+    @PreAuthorize("@tenantEntitlementService.isFeatureEnabled('BRANDING') and hasAuthority('CUSTOMIZATION_VIEW')")
     public String myCustomization(Model model) {
 
         TenantCustomization customization = customizationService.getOrCreateForCurrentTenant();
@@ -85,7 +85,7 @@ public class TenantCustomizationController {
     }
 
     @PostMapping("/my/update")
-    @PreAuthorize("hasAuthority('CUSTOMIZATION_EDIT')")
+    @PreAuthorize("@tenantEntitlementService.isFeatureEnabled('BRANDING') and hasAuthority('CUSTOMIZATION_EDIT')")
     public String updateMyCustomization(
             @ModelAttribute TenantCustomization customization,
             RedirectAttributes redirectAttributes) {

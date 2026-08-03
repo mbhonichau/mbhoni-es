@@ -39,14 +39,16 @@ public class AdminController {
             Model model,
             Authentication authentication) {
 
+        model.addAttribute("globalAdmin", false);
+
         try {
             TenantDto dto = tenantService.getTenantById(tenantId);
-
             model.addAttribute("tenant", dto);
             model.addAttribute("tenantName", dto.getName());
-
+            model.addAttribute("tenantUsers", 0);
         } catch (Exception e) {
             model.addAttribute("tenantName", "Unknown Tenant");
+            model.addAttribute("tenantUsers", 0);
         }
 
         model.addAttribute(

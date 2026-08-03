@@ -16,19 +16,33 @@
                 <span th:text="${successMessage}">Success message</span>
             </div>
 
+            <div th:if="${errorMessage}" class="alert alert-danger admin-alert">
+                <i class="bi bi-exclamation-triangle"></i>
+                <span th:text="${errorMessage}">Error message</span>
+            </div>
+
             <section class="page-heading">
                 <div>
-                    <p class="eyebrow">Platform</p>
-                    <h2>Modules</h2>
-                    <p class="text-muted mb-0">Enable or disable reusable platform modules per tenant.</p>
+                    <p class="eyebrow">Platform Capabilities</p>
+                    <h2>Tenant Module Hub</h2>
+                    <p class="text-muted mb-0">Enable or disable reusable platform modules per tenant workspace.</p>
                 </div>
+
+                <button type="button"
+                        class="btn btn-primary"
+                        data-bs-toggle="modal"
+                        data-bs-target="#createModuleModal"
+                        sec:authorize="hasAuthority('MODULE_EDIT')">
+                    <i class="bi bi-plus-lg me-1"></i>
+                    Create Platform Module
+                </button>
             </section>
 
             <section class="form-panel mb-4">
                 <form th:action="@{/modules/tenant}" method="post">
                     <div class="form-grid">
                         <div>
-                            <label class="form-label">Tenant</label>
+                            <label class="form-label">Select Tenant Workspace</label>
                             <select name="tenantId" class="form-select" required>
                                 <option value="">Choose tenant</option>
                                 <option th:each="tenant : ${tenants}"
@@ -43,8 +57,7 @@
 
                     <div class="form-actions">
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-search"></i>
-                            Load Modules
+                            <i class="bi bi-grid-3x3-gap me-1"></i> Load Modules Matrix
                         </button>
                     </div>
                 </form>
@@ -54,47 +67,157 @@
                 <form th:action="@{/modules/tenant/update}" method="post">
                     <input type="hidden" name="tenantId" th:value="${selectedTenantId}">
 
-                    <div class="module-grid">
-                        <label class="module-card" th:each="module : ${modules}">
-						    <input type="checkbox"
-						           name="enabledModuleIds"
-						           th:value="${module.moduleId}"
-						           th:checked="${module.enabled}"
-						           th:disabled="${!module.allowedByPlan}"
-						           sec:authorize="hasAuthority('MODULE_EDIT')">
-						
-						    <span class="module-icon">
-						        <i class="bi bi-grid"></i>
-						    </span>
-						
-						    <span>
-						        <strong th:text="${module.name}">Module</strong>
-						        <small th:text="${module.category}">Category</small>
-						        <p th:text="${module.description}">Description</p>
-						
-						        <em th:if="${module.allowedByPlan and module.enabled}" class="status-pill active">
-						            Enabled
-						        </em>
-						
-						        <em th:if="${module.allowedByPlan and !module.enabled}" class="status-pill inactive">
-						            Disabled
-						        </em>
-						
-						        <em th:unless="${module.allowedByPlan}" class="status-pill inactive">
-						            Not in plan
-						        </em>
-						    </span>
-						</label>
+                    <!-- Module Matrix Grid -->
+                    <div class="module-hub-grid mb-4">
+                        <div class="module-card-v2" th:each="module : ${modules}">
+                            <div>
+                                <div class="module-card-header">
+                                    <div class="module-icon-box" th:classappend="${module.enabled ? 'green' : ''}">
+                                        <i class="bi bi-boxes"></i>
+                                    </div>
+                                    <div class="form-check form-switch" sec:authorize="hasAuthority('MODULE_EDIT')">
+                                        <input class="form-check-input"
+                                               type="checkbox"
+                                               name="enabledModuleIds"
+                                               th:value="${module.moduleId}"
+                                               th:checked="${module.enabled}"
+                                               th:disabled="${!module.allowedByPlan}">
+                                    </div>
+                                </div>
+
+                                <div class="module-card-body">
+                                    <h6 th:text="${module.name}">Module Name</h6>
+                                    <span class="badge bg-secondary mb-2" th:text="${module.category}">Category</span>
+                                    <p th:text="${module.description != null ? module.description : 'Platform enterprise module capabilities.'}">Description</p>
+                                </div>
+                            </div>
+
+                            <div class="module-card-footer">
+                                <div>
+                                    <span th:if="${module.allowedByPlan and module.enabled}" class="badge bg-success">Active</span>
+                                    <span th:if="${module.allowedByPlan and !module.enabled}" class="badge bg-secondary">Disabled</span>
+                                    <span th:unless="${module.allowedByPlan}" class="badge bg-warning">Not in Plan</span>
+                                </div>
+
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-secondary"
+                                        data-bs-toggle="modal"
+                                        th:attr="data-bs-target='#modModal-' + ${module.moduleId}">
+                                    <i class="bi bi-info-circle me-1"></i> Capabilities
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="form-actions" sec:authorize="hasAuthority('MODULE_EDIT')">
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-check2"></i>
-                            Save Modules
+                            <i class="bi bi-check2 me-1"></i> Save Module Configuration
                         </button>
                     </div>
                 </form>
             </section>
+
+            <!-- Top-Level Modals for Clean Z-Index Stacking Outside Form & Grid Cards -->
+            <div th:if="${modules != null}">
+                <div class="modal fade" th:each="module : ${modules}" th:id="'modModal-' + ${module.moduleId}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title d-flex align-items-center gap-2">
+                                    <i class="bi bi-boxes text-primary"></i>
+                                    <span th:text="${module.name} + ' - Unlocked Features'">Module Features</span>
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body text-start">
+                                <p class="text-muted small mb-3" th:text="${module.description}"></p>
+                                <div class="category-summary-list">
+                                    <span class="category-badge py-2 px-3 m-1">
+                                        <i class="bi bi-check-circle-fill text-success me-1"></i> Category: <strong th:text="${module.category}">Category</strong>
+                                    </span>
+                                    <span class="category-badge py-2 px-3 m-1" th:if="${module.allowedByPlan}">
+                                        <i class="bi bi-shield-check text-success me-1"></i> Commercial Plan Licensed
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+            </div>
+
+            <!-- Create Platform Module Modal -->
+            <div class="modal fade" id="createModuleModal" tabindex="-1" aria-labelledby="createModuleModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <form th:action="@{/modules/create}" method="post">
+                            <div class="modal-header">
+                                <h5 class="modal-title d-flex align-items-center gap-2" id="createModuleModalLabel">
+                                    <i class="bi bi-box-seam-fill text-primary"></i>
+                                    <span>Create New Platform Module</span>
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body text-start">
+                                <div class="mb-3">
+                                    <label class="form-label">Module Code <span class="text-danger">*</span></label>
+                                    <input type="text"
+                                           name="code"
+                                           class="form-control"
+                                           placeholder="e.g. CRM, HCM, ANALYTICS"
+                                           required
+                                           style="text-transform: uppercase;">
+                                    <div class="form-text">Unique uppercase code identifier.</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Module Name <span class="text-danger">*</span></label>
+                                    <input type="text"
+                                           name="name"
+                                           class="form-control"
+                                           placeholder="e.g. Customer Relationship Management"
+                                           required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Category</label>
+                                    <select name="category" class="form-select">
+                                        <option value="Core">Core</option>
+                                        <option value="Enterprise">Enterprise</option>
+                                        <option value="Operations">Operations</option>
+                                        <option value="Finance">Finance</option>
+                                        <option value="Add-on">Add-on</option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Description</label>
+                                    <textarea name="description"
+                                              class="form-control"
+                                              rows="3"
+                                              placeholder="Brief summary of capabilities provided by this module."></textarea>
+                                </div>
+
+                                <div class="form-check form-switch mt-3">
+                                    <input class="form-check-input"
+                                           type="checkbox"
+                                           name="active"
+                                           id="moduleActiveSwitch"
+                                           checked>
+                                    <label class="form-check-label" for="moduleActiveSwitch">Active / Available in System</label>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-plus-circle me-1"></i> Create Module
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </main>
 
         <div th:replace="~{fragments/footer :: footer}"></div>

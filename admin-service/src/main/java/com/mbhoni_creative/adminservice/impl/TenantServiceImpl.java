@@ -15,6 +15,9 @@ import com.mbhoni_creative.config.TenantSecurityService;
 import com.mbhoni_creative.adminentity.IndustryProfile;
 import com.mbhoni_creative.adminrepository.IndustryProfileRepository;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+
 @Service
 public class TenantServiceImpl implements TenantService {
 
@@ -22,17 +25,21 @@ private final TenantRepository tenantRepository;
 private final TenantSecurityService tenantSecurityService;
 private final IndustryProfileRepository industryProfileRepository;
 private final NotificationService notificationService;
+@PersistenceContext
+private EntityManager entityManager;
 
 public TenantServiceImpl(
         TenantRepository tenantRepository,
         TenantSecurityService tenantSecurityService,
         IndustryProfileRepository industryProfileRepository,
-        NotificationService notificationService) {
+        NotificationService notificationService,
+        EntityManager entityManager) {
 
     this.tenantRepository = tenantRepository;
     this.tenantSecurityService = tenantSecurityService;
     this.industryProfileRepository = industryProfileRepository;
     this.notificationService = notificationService;
+    this.entityManager = entityManager;
 }
 
 // =====================================================
@@ -40,6 +47,7 @@ public TenantServiceImpl(
 // =====================================================
 
 @Override
+@Transactional(readOnly = true)
 public List<TenantDto> getAllTenants() {
 
     assertGlobalAdmin();
@@ -55,6 +63,7 @@ public List<TenantDto> getAllTenants() {
 // =====================================================
 
 @Override
+@Transactional(readOnly = true)
 public TenantDto getTenantById(Long id) {
 
     Tenant tenant = tenantRepository.findById(id)
@@ -127,6 +136,71 @@ public void deleteTenant(Long id) {
     Tenant tenant = tenantRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Tenant not found"));
 
+    // Step 1: Disassociate employee manager references & delete employees
+    entityManager.createQuery("UPDATE Employee e SET e.manager = NULL WHERE e.tenant.id = :id")
+            .setParameter("id", id).executeUpdate();
+    entityManager.createQuery("DELETE FROM Employee e WHERE e.tenant.id = :id")
+            .setParameter("id", id).executeUpdate();
+
+    // Step 2: Delete user_roles join records & user records
+    entityManager.createNativeQuery("DELETE FROM user_roles WHERE user_id IN (SELECT id FROM users WHERE tenant_id = :id)")
+            .setParameter("id", id).executeUpdate();
+    entityManager.createQuery("DELETE FROM User u WHERE u.tenant.id = :id")
+            .setParameter("id", id).executeUpdate();
+
+    // Step 3: Delete contract milestones & contracts
+    entityManager.createNativeQuery("DELETE FROM contract_milestones WHERE contract_id IN (SELECT id FROM contracts WHERE tenant_id = :id)")
+            .setParameter("id", id).executeUpdate();
+    entityManager.createQuery("DELETE FROM Contract c WHERE c.tenant.id = :id")
+            .setParameter("id", id).executeUpdate();
+
+    // Step 4: Delete payments, invoices & billing accounts
+    entityManager.createNativeQuery("DELETE FROM payments WHERE invoice_id IN (SELECT id FROM invoices WHERE tenant_id = :id)")
+            .setParameter("id", id).executeUpdate();
+    entityManager.createQuery("DELETE FROM Invoice i WHERE i.tenant.id = :id")
+            .setParameter("id", id).executeUpdate();
+    entityManager.createQuery("DELETE FROM BillingAccount b WHERE b.tenant.id = :id")
+            .setParameter("id", id).executeUpdate();
+
+    // Step 5: Disassociate org unit parents & delete organization units
+    entityManager.createQuery("UPDATE OrganizationUnit ou SET ou.parentUnit = NULL WHERE ou.tenant.id = :id")
+            .setParameter("id", id).executeUpdate();
+    entityManager.createQuery("DELETE FROM OrganizationUnit ou WHERE ou.tenant.id = :id")
+            .setParameter("id", id).executeUpdate();
+
+    // Step 6: Delete lookup codes & lookup categories
+    entityManager.createNativeQuery("DELETE FROM lookup_codes WHERE category_id IN (SELECT id FROM lookup_categories WHERE tenant_id = :id)")
+            .setParameter("id", id).executeUpdate();
+    entityManager.createQuery("DELETE FROM LookupCategory lc WHERE lc.tenant.id = :id")
+            .setParameter("id", id).executeUpdate();
+
+    // Step 7: Delete API keys & API key permissions
+    entityManager.createNativeQuery("DELETE FROM tenant_api_key_permissions WHERE api_key_id IN (SELECT id FROM tenant_api_keys WHERE tenant_id = :id)")
+            .setParameter("id", id).executeUpdate();
+    entityManager.createQuery("DELETE FROM TenantApiKey ak WHERE ak.tenant.id = :id")
+            .setParameter("id", id).executeUpdate();
+
+    // Step 8: Delete tenant-specific settings & configurations
+    entityManager.createQuery("DELETE FROM TenantSubscription ts WHERE ts.tenant.id = :id")
+            .setParameter("id", id).executeUpdate();
+    entityManager.createQuery("DELETE FROM TenantQuota tq WHERE tq.tenant.id = :id")
+            .setParameter("id", id).executeUpdate();
+    entityManager.createQuery("DELETE FROM TenantCustomization tc WHERE tc.tenant.id = :id")
+            .setParameter("id", id).executeUpdate();
+    entityManager.createQuery("DELETE FROM TenantModule tm WHERE tm.tenant.id = :id")
+            .setParameter("id", id).executeUpdate();
+    entityManager.createQuery("DELETE FROM TenantContent tc WHERE tc.tenant.id = :id")
+            .setParameter("id", id).executeUpdate();
+    entityManager.createQuery("DELETE FROM TenantMetric tm WHERE tm.tenant.id = :id")
+            .setParameter("id", id).executeUpdate();
+
+    // Step 9: Delete role_permissions join records & tenant roles
+    entityManager.createNativeQuery("DELETE FROM role_permissions WHERE role_id IN (SELECT id FROM roles WHERE tenant_id = :id)")
+            .setParameter("id", id).executeUpdate();
+    entityManager.createQuery("DELETE FROM Role r WHERE r.tenant.id = :id")
+            .setParameter("id", id).executeUpdate();
+
+    // Step 10: Finally delete tenant
     tenantRepository.delete(tenant);
 }
 

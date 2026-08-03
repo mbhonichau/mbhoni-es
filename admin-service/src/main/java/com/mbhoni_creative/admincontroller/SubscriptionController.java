@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.mbhoni_creative.admindto.PageMeta;
+import com.mbhoni_creative.admindto.TenantDto;
 import com.mbhoni_creative.adminentity.BillingCycle;
 import com.mbhoni_creative.adminentity.SubscriptionPlan;
 import com.mbhoni_creative.adminentity.SubscriptionStatus;
@@ -23,6 +24,7 @@ import com.mbhoni_creative.adminentity.TenantSubscription;
 import com.mbhoni_creative.adminservice.PlanModuleService;
 import com.mbhoni_creative.adminservice.SubscriptionService;
 import com.mbhoni_creative.adminservice.TenantService;
+import com.mbhoni_creative.config.TenantSecurityService;
 
 @Controller
 @RequestMapping("/subscriptions")
@@ -31,15 +33,18 @@ public class SubscriptionController {
     private final SubscriptionService subscriptionService;
     private final TenantService tenantService;
     private final PlanModuleService planModuleService;
+    private final TenantSecurityService tenantSecurityService;
 
     public SubscriptionController(
             SubscriptionService subscriptionService,
             TenantService tenantService,
-            PlanModuleService planModuleService) {
+            PlanModuleService planModuleService,
+            TenantSecurityService tenantSecurityService) {
 
         this.subscriptionService = subscriptionService;
         this.tenantService = tenantService;
         this.planModuleService = planModuleService;
+        this.tenantSecurityService = tenantSecurityService;
     }
 
     @GetMapping("/plans")
@@ -50,6 +55,8 @@ public class SubscriptionController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "25") int size,
             Model model) {
+
+        enforceGlobalAdmin();
 
         List<SubscriptionPlan> plans = subscriptionService.getAllPlans()
                 .stream()
@@ -79,6 +86,7 @@ public class SubscriptionController {
     @PreAuthorize("hasAuthority('SUBSCRIPTION_CREATE')")
     public String createPlanForm(Model model) {
 
+        enforceGlobalAdmin();
         model.addAttribute("plan", new SubscriptionPlan());
 
         return "subscriptions/plan-create";
@@ -90,6 +98,7 @@ public class SubscriptionController {
             @ModelAttribute SubscriptionPlan plan,
             RedirectAttributes redirectAttributes) {
 
+        enforceGlobalAdmin();
         subscriptionService.savePlan(plan);
         redirectAttributes.addFlashAttribute("successMessage", "Subscription plan created successfully.");
 
@@ -102,6 +111,7 @@ public class SubscriptionController {
             @RequestParam Long id,
             Model model) {
 
+        enforceGlobalAdmin();
         model.addAttribute("plan", subscriptionService.getPlanById(id));
 
         return "subscriptions/plan-edit";
@@ -114,6 +124,7 @@ public class SubscriptionController {
             @ModelAttribute SubscriptionPlan plan,
             RedirectAttributes redirectAttributes) {
 
+        enforceGlobalAdmin();
         subscriptionService.updatePlan(id, plan);
         redirectAttributes.addFlashAttribute("successMessage", "Subscription plan updated successfully.");
 
@@ -126,6 +137,7 @@ public class SubscriptionController {
             @RequestParam Long id,
             RedirectAttributes redirectAttributes) {
 
+        enforceGlobalAdmin();
         subscriptionService.deactivatePlan(id);
         redirectAttributes.addFlashAttribute("successMessage", "Subscription plan deactivated successfully.");
 
@@ -164,7 +176,7 @@ public class SubscriptionController {
         model.addAttribute("q", q);
         model.addAttribute("selectedStatus", status);
         model.addAttribute("selectedBillingCycle", billingCycle);
-        model.addAttribute("tenants", tenantService.getAllTenants());
+        model.addAttribute("tenants", getAccessibleTenants());
         model.addAttribute("plans", subscriptionService.getActivePlans());
         model.addAttribute("statuses", SubscriptionStatus.values());
         model.addAttribute("billingCycles", BillingCycle.values());
@@ -184,6 +196,13 @@ public class SubscriptionController {
             @RequestParam(required = false) LocalDate trialEndsAt,
             @RequestParam(defaultValue = "false") boolean autoRenew,
             RedirectAttributes redirectAttributes) {
+
+        if (!tenantSecurityService.isGlobalAdmin()) {
+            Long currentTenantId = tenantSecurityService.getCurrentTenantId();
+            if (currentTenantId == null || !currentTenantId.equals(tenantId)) {
+                throw new RuntimeException("Access denied: cannot modify other tenant subscriptions");
+            }
+        }
 
         subscriptionService.assignTenantSubscription(
                 tenantId,
@@ -207,6 +226,7 @@ public class SubscriptionController {
             @RequestParam Long id,
             Model model) {
 
+        enforceGlobalAdmin();
         model.addAttribute("plan", subscriptionService.getPlanById(id));
         model.addAttribute("modules", planModuleService.getPlanModuleViews(id));
 
@@ -220,11 +240,33 @@ public class SubscriptionController {
             @RequestParam(required = false) Set<Long> allowedModuleIds,
             RedirectAttributes redirectAttributes) {
 
+        enforceGlobalAdmin();
         planModuleService.updatePlanModules(id, allowedModuleIds);
 
         redirectAttributes.addFlashAttribute("successMessage", "Plan modules updated successfully.");
 
         return "redirect:/subscriptions/plans";
+    }
+
+    private void enforceGlobalAdmin() {
+        if (!tenantSecurityService.isGlobalAdmin()) {
+            throw new RuntimeException("Access denied: global admin only");
+        }
+    }
+
+    private List<TenantDto> getAccessibleTenants() {
+        if (tenantSecurityService.isGlobalAdmin()) {
+            return tenantService.getAllTenants();
+        }
+        Long tenantId = tenantSecurityService.getCurrentTenantId();
+        if (tenantId == null) {
+            return List.of();
+        }
+        try {
+            return List.of(tenantService.getTenantById(tenantId));
+        } catch (Exception e) {
+            return List.of();
+        }
     }
 
     private boolean matchesPlanSearch(SubscriptionPlan plan, String q) {

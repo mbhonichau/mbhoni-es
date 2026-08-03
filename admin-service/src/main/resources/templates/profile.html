@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="https://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/head :: head('My Profile')}"></head>
+
+<body>
+<div class="admin-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <main class="admin-content">
+            <section class="page-heading">
+                <p class="eyebrow">User Account</p>
+                <h2>My Profile & Security Settings</h2>
+                <p class="text-muted">Manage your personal account details, password, and view assigned tenant authorities.</p>
+            </section>
+
+            <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i><span th:text="${successMessage}">Success!</span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i><span th:text="${errorMessage}">Error!</span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <div class="row g-4 mt-2">
+                <!-- User Summary Card -->
+                <div class="col-md-4">
+                    <div class="card shadow-sm text-center p-4">
+                        <div class="mb-3">
+                            <img th:if="${profile.avatarUrl != null and !profile.avatarUrl.isEmpty()}"
+                                 th:src="${profile.avatarUrl}" class="rounded-circle img-thumbnail" style="width: 110px; height: 110px; object-fit: cover;" alt="Avatar">
+                            <div th:if="${profile.avatarUrl == null or profile.avatarUrl.isEmpty()}"
+                                 class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center shadow-sm"
+                                 style="width: 100px; height: 100px; font-size: 2.5rem; font-weight: 600;">
+                                <span th:text="${#strings.substring(profile.username, 0, 1).toUpperCase()}">U</span>
+                            </div>
+                        </div>
+                        <h4 class="mb-1" th:text="${(profile.firstName != null ? profile.firstName : '') + ' ' + (profile.lastName != null ? profile.lastName : profile.username)}">User Name</h4>
+                        <p class="text-muted small mb-2" th:text="${profile.email}">user@enterprise.com</p>
+                        
+                        <div class="mb-3">
+                            <span th:if="${profile.globalAdmin}" class="badge bg-danger">Global Admin</span>
+                            <span th:if="${!profile.globalAdmin}" class="badge bg-primary" th:text="${profile.tenantName != null ? profile.tenantName : 'Tenant User'}">Tenant User</span>
+                            <span class="badge bg-secondary" th:text="${'Auth: ' + profile.authProvider}">Auth: LOCAL</span>
+                        </div>
+
+                        <hr>
+
+                        <div class="text-start">
+                            <h6 class="text-muted text-uppercase fs-7 mb-2">Assigned Roles</h6>
+                            <div>
+                                <span th:each="r : ${profile.roles}" class="badge bg-light text-dark border me-1 mb-1" th:text="${r}">ROLE_USER</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Update Info & Change Password Tabs -->
+                <div class="col-md-8">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-white border-bottom">
+                            <ul class="nav nav-tabs card-header-tabs" id="profileTabs" role="tablist">
+                                <li class="nav-item">
+                                    <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#detailsTab" type="button">
+                                        <i class="bi bi-person me-1"></i> Personal Info
+                                    </button>
+                                </li>
+                                <li class="nav-item">
+                                    <button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#securityTab" type="button">
+                                        <i class="bi bi-shield-lock me-1"></i> Security & Password
+                                    </button>
+                                </li>
+                                <li class="nav-item">
+                                    <button class="nav-link" id="permissions-tab" data-bs-toggle="tab" data-bs-target="#permissionsTab" type="button">
+                                        <i class="bi bi-key me-1"></i> Granted Authorities
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="card-body tab-content p-4">
+                            <!-- Personal Info Tab -->
+                            <div class="tab-pane fade show active" id="detailsTab">
+                                <form th:action="@{/profile/update}" method="post">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label font-weight-bold">Username</label>
+                                            <input type="text" class="form-control" th:value="${profile.username}" disabled readonly>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label font-weight-bold">Email Address</label>
+                                            <input type="email" name="email" class="form-control" th:value="${profile.email}" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">First Name</label>
+                                            <input type="text" name="firstName" class="form-control" th:value="${profile.firstName}">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Last Name</label>
+                                            <input type="text" name="lastName" class="form-control" th:value="${profile.lastName}">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Phone Number</label>
+                                            <input type="text" name="phoneNumber" class="form-control" th:value="${profile.phoneNumber}">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Avatar URL</label>
+                                            <input type="url" name="avatarUrl" class="form-control" th:value="${profile.avatarUrl}" placeholder="https://example.com/avatar.jpg">
+                                        </div>
+                                    </div>
+                                    <div class="mt-4 text-end">
+                                        <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i> Save Profile</button>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <!-- Security Tab -->
+                            <div class="tab-pane fade" id="securityTab">
+                                <form th:action="@{/profile/password}" method="post">
+                                    <div class="row g-3">
+                                        <div class="col-md-12">
+                                            <label class="form-label">Current Password</label>
+                                            <input type="password" name="currentPassword" class="form-control" required placeholder="Enter current password">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">New Password</label>
+                                            <input type="password" name="newPassword" class="form-control" required placeholder="New password (min 6 chars)">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Confirm New Password</label>
+                                            <input type="password" name="confirmPassword" class="form-control" required placeholder="Confirm new password">
+                                        </div>
+                                    </div>
+                                    <div class="mt-4 text-end">
+                                        <button type="submit" class="btn btn-warning"><i class="bi bi-key me-1"></i> Update Password</button>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <!-- Permissions Tab -->
+                            <div class="tab-pane fade" id="permissionsTab">
+                                <h6>Effective Authority Matrix</h6>
+                                <p class="text-muted small">Permissions computed dynamically based on your assigned roles and tenant subscription tier.</p>
+                                <div class="d-flex flex-wrap gap-2 mt-3">
+                                    <span th:each="p : ${profile.permissions}" class="badge bg-light text-dark border p-2">
+                                        <i class="bi bi-shield-check text-success me-1"></i><span th:text="${p}">PERMISSION</span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <div th:replace="~{fragments/footer :: footer}"></div>
+    </div>
+</div>
+
+<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/sidebar.js}"></script>
+</body>
+</html>

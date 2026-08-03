@@ -27,6 +27,26 @@ public class User extends BaseEntity {
 
     private String lastName;
 
+    @Column(name = "phone_number")
+    private String phoneNumber;
+
+    @Column(name = "avatar_url", length = 500)
+    private String avatarUrl;
+
+    private String department;
+
+    @Column(name = "job_title")
+    private String jobTitle;
+
+    @Column(name = "time_zone")
+    private String timeZone = "Africa/Johannesburg";
+
+    @Column(name = "auth_provider", nullable = false)
+    private String authProvider = "LOCAL";
+
+    @Column(name = "provider_id")
+    private String providerId;
+
     private boolean active = true;
 
     private boolean isGlobalAdmin = false;
@@ -34,13 +54,25 @@ public class User extends BaseEntity {
     @Column(name = "password_change_required", nullable = false)
     private boolean passwordChangeRequired = false;
 
+    @Column(name = "mfa_enforced", nullable = false)
+    private boolean mfaEnforced = false;
+
+    @Column(name = "sso_enforced", nullable = false)
+    private boolean ssoEnforced = false;
+
+    @Column(name = "api_access_allowed", nullable = false)
+    private boolean apiAccessAllowed = true;
+
+    @Column(name = "audit_extended", nullable = false)
+    private boolean auditExtended = false;
+
     @Column(name = "password_reset_token", length = 100)
     private String passwordResetToken;
 
     @Column(name = "password_reset_token_expiry")
     private LocalDateTime passwordResetTokenExpiry;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "tenant_id")
     private Tenant tenant;
 
@@ -59,6 +91,10 @@ public class User extends BaseEntity {
 
     public Long getId() {
         return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public String getUsername() {
@@ -101,6 +137,30 @@ public class User extends BaseEntity {
         this.lastName = lastName;
     }
 
+    public String getDepartment() {
+        return department;
+    }
+
+    public void setDepartment(String department) {
+        this.department = department;
+    }
+
+    public String getJobTitle() {
+        return jobTitle;
+    }
+
+    public void setJobTitle(String jobTitle) {
+        this.jobTitle = jobTitle;
+    }
+
+    public String getTimeZone() {
+        return timeZone;
+    }
+
+    public void setTimeZone(String timeZone) {
+        this.timeZone = timeZone;
+    }
+
     public boolean isActive() {
         return active;
     }
@@ -123,6 +183,38 @@ public class User extends BaseEntity {
 
     public void setPasswordChangeRequired(boolean passwordChangeRequired) {
         this.passwordChangeRequired = passwordChangeRequired;
+    }
+
+    public boolean isMfaEnforced() {
+        return mfaEnforced;
+    }
+
+    public void setMfaEnforced(boolean mfaEnforced) {
+        this.mfaEnforced = mfaEnforced;
+    }
+
+    public boolean isSsoEnforced() {
+        return ssoEnforced;
+    }
+
+    public void setSsoEnforced(boolean ssoEnforced) {
+        this.ssoEnforced = ssoEnforced;
+    }
+
+    public boolean isApiAccessAllowed() {
+        return apiAccessAllowed;
+    }
+
+    public void setApiAccessAllowed(boolean apiAccessAllowed) {
+        this.apiAccessAllowed = apiAccessAllowed;
+    }
+
+    public boolean isAuditExtended() {
+        return auditExtended;
+    }
+
+    public void setAuditExtended(boolean auditExtended) {
+        this.auditExtended = auditExtended;
     }
 
     public String getPasswordResetToken() {
@@ -155,5 +247,37 @@ public class User extends BaseEntity {
 
     public void setRoles(Set<Role> roles) {
         this.roles = roles != null ? new HashSet<>(roles) : new HashSet<>();
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
+    public String getAvatarUrl() {
+        return avatarUrl;
+    }
+
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
+    }
+
+    public String getAuthProvider() {
+        return authProvider;
+    }
+
+    public void setAuthProvider(String authProvider) {
+        this.authProvider = authProvider;
+    }
+
+    public String getProviderId() {
+        return providerId;
+    }
+
+    public void setProviderId(String providerId) {
+        this.providerId = providerId;
     }
 }

@@ -11,6 +11,7 @@ import com.mbhoni_creative.adminentity.InvoiceStatus;
 
 public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
     List<Invoice> findByTenantOrderByIssueDateDesc(Tenant tenant);
+    List<Invoice> findByTenantId(Long tenantId);
     boolean existsByInvoiceNumber(String invoiceNumber);
     
     List<Invoice> findByStatusInAndDueDateBefore(

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Assign Roles')}"></head>
+
+<body>
+<div class="admin-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <main class="admin-content">
+            <section class="page-heading">
+                <div>
+                    <p class="eyebrow">User Management</p>
+                    <h2>Assign Roles</h2>
+                    <p class="text-muted mb-0">Choose the roles this user should have.</p>
+                </div>
+
+                <a th:href="@{/users}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i>
+                    Back
+                </a>
+            </section>
+
+            <section class="form-panel">
+                <form th:action="@{/users/roles/update}" method="post">
+                    <input type="hidden" name="id" th:value="${userId}">
+
+                    <div class="module-grid">
+                        <label class="module-card" th:each="role : ${roles}">
+                            <input type="checkbox"
+                                   name="roleIds"
+                                   th:value="${role.roleId}"
+                                   th:checked="${role.assigned}">
+
+                            <span class="module-icon">
+                                <i class="bi bi-shield-check"></i>
+                            </span>
+
+                            <span>
+                                <strong th:text="${role.name}">Role</strong>
+                                <small>Role</small>
+                                <p th:text="${role.description != null and !#strings.isEmpty(role.description) ? role.description : 'No description'}">
+                                    Description
+                                </p>
+
+                                <em th:if="${role.assigned}" class="status-pill active">Assigned</em>
+                                <em th:unless="${role.assigned}" class="status-pill inactive">Not assigned</em>
+                            </span>
+                        </label>
+                    </div>
+
+                    <div class="empty-state" th:if="${roles == null or #lists.isEmpty(roles)}">
+                        <i class="bi bi-shield-lock"></i>
+                        <strong>No roles available</strong>
+                        <span>Create tenant roles first, then assign them to users.</span>
+                    </div>
+
+                    <div class="form-actions">
+                        <a th:href="@{/users}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check2"></i>
+                            Save Roles
+                        </button>
+                    </div>
+                </form>
+            </section>
+        </main>
+
+        <div th:replace="~{fragments/footer :: footer}"></div>
+    </div>
+</div>
+
+<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/sidebar.js}"></script>
+</body>
+</html>

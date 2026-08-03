@@ -33,7 +33,7 @@ public class ApiKeyController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAuthority('API_KEY_VIEW') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN')")
+    @PreAuthorize("@tenantEntitlementService.isFeatureEnabled('API_ACCESS') and (hasAuthority('API_KEY_VIEW') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN'))")
     public String listApiKeys(
             @RequestParam(required = false) String q,
             @RequestParam(required = false) String status,
@@ -65,7 +65,7 @@ public class ApiKeyController {
     }
 
     @GetMapping("/create")
-    @PreAuthorize("hasAuthority('API_KEY_CREATE') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN')")
+    @PreAuthorize("@tenantEntitlementService.isFeatureEnabled('API_ACCESS') and (hasAuthority('API_KEY_CREATE') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN'))")
     public String createApiKeyForm(Model model) {
         model.addAttribute("apiKey", apiKeyService.prepareCreate());
         model.addAttribute("permissions", apiKeyService.getAllPermissions());
@@ -79,7 +79,7 @@ public class ApiKeyController {
     }
 
     @PostMapping("/create")
-    @PreAuthorize("hasAuthority('API_KEY_CREATE') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN')")
+    @PreAuthorize("@tenantEntitlementService.isFeatureEnabled('API_ACCESS') and (hasAuthority('API_KEY_CREATE') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN'))")
     public String createApiKey(
             @ModelAttribute("apiKey") ApiKeyDto apiKeyDto,
             RedirectAttributes redirectAttributes) {
@@ -90,7 +90,7 @@ public class ApiKeyController {
     }
 
     @PostMapping("/revoke")
-    @PreAuthorize("hasAuthority('API_KEY_DELETE') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN')")
+    @PreAuthorize("@tenantEntitlementService.isFeatureEnabled('API_ACCESS') and (hasAuthority('API_KEY_DELETE') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN'))")
     public String revokeApiKey(
             @RequestParam Long id,
             RedirectAttributes redirectAttributes) {

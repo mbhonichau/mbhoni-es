@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Create User')}"></head>
+
+<body>
+<div class="admin-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <main class="admin-content">
+            <section class="page-heading">
+                <div>
+                    <p class="eyebrow">User Management</p>
+                    <h2>Create Account</h2>
+                    <p class="text-muted mb-0">Create an enterprise user account and assign security roles.</p>
+                </div>
+
+                <a th:href="@{/users}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back
+                </a>
+            </section>
+
+            <form th:action="@{/users/create}" th:object="${user}" method="post">
+                <section class="form-panel mb-4">
+                    <h6 class="fw-bold mb-3"><i class="bi bi-person text-primary me-1"></i> Identity Credentials</h6>
+                    <div class="form-grid mb-3">
+                        <div>
+                            <label class="form-label">Username</label>
+                            <input type="text" th:field="*{username}" class="form-control" placeholder="e.g. jsmith" required>
+                        </div>
+
+                        <div>
+                            <label class="form-label">Email Address</label>
+                            <input type="email" th:field="*{email}" class="form-control" placeholder="jsmith@enterprise.com" required>
+                        </div>
+
+                        <div>
+                            <label class="form-label">Department / Division</label>
+                            <input type="text" th:field="*{department}" class="form-control" placeholder="e.g. Engineering, Finance">
+                        </div>
+
+                        <div>
+                            <label class="form-label">Job Title</label>
+                            <input type="text" th:field="*{jobTitle}" class="form-control" placeholder="e.g. System Specialist">
+                        </div>
+
+                        <div>
+                            <label class="form-label">Password</label>
+                            <div class="input-group">
+                                <input type="password" th:field="*{password}" class="form-control" id="passwordField" minlength="6">
+                                <button type="button" class="btn btn-outline-secondary" onclick="generatePassword()">
+                                    <i class="bi bi-magic text-warning me-1"></i> Auto Generate
+                                </button>
+                            </div>
+                            <small class="text-muted">Leave blank to email a password setup link.</small>
+                        </div>
+
+                        <div th:if="${globalAdmin}">
+                            <label class="form-label">Tenant Workspace</label>
+                            <select th:field="*{tenantId}" class="form-select" id="tenantSelect">
+                                <option value="">Global user</option>
+                                <option th:each="tenant : ${tenants}"
+                                        th:value="${tenant.id}"
+                                        th:text="${tenant.name}">
+                                    Tenant
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Creative Security Roles Selection Matrix -->
+                <section class="form-panel mb-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div>
+                            <h6 class="fw-bold mb-0"><i class="bi bi-shield-check text-success me-1"></i> Security Role Entitlements</h6>
+                            <p class="text-muted small mb-0">Select one or more security roles to assign user permissions.</p>
+                        </div>
+                        <span class="badge bg-secondary" id="rolesCountBadge" th:text="${availableRoles != null ? availableRoles.size() : 0} + ' Available Roles'">0 Roles</span>
+                    </div>
+
+                    <div class="module-hub-grid" th:if="${availableRoles != null and !#lists.isEmpty(availableRoles)}">
+                        <div class="module-card-v2"
+                             th:each="role : ${availableRoles}"
+                             th:attr="data-role-tenant-id=${role.tenant != null ? role.tenant.id : ''}">
+                            <div>
+                                <div class="module-card-header">
+                                    <div class="module-icon-box" th:classappend="${role.systemRole ? '' : 'green'}">
+                                        <i th:class="${role.systemRole ? 'bi bi-shield-lock-fill' : 'bi bi-person-gear'}"></i>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input"
+                                               type="checkbox"
+                                               name="roleIds"
+                                               th:value="${role.id}">
+                                    </div>
+                                </div>
+
+                                <div class="module-card-body">
+                                    <h6 th:text="${role.name}">ROLE_NAME</h6>
+                                    <span class="badge bg-secondary mb-2" th:text="${role.tenant != null ? role.tenant.name : 'Global System Role'}">Scope</span>
+                                    <p th:text="${role.description != null and !#strings.isEmpty(role.description) ? role.description : 'Standard security role entitlements.'}">
+                                        Description
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="module-card-footer">
+                                <div>
+                                    <span th:if="${role.systemRole}" class="badge bg-success">System Level</span>
+                                    <span th:unless="${role.systemRole}" class="badge bg-info">Custom Role</span>
+                                </div>
+
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-secondary"
+                                        data-bs-toggle="modal"
+                                        th:attr="data-bs-target='#rolePermModal-' + ${role.id}">
+                                    <i class="bi bi-shield-lock text-primary me-1"></i> View Matrix
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="empty-state py-4" th:if="${availableRoles == null or #lists.isEmpty(availableRoles)}">
+                        <i class="bi bi-shield-lock fs-1 text-muted"></i>
+                        <strong class="d-block mt-2">No roles available</strong>
+                        <span class="text-muted small">Create roles in Access Control first before assigning to users.</span>
+                    </div>
+                </section>
+
+                <div class="form-actions">
+                    <a th:href="@{/users}" class="btn btn-outline-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-person-plus me-1"></i> Create User Account
+                    </button>
+                </div>
+            </form>
+
+            <!-- Top-Level Modals for Role Permission Previews -->
+            <div th:if="${availableRoles != null}">
+                <div class="modal fade" th:each="role : ${availableRoles}" th:id="'rolePermModal-' + ${role.id}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title d-flex align-items-center gap-2">
+                                    <i class="bi bi-shield-check text-success"></i>
+                                    <span th:text="${role.name} + ' - Permission Matrix'">Role Permissions</span>
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body text-start">
+                                <p class="text-muted small mb-3" th:text="${role.description != null and !#strings.isEmpty(role.description) ? role.description : 'Permissions granted to users assigned this role:'}"></p>
+                                
+                                <div class="category-summary-list" th:if="${role.permissions != null and !#lists.isEmpty(role.permissions)}">
+                                    <span th:each="perm : ${role.permissions}" class="category-badge py-2 px-3 m-1">
+                                        <i class="bi bi-check-circle-fill text-success me-1"></i>
+                                        <strong th:text="${perm.name != null ? perm.name : perm}">PERM</strong>
+                                    </span>
+                                </div>
+                                <div th:unless="${role.permissions != null and !#lists.isEmpty(role.permissions)}" class="text-center py-4 text-muted">
+                                    No explicit permissions assigned to this role.
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <div th:replace="~{fragments/footer :: footer}"></div>
+    </div>
+</div>
+
+<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/sidebar.js}"></script>
+<script>
+function generatePassword() {
+    fetch('/users/generate-password')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('passwordField').value = data.password;
+        })
+        .catch(error => {
+            console.error('Error generating password:', error);
+            alert('Failed to generate password. Please try again.');
+        });
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    const tenantSelect = document.getElementById('tenantSelect');
+    if (!tenantSelect) return;
+
+    function filterRolesByTenant() {
+        const selectedTenantId = tenantSelect.value;
+        const roleCards = document.querySelectorAll('.module-card-v2[data-role-tenant-id]');
+        let visibleCount = 0;
+
+        roleCards.forEach(card => {
+            const cardTenantId = card.getAttribute('data-role-tenant-id');
+            
+            if (selectedTenantId === '') {
+                if (cardTenantId === '') {
+                    card.style.display = 'flex';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                    const checkbox = card.querySelector('input[type="checkbox"]');
+                    if (checkbox) checkbox.checked = false;
+                }
+            } else {
+                if (cardTenantId === '' || cardTenantId === selectedTenantId) {
+                    card.style.display = 'flex';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                    const checkbox = card.querySelector('input[type="checkbox"]');
+                    if (checkbox) checkbox.checked = false;
+                }
+            }
+        });
+
+        const countBadge = document.getElementById('rolesCountBadge');
+        if (countBadge) {
+            countBadge.textContent = visibleCount + ' Applicable Roles';
+        }
+    }
+
+    tenantSelect.addEventListener('change', filterRolesByTenant);
+    filterRolesByTenant();
+});
+</script>
+</body>
+</html>

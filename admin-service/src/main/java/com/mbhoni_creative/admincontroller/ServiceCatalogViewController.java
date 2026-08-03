@@ -19,7 +19,7 @@ public class ServiceCatalogViewController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAuthority('SERVICE_VIEW') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN') or hasAuthority('TENANT_VIEW')")
+    @PreAuthorize("@tenantEntitlementService.isModuleEnabled('SERVICE') and (hasAuthority('SERVICE_VIEW') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN') or hasAuthority('TENANT_VIEW'))")
     public String index(Model model) {
         model.addAttribute("services", serviceCatalogService.getAllServices());
         model.addAttribute("newService", new ServiceCatalog());
@@ -28,14 +28,14 @@ public class ServiceCatalogViewController {
     }
 
     @PostMapping("/save")
-    @PreAuthorize("hasAuthority('SERVICE_EDIT') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN') or hasAuthority('TENANT_VIEW')")
+    @PreAuthorize("@tenantEntitlementService.isModuleEnabled('SERVICE') and (hasAuthority('SERVICE_EDIT') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN') or hasAuthority('TENANT_VIEW'))")
     public String saveService(@ModelAttribute ServiceCatalog serviceCatalog) {
         serviceCatalogService.saveService(serviceCatalog);
         return "redirect:/services";
     }
 
     @PostMapping("/slas/save")
-    @PreAuthorize("hasAuthority('SERVICE_EDIT') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN') or hasAuthority('TENANT_VIEW')")
+    @PreAuthorize("@tenantEntitlementService.isModuleEnabled('SERVICE') and (hasAuthority('SERVICE_EDIT') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN') or hasAuthority('TENANT_VIEW'))")
     public String saveSla(@RequestParam Long serviceId, @ModelAttribute ServiceSla sla) {
         serviceCatalogService.addSla(serviceId, sla);
         return "redirect:/services";

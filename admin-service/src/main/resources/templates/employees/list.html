@@ -13,11 +13,11 @@
         <main class="admin-content">
             <section class="page-heading d-flex justify-content-between align-items-center">
                 <div>
-                    <p class="eyebrow">Enterprise Governance</p>
-                    <h2>Employee Management (HCM)</h2>
+                    <p class="eyebrow">Human Capital Management</p>
+                    <h2>Employee Directory & HCM</h2>
                     <p class="text-muted mb-0">Manage personnel records, job titles, department assignments, and employment status.</p>
                 </div>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newEmployeeModal">
+                <button sec:authorize="hasAuthority('EMPLOYEE_EDIT') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN')" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newEmployeeModal">
                     <i class="bi bi-plus-lg me-1"></i> New Employee
                 </button>
             </section>
@@ -34,6 +34,7 @@
                             <th>Organization Unit</th>
                             <th>Type</th>
                             <th>Status</th>
+                            <th sec:authorize="hasAuthority('EMPLOYEE_EDIT') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN')" class="text-end">Actions</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -45,12 +46,28 @@
                             <td th:text="${e.organizationUnit != null ? e.organizationUnit.name : '-'}">Engineering</td>
                             <td><span class="badge bg-info" th:text="${e.employmentType}">FULL_TIME</span></td>
                             <td>
-                                <span th:classappend="${e.status.name() == 'ACTIVE'} ? 'bg-success' : 'bg-secondary'"
+                                <span th:classappend="${e.status != null and e.status.name() == 'ACTIVE'} ? 'bg-success' : 'bg-secondary'"
                                       class="badge" th:text="${e.status}">ACTIVE</span>
+                            </td>
+                            <td sec:authorize="hasAuthority('EMPLOYEE_EDIT') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN')" class="text-end">
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        Status
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li th:each="st : ${statuses}">
+                                            <form th:action="@{/employees/status}" method="post" class="d-inline">
+                                                <input type="hidden" name="id" th:value="${e.id}"/>
+                                                <input type="hidden" name="status" th:value="${st}"/>
+                                                <button type="submit" class="dropdown-item" th:text="${#strings.capitalize(#strings.toLowerCase(st))}"></button>
+                                            </form>
+                                        </li>
+                                    </ul>
+                                </div>
                             </td>
                         </tr>
                         <tr th:if="${employees == null or employees.isEmpty()}">
-                            <td colspan="7" class="text-center text-muted py-4">No employees registered. Click 'New Employee' to add.</td>
+                            <td colspan="8" class="text-center text-muted py-4">No employees registered. Click 'New Employee' to add.</td>
                         </tr>
                         </tbody>
                     </table>
@@ -71,7 +88,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body row g-3">
-                <div class="col-md-6">
+                <div class="col-md-6" th:if="${tenants != null and !tenants.isEmpty()}">
                     <label class="form-label">Tenant</label>
                     <select name="tenantId" class="form-select" required>
                         <option th:each="t : ${tenants}" th:value="${t.id}" th:text="${t.name}">Tenant</option>
@@ -96,6 +113,20 @@
                 <div class="col-md-6">
                     <label class="form-label">Job Title</label>
                     <input type="text" name="jobTitle" class="form-control" placeholder="e.g. Principal Architect">
+                </div>
+                <div class="col-md-6" th:if="${orgUnits != null}">
+                    <label class="form-label">Organization Unit</label>
+                    <select name="orgUnitId" class="form-select">
+                        <option value="">-- Select Unit (Optional) --</option>
+                        <option th:each="ou : ${orgUnits}" th:value="${ou.id}" th:text="${ou.name}"></option>
+                    </select>
+                </div>
+                <div class="col-md-6" th:if="${managers != null}">
+                    <label class="form-label">Manager</label>
+                    <select name="managerId" class="form-select">
+                        <option value="">-- Select Manager (Optional) --</option>
+                        <option th:each="m : ${managers}" th:value="${m.id}" th:text="${m.firstName + ' ' + m.lastName}"></option>
+                    </select>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Employment Type</label>

@@ -11,6 +11,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.mbhoni_creative.adminservice.ModuleService;
 import com.mbhoni_creative.adminservice.TenantService;
 
+import com.mbhoni_creative.adminentity.PlatformModule;
+
 @Controller
 @RequestMapping("/modules")
 public class ModuleController {
@@ -33,6 +35,22 @@ public class ModuleController {
         model.addAttribute("tenants", tenantService.getAllTenants());
 
         return "modules/index";
+    }
+
+    @PostMapping("/create")
+    @PreAuthorize("hasAuthority('MODULE_EDIT')")
+    public String createModule(
+            @ModelAttribute PlatformModule module,
+            RedirectAttributes redirectAttributes) {
+
+        try {
+            moduleService.createModule(module);
+            redirectAttributes.addFlashAttribute("successMessage", "Platform module '" + module.getName() + "' created successfully.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+
+        return "redirect:/modules";
     }
 
     @PostMapping("/tenant")

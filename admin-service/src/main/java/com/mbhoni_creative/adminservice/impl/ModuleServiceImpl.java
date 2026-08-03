@@ -187,4 +187,26 @@ public class ModuleServiceImpl implements ModuleService {
                 module.getCode()
         );
     }
+
+    @Override
+    @Transactional
+    public PlatformModule createModule(PlatformModule module) {
+
+        if (module == null || module.getCode() == null || module.getCode().isBlank()) {
+            throw new IllegalArgumentException("Module code is required");
+        }
+
+        String normalizedCode = module.getCode().trim().toUpperCase();
+
+        if (platformModuleRepository.findByCode(normalizedCode).isPresent()) {
+            throw new IllegalArgumentException("A platform module with code '" + normalizedCode + "' already exists.");
+        }
+
+        module.setCode(normalizedCode);
+        if (module.getCategory() == null || module.getCategory().isBlank()) {
+            module.setCategory("Core");
+        }
+
+        return platformModuleRepository.save(module);
+    }
 }

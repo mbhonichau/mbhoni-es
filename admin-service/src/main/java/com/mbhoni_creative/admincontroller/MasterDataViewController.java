@@ -24,7 +24,7 @@ public class MasterDataViewController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAuthority('MASTER_DATA_VIEW') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN') or hasAuthority('TENANT_VIEW')")
+    @PreAuthorize("@tenantEntitlementService.isModuleEnabled('MASTER_DATA') and (hasAuthority('MASTER_DATA_VIEW') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN') or hasAuthority('TENANT_VIEW'))")
     public String index(@RequestParam(required = false) Long categoryId, Model model) {
         Long tenantId = tenantSecurityService.getCurrentTenantId();
         var categories = masterDataService.getAllCategories(tenantId);
@@ -44,7 +44,7 @@ public class MasterDataViewController {
     }
 
     @PostMapping("/categories/save")
-    @PreAuthorize("hasAuthority('MASTER_DATA_EDIT') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN') or hasAuthority('TENANT_VIEW')")
+    @PreAuthorize("@tenantEntitlementService.isModuleEnabled('MASTER_DATA') and (hasAuthority('MASTER_DATA_EDIT') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN') or hasAuthority('TENANT_VIEW'))")
     public String saveCategory(@ModelAttribute LookupCategory category) {
         Long tenantId = tenantSecurityService.getCurrentTenantId();
         masterDataService.createCategory(category, tenantId);
@@ -52,7 +52,7 @@ public class MasterDataViewController {
     }
 
     @PostMapping("/codes/save")
-    @PreAuthorize("hasAuthority('MASTER_DATA_EDIT') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN') or hasAuthority('TENANT_VIEW')")
+    @PreAuthorize("@tenantEntitlementService.isModuleEnabled('MASTER_DATA') and (hasAuthority('MASTER_DATA_EDIT') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN') or hasAuthority('TENANT_VIEW'))")
     public String saveCode(@RequestParam Long categoryId, @ModelAttribute LookupCode code) {
         masterDataService.saveLookupCode(categoryId, code);
         return "redirect:/master-data?categoryId=" + categoryId;

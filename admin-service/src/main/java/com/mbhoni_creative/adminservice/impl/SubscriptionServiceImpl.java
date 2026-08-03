@@ -24,17 +24,20 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private final TenantSubscriptionRepository subscriptionRepository;
     private final TenantRepository tenantRepository;
     private final NotificationService notificationService;
+    private final com.mbhoni_creative.config.TenantSecurityService tenantSecurityService;
 
     public SubscriptionServiceImpl(
             SubscriptionPlanRepository planRepository,
             TenantSubscriptionRepository subscriptionRepository,
             TenantRepository tenantRepository,
-            NotificationService notificationService) {
+            NotificationService notificationService,
+            com.mbhoni_creative.config.TenantSecurityService tenantSecurityService) {
 
         this.planRepository = planRepository;
         this.subscriptionRepository = subscriptionRepository;
         this.tenantRepository = tenantRepository;
         this.notificationService = notificationService;
+        this.tenantSecurityService = tenantSecurityService;
     }
 
     @Override
@@ -100,7 +103,16 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     @Override
     public List<TenantSubscription> getAllTenantSubscriptions() {
-        return subscriptionRepository.findAll();
+        if (tenantSecurityService.isGlobalAdmin()) {
+            return subscriptionRepository.findAll();
+        }
+        Long tenantId = tenantSecurityService.getCurrentTenantId();
+        if (tenantId == null) {
+            return List.of();
+        }
+        return subscriptionRepository.findByTenantId(tenantId)
+                .map(List::of)
+                .orElseGet(List::of);
     }
 
     @Override

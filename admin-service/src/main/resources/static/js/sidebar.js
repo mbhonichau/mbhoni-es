@@ -1,6 +1,16 @@
 document.addEventListener("DOMContentLoaded", function () {
     const sidebar = document.querySelector(".admin-sidebar");
     const mobileToggle = document.getElementById("mobileSidebarToggle");
+    const sectionToggles = document.querySelectorAll(".nav-section-toggle");
+
+    sectionToggles.forEach(function (toggle) {
+        toggle.addEventListener("click", function () {
+            const section = toggle.closest(".nav-section");
+            const isOpen = section.classList.toggle("open");
+
+            toggle.setAttribute("aria-expanded", String(isOpen));
+        });
+    });
 
     if (mobileToggle && sidebar) {
         mobileToggle.addEventListener("click", function () {

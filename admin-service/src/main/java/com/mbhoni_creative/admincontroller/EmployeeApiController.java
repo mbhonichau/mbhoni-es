@@ -20,19 +20,19 @@ public class EmployeeApiController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAuthority('EMPLOYEE_VIEW') or hasAuthority('API_KEY')")
+    @PreAuthorize("@tenantEntitlementService.isModuleEnabled('EMPLOYEE') and (hasAuthority('EMPLOYEE_VIEW') or hasAuthority('API_KEY'))")
     public ResponseEntity<List<Employee>> getEmployees(@RequestParam(required = false) Long tenantId) {
         return ResponseEntity.ok(employeeService.getEmployeesByTenant(tenantId));
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('EMPLOYEE_VIEW') or hasAuthority('API_KEY')")
+    @PreAuthorize("@tenantEntitlementService.isModuleEnabled('EMPLOYEE') and (hasAuthority('EMPLOYEE_VIEW') or hasAuthority('API_KEY'))")
     public ResponseEntity<Employee> getEmployee(@PathVariable Long id) {
         return ResponseEntity.ok(employeeService.getEmployeeById(id));
     }
 
     @PostMapping
-    @PreAuthorize("hasAuthority('EMPLOYEE_EDIT')")
+    @PreAuthorize("@tenantEntitlementService.isModuleEnabled('EMPLOYEE') and hasAuthority('EMPLOYEE_EDIT')")
     public ResponseEntity<Employee> createEmployee(
             @RequestParam Long tenantId,
             @RequestParam(required = false) Long orgUnitId,
@@ -42,7 +42,7 @@ public class EmployeeApiController {
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAuthority('EMPLOYEE_EDIT')")
+    @PreAuthorize("@tenantEntitlementService.isModuleEnabled('EMPLOYEE') and hasAuthority('EMPLOYEE_EDIT')")
     public ResponseEntity<Employee> updateStatus(@PathVariable Long id, @RequestParam EmployeeStatus status) {
         return ResponseEntity.ok(employeeService.updateEmployeeStatus(id, status));
     }

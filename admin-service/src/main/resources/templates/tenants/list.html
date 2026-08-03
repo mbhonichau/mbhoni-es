@@ -162,12 +162,16 @@
 
                                     <form th:action="@{/tenants/delete}"
                                           method="post"
-                                          class="d-inline"
+                                          class="d-inline delete-form"
+                                          data-confirm="true"
+                                          th:data-confirm-title="'Delete Tenant Workspace: ' + ${tenant.tenantName}"
+                                          data-confirm-message="Are you sure you want to delete this tenant workspace? This operation is permanent."
+                                          data-confirm-warning="Warning: Deleting this tenant will permanently purge all associated employees, users, contracts, billing accounts, invoices, and subscriptions."
+                                          data-confirm-btn="Delete Tenant Workspace"
                                           sec:authorize="hasAuthority('TENANT_DELETE')">
                                         <input type="hidden" name="id" th:value="${tenant.tenantId}">
                                         <button type="submit"
                                                 class="btn btn-sm btn-outline-danger"
-                                                onclick="return confirm('Delete this tenant?')"
                                                 title="Delete tenant">
                                             <i class="bi bi-trash"></i>
                                         </button>

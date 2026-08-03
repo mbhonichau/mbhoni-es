@@ -76,7 +76,7 @@
                             <th>Role</th>
                             <th>Tenant</th>
                             <th>Type</th>
-                            <th>Permissions</th>
+                            <th>Permissions Matrix</th>
                             <th class="text-end">Actions</th>
                         </tr>
                         </thead>
@@ -86,7 +86,7 @@
                             <td>
                                 <div class="entity-cell">
                                     <span class="avatar">
-                                        <i class="bi bi-shield-lock"></i>
+                                        <i class="bi bi-shield-lock text-primary"></i>
                                     </span>
                                     <div>
                                         <strong th:text="${role.name}">ROLE</strong>
@@ -108,18 +108,18 @@
                             </td>
 
                             <td>
-                                <span class="status-pill active" th:if="${role.systemRole}">System</span>
-                                <span class="status-pill inactive" th:unless="${role.systemRole}">Custom</span>
+                                <span class="badge bg-success" th:if="${role.systemRole}">System</span>
+                                <span class="badge bg-info" th:unless="${role.systemRole}">Custom</span>
                             </td>
 
                             <td>
-                                <div class="role-list">
-                                    <span th:each="permission : ${role.permissions}"
-                                          class="role-pill"
-                                          th:text="${permission}">
-                                        PERMISSION
-                                    </span>
-                                </div>
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1"
+                                        data-bs-toggle="modal"
+                                        th:attr="data-bs-target='#permModal-' + ${role.id}">
+                                    <i class="bi bi-shield-check text-success"></i>
+                                    <span th:text="${role.permissions != null ? role.permissions.size() : 0} + ' Permissions'">0 Permissions</span>
+                                </button>
                             </td>
 
                             <td class="text-end">
@@ -133,19 +133,23 @@
                                                 class="btn btn-sm btn-outline-secondary"
                                                 th:disabled="${role.systemRole}"
                                                 title="Edit role">
-                                            <i class="bi bi-pencil"></i>
+                                            <i class="bi bi-pencil text-primary"></i>
                                         </button>
                                     </form>
 
                                     <form th:action="@{/roles/delete}"
                                           method="post"
-                                          class="d-inline"
+                                          class="d-inline delete-form"
+                                          data-confirm="true"
+                                          th:data-confirm-title="'Delete Role: ' + ${role.name}"
+                                          data-confirm-message="Are you sure you want to delete this security role?"
+                                          data-confirm-warning="Warning: Deleting this role will unassign it from all assigned users."
+                                          data-confirm-btn="Delete Role"
                                           sec:authorize="hasAuthority('ROLE_DELETE')">
                                         <input type="hidden" name="id" th:value="${role.id}">
                                         <button type="submit"
                                                 class="btn btn-sm btn-outline-danger"
                                                 th:disabled="${role.systemRole}"
-                                                onclick="return confirm('Delete this role?')"
                                                 title="Delete role">
                                             <i class="bi bi-trash"></i>
                                         </button>
@@ -185,6 +189,39 @@
                    th:href="@{/roles(page=${page.number + 1}, size=${page.size}, q=${q}, type=${type})}">
                     Next
                 </a>
+            </div>
+
+            <!-- Top-Level Role Permission Modals Outside Table Structure -->
+            <div th:if="${roles != null}">
+                <div class="modal fade" th:each="role : ${roles}" th:id="'permModal-' + ${role.id}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title d-flex align-items-center gap-2">
+                                    <i class="bi bi-shield-lock text-primary"></i>
+                                    <span th:text="${role.name} + ' - Permission Matrix'">Role Permissions</span>
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body text-start">
+                                <p class="text-muted small mb-3" th:text="${role.description != null and !#strings.isEmpty(role.description) ? role.description : 'Assigned permission matrix.'}"></p>
+                                
+                                <div class="category-summary-list" th:if="${role.permissions != null and !#lists.isEmpty(role.permissions)}">
+                                    <span th:each="perm : ${role.permissions}" class="category-badge py-2 px-3 m-1">
+                                        <i class="bi bi-check-circle-fill text-success me-1"></i>
+                                        <strong th:text="${perm}">PERM</strong>
+                                    </span>
+                                </div>
+                                <div th:unless="${role.permissions != null and !#lists.isEmpty(role.permissions)}" class="text-center py-4 text-muted">
+                                    No permissions assigned to this role.
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
 

@@ -1,8 +1,9 @@
 <head xmlns:th="http://www.thymeleaf.org" th:fragment="head(title)">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title th:text="${title}">MBHONI Admin</title>
+    <title th:text="${title + ' - MBHONI Creative Enterprise'}">MBHONI Admin</title>
 
+    <link rel="icon" type="image/png" th:href="@{/images/logo.png}">
     <link rel="stylesheet" th:href="@{/vendor/bootstrap/css/bootstrap.min.css}">
     <link rel="stylesheet" th:href="@{/vendor/bootstrap-icons/bootstrap-icons.css}">
     <link rel="stylesheet" th:href="@{/css/admin.css}">
