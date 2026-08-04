@@ -204,7 +204,7 @@ public class ModuleServiceImpl implements ModuleService {
 
         module.setCode(normalizedCode);
         if (module.getCategory() == null || module.getCategory().isBlank()) {
-            module.setCategory("Core");
+            module.setCategory("Core HCM & Workforce");
         }
 
         return platformModuleRepository.save(module);
