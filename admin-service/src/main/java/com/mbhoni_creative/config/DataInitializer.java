@@ -174,22 +174,56 @@ public class DataInitializer implements CommandLineRunner {
         roleRepository.save(tenantAdminRole);
         roleRepository.save(userRole);
 
-        // Seed Platform Modules
-        PlatformModule employeeModule = getOrCreateModule("EMPLOYEE", "Employee Directory & HCM", "HCM & Payroll", "Personnel records, job titles, department assignments, and employment status.");
-        PlatformModule orgModule = getOrCreateModule("ORG", "Organization Units", "Business Modules", "Departments, divisions, cost centers, and hierarchy.");
-        PlatformModule contractModule = getOrCreateModule("CONTRACT", "Contract Management", "Business Modules", "Vendor, customer, and employment contract tracking.");
-        PlatformModule masterDataModule = getOrCreateModule("MASTER_DATA", "Master Data & Lookups", "System Setup", "System reference codes and lookup categories.");
-        PlatformModule serviceModule = getOrCreateModule("SERVICE", "Service Catalog", "Business Modules", "Service catalog and SLA management.");
+        // Seed Platform Modules with Standardized Domain Categories
+        PlatformModule employeeModule = getOrCreateModule("EMPLOYEE", "Employee Directory & HCM", "Core HCM & Workforce", "Personnel records, job titles, department assignments, and employment status.");
+        PlatformModule orgModule = getOrCreateModule("ORG", "Organization Units", "Organization & Governance", "Departments, divisions, cost centers, and structural hierarchy.");
+        PlatformModule contractModule = getOrCreateModule("CONTRACT", "Contract Management", "Contract & Commercial Ops", "Vendor, customer, and employment contract tracking.");
+        PlatformModule masterDataModule = getOrCreateModule("MASTER_DATA", "Master Data & Lookups", "Master Data & System Config", "System reference codes and lookup categories.");
+        PlatformModule serviceModule = getOrCreateModule("SERVICE", "Service Catalog", "Service Catalog & SLAs", "Service catalog, SLA targets, and support operational commitments.");
 
         List<PlatformModule> allModules = List.of(employeeModule, orgModule, contractModule, masterDataModule, serviceModule);
 
-        // Seed Default Subscription Plan
+        // Seed Tiered Subscription Plans
+        SubscriptionPlan starterPlan = subscriptionPlanRepository.findByCode("STARTER")
+                .orElseGet(() -> {
+                    SubscriptionPlan plan = new SubscriptionPlan();
+                    plan.setCode("STARTER");
+                    plan.setName("Starter Essentials Tier");
+                    plan.setDescription("Core operational capabilities for small teams with basic identity governance and standard storage quotas.");
+                    plan.setMonthlyPrice(new BigDecimal("49.00"));
+                    plan.setAnnualPrice(new BigDecimal("490.00"));
+                    plan.setMaxUsers(10);
+                    plan.setMaxStorageMb(5000);
+                    plan.setApiAccessEnabled(false);
+                    plan.setBrandingEnabled(false);
+                    plan.setCustomDomainEnabled(false);
+                    plan.setActive(true);
+                    return subscriptionPlanRepository.save(plan);
+                });
+
+        SubscriptionPlan proPlan = subscriptionPlanRepository.findByCode("PROFESSIONAL")
+                .orElseGet(() -> {
+                    SubscriptionPlan plan = new SubscriptionPlan();
+                    plan.setCode("PROFESSIONAL");
+                    plan.setName("Professional Business Tier");
+                    plan.setDescription("Expanded capacity for growing businesses with REST API gateway access, white-label UI branding, and custom roles.");
+                    plan.setMonthlyPrice(new BigDecimal("149.00"));
+                    plan.setAnnualPrice(new BigDecimal("1490.00"));
+                    plan.setMaxUsers(100);
+                    plan.setMaxStorageMb(20000);
+                    plan.setApiAccessEnabled(true);
+                    plan.setBrandingEnabled(true);
+                    plan.setCustomDomainEnabled(false);
+                    plan.setActive(true);
+                    return subscriptionPlanRepository.save(plan);
+                });
+
         SubscriptionPlan defaultPlan = subscriptionPlanRepository.findByCode("ENTERPRISE")
                 .orElseGet(() -> {
                     SubscriptionPlan plan = new SubscriptionPlan();
                     plan.setCode("ENTERPRISE");
-                    plan.setName("Enterprise Tier");
-                    plan.setDescription("Full featured enterprise platform suite");
+                    plan.setName("Enterprise Suite Tier");
+                    plan.setDescription("Unrestricted high-capacity enterprise architecture with dedicated API keys, custom domain mapping, white-labeling, and audit logging.");
                     plan.setMonthlyPrice(new BigDecimal("299.00"));
                     plan.setAnnualPrice(new BigDecimal("2990.00"));
                     plan.setMaxUsers(500);
@@ -201,7 +235,7 @@ public class DataInitializer implements CommandLineRunner {
                     return subscriptionPlanRepository.save(plan);
                 });
 
-        // Allow all modules for the default plan
+        // Allow all modules for Enterprise & Professional plans, core modules for Starter
         for (PlatformModule module : allModules) {
             subscriptionPlanModuleRepository.findByPlanAndModule(defaultPlan, module)
                     .orElseGet(() -> {
@@ -211,6 +245,26 @@ public class DataInitializer implements CommandLineRunner {
                         pm.setAllowed(true);
                         return subscriptionPlanModuleRepository.save(pm);
                     });
+
+            subscriptionPlanModuleRepository.findByPlanAndModule(proPlan, module)
+                    .orElseGet(() -> {
+                        SubscriptionPlanModule pm = new SubscriptionPlanModule();
+                        pm.setPlan(proPlan);
+                        pm.setModule(module);
+                        pm.setAllowed(true);
+                        return subscriptionPlanModuleRepository.save(pm);
+                    });
+
+            if ("EMPLOYEE".equals(module.getCode()) || "ORG".equals(module.getCode()) || "MASTER_DATA".equals(module.getCode())) {
+                subscriptionPlanModuleRepository.findByPlanAndModule(starterPlan, module)
+                        .orElseGet(() -> {
+                            SubscriptionPlanModule pm = new SubscriptionPlanModule();
+                            pm.setPlan(starterPlan);
+                            pm.setModule(module);
+                            pm.setAllowed(true);
+                            return subscriptionPlanModuleRepository.save(pm);
+                        });
+            }
         }
 
         // Seed Default Tenant
@@ -309,15 +363,16 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private PlatformModule getOrCreateModule(String code, String name, String category, String description) {
-        return platformModuleRepository.findByCode(code)
+        PlatformModule module = platformModuleRepository.findByCode(code)
                 .orElseGet(() -> {
-                    PlatformModule module = new PlatformModule();
-                    module.setCode(code);
-                    module.setName(name);
-                    module.setCategory(category);
-                    module.setDescription(description);
-                    module.setActive(true);
-                    return platformModuleRepository.save(module);
+                    PlatformModule m = new PlatformModule();
+                    m.setCode(code);
+                    return m;
                 });
+        module.setName(name);
+        module.setCategory(category);
+        module.setDescription(description);
+        module.setActive(true);
+        return platformModuleRepository.save(module);
     }
 }

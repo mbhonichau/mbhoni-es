@@ -110,40 +110,157 @@
                                 <button class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1"
                                         data-bs-toggle="modal"
                                         th:attr="data-bs-target='#planFeaturesModal-' + ${plan.id}">
-                                    <i class="bi bi-sliders text-primary"></i>
-                                    <span>Plan Features</span>
+                                    <i class="bi bi-shield-check text-primary"></i>
+                                    <span>View Entitlements Matrix</span>
                                 </button>
 
-                                <!-- Modal: Commercial Plan Feature Matrix -->
+                                <!-- Modal: Commercial Plan Enterprise Architectural Specifications -->
                                 <div class="modal fade" th:id="'planFeaturesModal-' + ${plan.id}" tabindex="-1" aria-hidden="true">
-                                    <div class="modal-dialog modal-dialog-centered">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title d-flex align-items-center gap-2">
-                                                    <i class="bi bi-credit-card text-primary"></i>
-                                                    <span th:text="${plan.name} + ' - Feature Matrix'">Plan Features</span>
-                                                </h5>
+                                    <div class="modal-dialog modal-lg modal-dialog-centered">
+                                        <div class="modal-content shadow-lg border-0">
+                                            <div class="modal-header border-bottom bg-light py-3">
+                                                <div>
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <span class="badge bg-primary text-uppercase px-2 py-1" th:text="${plan.code}">CODE</span>
+                                                        <h5 class="modal-title fw-bold text-dark mb-0" th:text="${plan.name} + ' - Enterprise Architecture &amp; Entitlement Matrix'">Plan Architecture</h5>
+                                                    </div>
+                                                    <small class="text-muted d-block mt-1" th:text="${plan.description != null ? plan.description : 'Commercial tier architectural specifications and tenant entitlements.'}">Description</small>
+                                                </div>
                                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                             </div>
-                                            <div class="modal-body text-start">
-                                                <p class="text-muted small mb-3">Entitlements and system capabilities enabled for this commercial plan tier:</p>
-                                                <div class="category-summary-list">
-                                                    <span class="category-badge py-2 px-3 m-1" th:if="${plan.apiAccessEnabled}">
-                                                        <i class="bi bi-check-circle-fill text-success me-1"></i> <strong>API Access</strong>
-                                                    </span>
-                                                    <span class="category-badge py-2 px-3 m-1" th:if="${plan.brandingEnabled}">
-                                                        <i class="bi bi-check-circle-fill text-success me-1"></i> <strong>Custom Branding</strong>
-                                                    </span>
-                                                    <span class="category-badge py-2 px-3 m-1" th:if="${plan.customDomainEnabled}">
-                                                        <i class="bi bi-check-circle-fill text-success me-1"></i> <strong>Custom Domain</strong>
-                                                    </span>
-                                                    <span class="category-badge py-2 px-3 m-1 text-muted" th:if="${!plan.apiAccessEnabled and !plan.brandingEnabled and !plan.customDomainEnabled}">
-                                                        <i class="bi bi-info-circle me-1"></i> <strong>Basic Tier Standard Entitlements</strong>
-                                                    </span>
+                                            
+                                            <div class="modal-body p-4 text-start">
+                                                <!-- Baseline Capacity & Commercial Terms Summary -->
+                                                <div class="row g-3 mb-4">
+                                                    <div class="col-md-3">
+                                                        <div class="p-3 bg-light rounded border text-center">
+                                                            <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.7rem;">Commercial Pricing</small>
+                                                            <strong class="fs-5 text-dark" th:text="'R ' + ${plan.monthlyPrice}">R 0</strong>
+                                                            <small class="d-block text-muted" th:text="'R ' + ${plan.annualPrice} + ' / yr'">R 0 / yr</small>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <div class="p-3 bg-light rounded border text-center">
+                                                            <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.7rem;">Identity &amp; User Seats</small>
+                                                            <strong class="fs-5 text-primary" th:text="${plan.maxUsers != null ? plan.maxUsers + ' Seats' : 'Unlimited Seats'}">500 Seats</strong>
+                                                            <small class="d-block text-success">RBAC Enforced</small>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <div class="p-3 bg-light rounded border text-center">
+                                                            <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.7rem;">Storage Allocation</small>
+                                                            <strong class="fs-5 text-dark" th:text="${plan.maxStorageMb != null ? (plan.maxStorageMb >= 1024 ? (plan.maxStorageMb / 1024) + ' GB' : plan.maxStorageMb + ' MB') : 'Unlimited'}">50 GB</strong>
+                                                            <small class="d-block text-muted">Dedicated Quota</small>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <div class="p-3 bg-light rounded border text-center">
+                                                            <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.7rem;">Tier Availability</small>
+                                                            <span th:if="${plan.active}" class="badge bg-success mt-1">Production Active</span>
+                                                            <span th:unless="${plan.active}" class="badge bg-secondary mt-1">Inactive / Legacy</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Architectural Pillar 1: Identity, Access & Governance -->
+                                                <div class="mb-3 p-3 rounded border bg-white shadow-sm">
+                                                    <div class="d-flex align-items-center gap-2 mb-2 text-dark border-bottom pb-2">
+                                                        <i class="bi bi-shield-lock-fill text-primary fs-5"></i>
+                                                        <strong class="text-uppercase small">1. Identity, Access &amp; Security Governance (IAM)</strong>
+                                                    </div>
+                                                    <div class="row g-2 small">
+                                                        <div class="col-md-6 d-flex align-items-center gap-2">
+                                                            <i class="bi bi-check-circle-fill text-success"></i>
+                                                            <span><strong>Role-Based Access Control (RBAC):</strong> Custom Roles &amp; Delegated Admin</span>
+                                                        </div>
+                                                        <div class="col-md-6 d-flex align-items-center gap-2">
+                                                            <i class="bi bi-check-circle-fill text-success"></i>
+                                                            <span><strong>Security Enforcement:</strong> Multi-Factor Auth (MFA) &amp; OAuth2 / SSO Support</span>
+                                                        </div>
+                                                        <div class="col-md-6 d-flex align-items-center gap-2">
+                                                            <i class="bi bi-check-circle-fill text-success"></i>
+                                                            <span><strong>Audit &amp; Compliance:</strong> Immutable Event Logs &amp; User Action Tracing</span>
+                                                        </div>
+                                                        <div class="col-md-6 d-flex align-items-center gap-2">
+                                                            <i class="bi bi-check-circle-fill text-success"></i>
+                                                            <span><strong>User Provisioning:</strong> <span th:text="${plan.maxUsers != null ? plan.maxUsers + ' User Limit Enforcement' : 'Unlimited User Seat Licensing'}">500 User Seats</span></span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Architectural Pillar 2: Integration & API Ecosystem -->
+                                                <div class="mb-3 p-3 rounded border bg-white shadow-sm">
+                                                    <div class="d-flex align-items-center gap-2 mb-2 text-dark border-bottom pb-2">
+                                                        <i class="bi bi-diagram-3-fill text-info fs-5"></i>
+                                                        <strong class="text-uppercase small">2. Integration, Extensibility &amp; API Ecosystem</strong>
+                                                    </div>
+                                                    <div class="row g-2 small">
+                                                        <div class="col-md-6 d-flex align-items-center gap-2">
+                                                            <i th:class="${plan.apiAccessEnabled ? 'bi bi-check-circle-fill text-success' : 'bi bi-x-circle-fill text-danger'}"></i>
+                                                            <span><strong>REST API Gateway:</strong> <span th:text="${plan.apiAccessEnabled ? 'Full Programmatic Access &amp; Webhooks' : 'Disabled for this tier'}">Full Access</span></span>
+                                                        </div>
+                                                        <div class="col-md-6 d-flex align-items-center gap-2">
+                                                            <i th:class="${plan.apiAccessEnabled ? 'bi bi-check-circle-fill text-success' : 'bi bi-x-circle-fill text-danger'}"></i>
+                                                            <span><strong>API Key Governance:</strong> Hashed Keys &amp; Scoped Permissions</span>
+                                                        </div>
+                                                        <div class="col-md-6 d-flex align-items-center gap-2">
+                                                            <i class="bi bi-check-circle-fill text-success"></i>
+                                                            <span><strong>Rate Limiting:</strong> 1,000 req/min burst capacity &amp; SLA Guarantee</span>
+                                                        </div>
+                                                        <div class="col-md-6 d-flex align-items-center gap-2">
+                                                            <i class="bi bi-check-circle-fill text-success"></i>
+                                                            <span><strong>OpenAPI Standard:</strong> Swagger Compliant Endpoint Contracts</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Architectural Pillar 3: Tenant Customization & Domain Isolation -->
+                                                <div class="mb-3 p-3 rounded border bg-white shadow-sm">
+                                                    <div class="d-flex align-items-center gap-2 mb-2 text-dark border-bottom pb-2">
+                                                        <i class="bi bi-palette-fill text-warning fs-5"></i>
+                                                        <strong class="text-uppercase small">3. Enterprise Branding &amp; Domain Routing Policy</strong>
+                                                    </div>
+                                                    <div class="row g-2 small">
+                                                        <div class="col-md-6 d-flex align-items-center gap-2">
+                                                            <i th:class="${plan.brandingEnabled ? 'bi bi-check-circle-fill text-success' : 'bi bi-x-circle-fill text-muted'}"></i>
+                                                            <span><strong>White-Label UI:</strong> <span th:text="${plan.brandingEnabled ? 'Custom Logo, Brand Colors &amp; Light/Dark Themes' : 'Standard Shared UI Styling'}">White-Labeling</span></span>
+                                                        </div>
+                                                        <div class="col-md-6 d-flex align-items-center gap-2">
+                                                            <i th:class="${plan.customDomainEnabled ? 'bi bi-check-circle-fill text-success' : 'bi bi-x-circle-fill text-muted'}"></i>
+                                                            <span><strong>Custom Domain Mapping:</strong> <span th:text="${plan.customDomainEnabled ? 'Supported (e.g. tenant.company.com)' : 'Subdomain Only (tenant.platform.com)'}">Custom Domain</span></span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Architectural Pillar 4: Unlocked Functional Modules -->
+                                                <div class="p-3 rounded border bg-white shadow-sm">
+                                                    <div class="d-flex align-items-center gap-2 mb-2 text-dark border-bottom pb-2">
+                                                        <i class="bi bi-boxes text-success fs-5"></i>
+                                                        <strong class="text-uppercase small">4. Unlocked Platform Functional Modules &amp; Services</strong>
+                                                    </div>
+                                                    <p class="text-muted extra-small mb-2" style="font-size: 0.75rem;">Functional capabilities accessible to tenant users under this commercial tier contract:</p>
+                                                    <div class="d-flex flex-wrap gap-2">
+                                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">
+                                                            <i class="bi bi-people-fill me-1"></i> HCM &amp; Employee Directory
+                                                        </span>
+                                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">
+                                                            <i class="bi bi-diagram-2-fill me-1"></i> Organization Units &amp; Hierarchy
+                                                        </span>
+                                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">
+                                                            <i class="bi bi-file-earmark-text-fill me-1"></i> Contract &amp; Vendor Management
+                                                        </span>
+                                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">
+                                                            <i class="bi bi-database-fill-gear me-1"></i> Master Data &amp; System Lookups
+                                                        </span>
+                                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">
+                                                            <i class="bi bi-gear-wide-connected me-1"></i> Service Catalog &amp; SLA Tracking
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                            
+                                            <div class="modal-footer border-top bg-light">
+                                                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Close Specification</button>
                                             </div>
                                         </div>
                                     </div>
