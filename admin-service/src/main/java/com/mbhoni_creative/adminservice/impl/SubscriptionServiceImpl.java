@@ -17,6 +17,9 @@ import com.mbhoni_creative.adminrepository.TenantSubscriptionRepository;
 import com.mbhoni_creative.adminservice.SubscriptionService;
 import com.mbhoni_creative.adminservice.NotificationService;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+
 @Service
 public class SubscriptionServiceImpl implements SubscriptionService {
 
@@ -25,6 +28,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private final TenantRepository tenantRepository;
     private final NotificationService notificationService;
     private final com.mbhoni_creative.config.TenantSecurityService tenantSecurityService;
+    @PersistenceContext
+    private EntityManager entityManager;
 
     public SubscriptionServiceImpl(
             SubscriptionPlanRepository planRepository,
@@ -99,6 +104,24 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         plan.setActive(false);
 
         planRepository.save(plan);
+    }
+
+    @Override
+    @Transactional
+    public void deletePlan(Long id) {
+
+        SubscriptionPlan plan = getPlanById(id);
+
+        // Delete plan-module mappings
+        entityManager.createNativeQuery("DELETE FROM subscription_plan_modules WHERE plan_id = :id")
+                .setParameter("id", id).executeUpdate();
+
+        // Delete tenant subscription references to this plan
+        entityManager.createNativeQuery("DELETE FROM tenant_subscriptions WHERE plan_id = :id")
+                .setParameter("id", id).executeUpdate();
+
+        // Delete plan
+        planRepository.delete(plan);
     }
 
     @Override
