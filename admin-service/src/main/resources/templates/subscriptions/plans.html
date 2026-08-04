@@ -177,18 +177,34 @@
                                         </button>
                                     </form>
 
-                                    <form th:action="@{/subscriptions/plans/deactivate}"
-                                          method="post"
-                                          class="d-inline"
-                                          sec:authorize="hasAuthority('SUBSCRIPTION_DELETE')">
-                                        <input type="hidden" name="id" th:value="${plan.id}">
-                                        <button type="submit"
-                                                class="btn btn-sm btn-outline-danger"
-                                                onclick="return confirm('Deactivate this plan?')"
-                                                title="Deactivate plan">
-                                            <i class="bi bi-slash-circle"></i>
-                                        </button>
-                                    </form>
+                                     <form th:action="@{/subscriptions/plans/deactivate}"
+                                           method="post"
+                                           class="d-inline"
+                                           sec:authorize="hasAuthority('SUBSCRIPTION_DELETE')">
+                                         <input type="hidden" name="id" th:value="${plan.id}">
+                                         <button type="submit"
+                                                 class="btn btn-sm btn-outline-warning"
+                                                 title="Deactivate plan">
+                                             <i class="bi bi-slash-circle"></i>
+                                         </button>
+                                     </form>
+
+                                     <form th:action="@{/subscriptions/plans/delete}"
+                                           method="post"
+                                           class="d-inline delete-form"
+                                           data-confirm="true"
+                                           th:data-confirm-title="'Delete Subscription Plan: ' + ${plan.name}"
+                                           data-confirm-message="Are you sure you want to delete this subscription plan?"
+                                           data-confirm-warning="Warning: Deleting this plan will permanently purge plan-module mappings and unassign associated tenant subscriptions."
+                                           data-confirm-btn="Delete Plan"
+                                           sec:authorize="hasAuthority('SUBSCRIPTION_DELETE')">
+                                         <input type="hidden" name="id" th:value="${plan.id}">
+                                         <button type="submit"
+                                                 class="btn btn-sm btn-outline-danger"
+                                                 title="Delete plan">
+                                             <i class="bi bi-trash"></i>
+                                         </button>
+                                     </form>
                                 </div>
                             </td>
                         </tr>

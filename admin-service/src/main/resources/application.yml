@@ -32,9 +32,15 @@ spring:
     password: Password@12345
     driver-class-name: com.mysql.cj.jdbc.Driver
 
+  sql:
+    init:
+      mode: always
+      continue-on-error: true
+
   jpa:
     hibernate:
       ddl-auto: update
+    defer-datasource-initialization: true
     open-in-view: true
 
   mail:

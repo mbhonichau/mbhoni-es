@@ -248,6 +248,19 @@ public class SubscriptionController {
         return "redirect:/subscriptions/plans";
     }
 
+    @PostMapping("/plans/delete")
+    @PreAuthorize("hasAuthority('SUBSCRIPTION_DELETE')")
+    public String deletePlan(
+            @RequestParam Long id,
+            RedirectAttributes redirectAttributes) {
+
+        enforceGlobalAdmin();
+        subscriptionService.deletePlan(id);
+        redirectAttributes.addFlashAttribute("successMessage", "Subscription plan deleted successfully.");
+
+        return "redirect:/subscriptions/plans";
+    }
+
     private void enforceGlobalAdmin() {
         if (!tenantSecurityService.isGlobalAdmin()) {
             throw new RuntimeException("Access denied: global admin only");

@@ -22,6 +22,8 @@ public interface SubscriptionService {
 
     void deactivatePlan(Long id);
 
+    void deletePlan(Long id);
+
     List<TenantSubscription> getAllTenantSubscriptions();
 
     TenantSubscription assignTenantSubscription(
