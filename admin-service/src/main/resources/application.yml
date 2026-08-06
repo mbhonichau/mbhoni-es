@@ -86,3 +86,6 @@ app:
 
 server:
   port: 8080
+  servlet:
+    session:
+      persistent: false

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="https://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/head :: head('Payslip Template Studio')}"></head>
+
+<body>
+<div class="admin-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <main class="admin-content">
+            <div class="page-shell">
+
+                <!-- Header Banner -->
+                <div class="page-header d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <div class="eyebrow">HCM & Payroll Designer</div>
+                        <h1 class="page-title mb-0"><i class="bi bi-file-earmark-code text-primary me-2"></i> Custom Payslip Template Studio</h1>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a th:href="@{/employees/payslips}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-arrow-left me-1"></i> Back to Payslips
+                        </a>
+                        <a th:href="@{/employees/payslips/excel/sample}" class="btn btn-success btn-sm px-3">
+                            <i class="bi bi-file-earmark-excel me-1"></i> Download Sample Excel (.xlsx)
+                        </a>
+                        <a th:href="@{/employees/payslips/word/sample}" class="btn btn-primary btn-sm px-3">
+                            <i class="bi bi-file-earmark-word me-1"></i> Download Sample Word (.docx)
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Alert Messages -->
+                <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i> <span th:text="${successMessage}">Success</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                    <i class="bi bi-exclamation-circle-fill me-2"></i> <span th:text="${errorMessage}">Error</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
+                <!-- Active Engine Banner -->
+                <div class="data-panel p-3 mb-4 bg-light border">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-3">
+                            <h6 class="font-weight-bold text-dark mb-0">Active Engine:</h6>
+                            <span th:if="${engineType == 'WORD'}" class="badge bg-primary font-weight-bold fs-6 px-3 py-1.5">
+                                <i class="bi bi-file-earmark-word me-1"></i> Microsoft Word (.docx) Engine
+                            </span>
+                            <span th:unless="${engineType == 'WORD'}" class="badge bg-success font-weight-bold fs-6 px-3 py-1.5">
+                                <i class="bi bi-file-earmark-excel me-1"></i> Microsoft Excel (.xlsx) Engine
+                            </span>
+                        </div>
+                        <small class="text-muted">Choose your preferred document format below to upload custom company templates.</small>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    <!-- Left Column: Engine Choice & Upload Form -->
+                    <div class="col-lg-6">
+                        <div class="data-panel p-4 h-100">
+                            <!-- Engine Tabs Header -->
+                            <ul class="nav nav-pills nav-fill mb-4" id="engineTabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button th:class="${engineType != 'WORD' ? 'nav-link active font-weight-bold py-2' : 'nav-link font-weight-bold py-2'}" id="excel-tab" data-bs-toggle="tab" data-bs-target="#tab-excel" type="button" role="tab">
+                                        <i class="bi bi-file-earmark-excel text-success me-1"></i> 1. Excel Engine (.xlsx)
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button th:class="${engineType == 'WORD' ? 'nav-link active font-weight-bold py-2' : 'nav-link font-weight-bold py-2'}" id="word-tab" data-bs-toggle="tab" data-bs-target="#tab-word" type="button" role="tab">
+                                        <i class="bi bi-file-earmark-word text-primary me-1"></i> 2. Word Engine (.docx)
+                                    </button>
+                                </li>
+                            </ul>
+
+                            <div class="tab-content" id="engineTabsContent">
+                                <!-- TAB 1: EXCEL ENGINE -->
+                                <div th:class="${engineType != 'WORD' ? 'tab-pane fade show active' : 'tab-pane fade'}" id="tab-excel" role="tabpanel">
+                                    <h6 class="font-weight-bold text-dark mb-2">Microsoft Excel Template Engine</h6>
+                                    <p class="text-muted small mb-4">
+                                        Design your payslip in Excel using cell borders, fonts, colors, and formulas (`SUM`, `IF`), then upload your <code>.xlsx</code> file.
+                                    </p>
+
+                                    <div class="p-3 mb-4 rounded border bg-light">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span th:if="${hasCustomExcel}" class="badge bg-success font-weight-bold">Custom Excel Active</span>
+                                            <span th:unless="${hasCustomExcel}" class="badge bg-secondary font-weight-bold">System Default Excel</span>
+                                            <span class="small font-weight-bold text-dark" th:text="${uploadedExcelFileName != null ? uploadedExcelFileName : 'Default Template'}">Excel File</span>
+                                        </div>
+                                    </div>
+
+                                    <form th:action="@{/employees/payslips/builder/save}" method="post" enctype="multipart/form-data">
+                                        <input type="hidden" name="engineType" value="EXCEL">
+                                        <div class="mb-4">
+                                            <label for="excelFile" class="form-label font-weight-bold">Select Excel Spreadsheet (.xlsx)</label>
+                                            <input type="file" id="excelFile" name="excelFile" accept=".xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" class="form-control">
+                                        </div>
+                                        <button type="submit" class="btn btn-success px-4">
+                                            <i class="bi bi-cloud-upload me-1"></i> Apply Excel Template
+                                        </button>
+                                    </form>
+                                </div>
+
+                                <!-- TAB 2: WORD ENGINE -->
+                                <div th:class="${engineType == 'WORD' ? 'tab-pane fade show active' : 'tab-pane fade'}" id="tab-word" role="tabpanel">
+                                    <h6 class="font-weight-bold text-dark mb-2">Microsoft Word Template Engine</h6>
+                                    <p class="text-muted small mb-4">
+                                        Design your payslip in Word using standard document layout, tables, fonts, and headers, then upload your <code>.docx</code> file.
+                                    </p>
+
+                                    <div class="p-3 mb-4 rounded border bg-light">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span th:if="${hasCustomWord}" class="badge bg-primary font-weight-bold">Custom Word Active</span>
+                                            <span th:unless="${hasCustomWord}" class="badge bg-secondary font-weight-bold">System Default Word</span>
+                                            <span class="small font-weight-bold text-dark" th:text="${uploadedWordFileName != null ? uploadedWordFileName : 'Default Template'}">Word File</span>
+                                        </div>
+                                    </div>
+
+                                    <form th:action="@{/employees/payslips/builder/save}" method="post" enctype="multipart/form-data">
+                                        <input type="hidden" name="engineType" value="WORD">
+                                        <div class="mb-4">
+                                            <label for="wordFile" class="form-label font-weight-bold">Select Word Document (.docx)</label>
+                                            <input type="file" id="wordFile" name="wordFile" accept=".docx, application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="form-control">
+                                        </div>
+                                        <button type="submit" class="btn btn-primary px-4">
+                                            <i class="bi bi-cloud-upload me-1"></i> Apply Word Template
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Placeholder Cheat Sheet -->
+                    <div class="col-lg-6">
+                        <div class="data-panel p-4">
+                            <h5 class="font-weight-bold text-dark mb-3">
+                                <i class="bi bi-code-slash text-success me-2"></i> Document Placeholders Cheat Sheet
+                            </h5>
+                            <p class="text-muted small mb-3">
+                                Place any of these placeholder tags inside your Excel cells or Word document paragraphs. The system will automatically substitute them with real employee figures.
+                            </p>
+
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover align-middle small mb-0 border">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Description</th>
+                                            <th>Placeholder Tag (Place in Cell / Document)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td>Company / Tenant Name</td><td><code>${tenantName}</code></td></tr>
+                                        <tr><td>Payslip Reference #</td><td><code>${payslipNumber}</code></td></tr>
+                                        <tr><td>Pay Period</td><td><code>${payPeriod}</code></td></tr>
+                                        <tr><td>Payment Date</td><td><code>${payDate}</code></td></tr>
+                                        <tr><td>Employee Full Name</td><td><code>${employeeName}</code></td></tr>
+                                        <tr><td>Employee Number / ID</td><td><code>${employeeNumber}</code></td></tr>
+                                        <tr><td>Job Designation / Title</td><td><code>${jobTitle}</code></td></tr>
+                                        <tr><td>Basic Base Salary</td><td><code>${basicSalary}</code></td></tr>
+                                        <tr><td>Allowances Amount</td><td><code>${allowances}</code></td></tr>
+                                        <tr><td>Overtime Remuneration</td><td><code>${overtime}</code></td></tr>
+                                        <tr><td>Total Gross Earnings</td><td><code>${grossPay}</code></td></tr>
+                                        <tr><td>PAYE Income Tax (18%)</td><td><code>${taxPaye}</code></td></tr>
+                                        <tr><td>UIF Contribution (1%)</td><td><code>${uifDeduction}</code></td></tr>
+                                        <tr><td>Other / Medical Deductions</td><td><code>${otherDeductions}</code></td></tr>
+                                        <tr><td>Total Deductions Amount</td><td><code>${totalDeductions}</code></td></tr>
+                                        <tr><td>Net Take-Home Remuneration</td><td><code>${netPay}</code></td></tr>
+                                        <tr><td>Disbursement Bank Name</td><td><code>${bankName}</code></td></tr>
+                                        <tr><td>Disbursement Account #</td><td><code>${accountNumber}</code></td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+</div>
+
+<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/admin.js}"></script>
+</body>
+</html>

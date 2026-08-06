@@ -477,6 +477,37 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    public boolean requestPasswordReset(String usernameOrEmail) {
+        if (usernameOrEmail == null || usernameOrEmail.isBlank()) {
+            return false;
+        }
+
+        String searchStr = usernameOrEmail.trim();
+
+        User user = userRepository.findByUsername(searchStr)
+                .or(() -> userRepository.findAll().stream()
+                        .filter(u -> u.getEmail() != null && u.getEmail().equalsIgnoreCase(searchStr))
+                        .findFirst())
+                .orElse(null);
+
+        if (user == null) {
+            return false;
+        }
+
+        String token = UUID.randomUUID().toString();
+        user.setPasswordResetToken(token);
+        user.setPasswordResetTokenExpiry(LocalDateTime.now().plusHours(24));
+        userRepository.save(user);
+
+        String resetLink = "http://localhost:8080/users/reset-password?token=" + token;
+        String tenantName = user.getTenant() != null ? user.getTenant().getName() : "Global Platform";
+
+        notificationService.sendRegistrationEmail(user.getUsername(), user.getEmail(), resetLink, tenantName);
+        return true;
+    }
+
+    @Override
+    @Transactional
     public boolean resetPasswordWithToken(String token, String newPassword) {
         User user = userRepository.findByPasswordResetToken(token)
                 .orElse(null);

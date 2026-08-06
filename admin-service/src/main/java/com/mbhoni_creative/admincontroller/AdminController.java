@@ -17,10 +17,12 @@ import com.mbhoni_creative.adminservice.TenantService;
 public class AdminController {
 
     private final TenantService tenantService;
+    private final com.mbhoni_creative.adminservice.UserService userService;
 
     @Autowired
-    public AdminController(TenantService tenantService) {
+    public AdminController(TenantService tenantService, com.mbhoni_creative.adminservice.UserService userService) {
         this.tenantService = tenantService;
+        this.userService = userService;
     }
 
     @GetMapping("/")
@@ -31,6 +33,16 @@ public class AdminController {
     @GetMapping("/login")
     public String showLoginPage() {
         return "auth/login";
+    }
+
+    @PostMapping({"/forgot-password", "/users/forgot-password"})
+    public String handleForgotPassword(
+            @RequestParam("username") String username,
+            org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
+
+        userService.requestPasswordReset(username);
+        redirectAttributes.addFlashAttribute("resetSentSuccess", true);
+        return "redirect:/login?resetSent=true";
     }
 
     @GetMapping("/dashboard/{id}")

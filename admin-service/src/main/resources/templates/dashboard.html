@@ -11,117 +11,282 @@
         <div th:replace="~{fragments/navbar :: navbar}"></div>
 
         <main class="admin-content">
-            <section class="page-heading">
-                <div>
-                    <p class="eyebrow">Overview</p>
-                    <h2>Dashboard</h2>
-                    <p class="text-muted mb-0">
-                        Manage tenants, users, and service visibility from one place.
-                    </p>
+
+            <!-- Premium 2-Column Redesigned Dashboard Component -->
+            <div class="dash-container">
+
+                <!-- DASHBOARD BODY (2 COLUMNS) -->
+                <div class="dash-body">
+
+                    <!-- COLUMN 1: USER PROFILE, OVERVIEW & RECENT OPERATIONS TIMELINE -->
+                    <div class="dash-col-1">
+
+                        <!-- USER & ROLE HEADING -->
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div class="dash-user-avatar-badge flex-shrink-0">
+                                <i class="bi bi-person-badge-fill"></i>
+                            </div>
+                            <div>
+                                <h3 class="h5 mb-0 font-weight-bold text-dark" th:text="${'Welcome, ' + username}">Welcome, Administrator</h3>
+                                <span class="badge bg-soft-primary text-primary" th:text="${globalAdmin ? 'Global Platform Admin' : 'Tenant Workspace Admin'}">Global Platform Admin</span>
+                            </div>
+                        </div>
+
+                        <p class="small text-muted mb-4">
+                            Central control hub for managing enterprise multi-tenant workspaces, user governance, service catalog, and system APIs.
+                        </p>
+
+                        <!-- RECENT OPERATIONS TIMELINE & SHORTCUTS -->
+                        <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-3">
+                            <h4 class="small text-uppercase text-muted font-weight-bold mb-0" style="letter-spacing: 1.5px;">Navigation Hub</h4>
+                            <span class="badge bg-light text-dark">Quick Access</span>
+                        </div>
+
+                        <ul class="dash-timeline">
+
+                            <li class="dash-timeline-item active" sec:authorize="hasAuthority('TENANT_VIEW')">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <a th:href="@{/tenants}" class="text-dark font-weight-bold text-decoration-none">
+                                        <i class="bi bi-buildings text-primary me-1"></i> Tenant Management
+                                    </a>
+                                    <span class="small text-muted" th:text="${globalAdmin ? totalTenants + ' Active' : 'Configured'}">Active</span>
+                                </div>
+                                <span class="d-block small text-muted">Provision &amp; manage client workspaces</span>
+                            </li>
+
+                            <li class="dash-timeline-item active" sec:authorize="hasAuthority('USER_VIEW')">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <a th:href="@{/users}" class="text-dark font-weight-bold text-decoration-none">
+                                        <i class="bi bi-people text-success me-1"></i> User Directory &amp; RBAC
+                                    </a>
+                                    <span class="small text-muted" th:text="${globalAdmin ? totalUsers + ' Accounts' : tenantUsers + ' Members'}">Accounts</span>
+                                </div>
+                                <span class="d-block small text-muted">Identity, roles &amp; security policies</span>
+                            </li>
+
+                            <li class="dash-timeline-item" sec:authorize="hasAuthority('EMPLOYEE_VIEW') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN')">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <a th:href="@{/employees}" class="text-dark font-weight-bold text-decoration-none">
+                                        <i class="bi bi-person-lines-fill text-info me-1"></i> Core HCM Workforce
+                                    </a>
+                                    <span class="small text-muted">HCM Directory</span>
+                                </div>
+                                <span class="d-block small text-muted">Organization units &amp; job profiles</span>
+                            </li>
+
+                            <li class="dash-timeline-item">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <a th:href="@{/subscriptions/plans}" class="text-dark font-weight-bold text-decoration-none">
+                                        <i class="bi bi-award text-warning me-1"></i> Subscription Tier Matrix
+                                    </a>
+                                    <span class="small text-muted" th:text="${totalPlans + ' Plans'}">Plans</span>
+                                </div>
+                                <span class="d-block small text-muted">Tier entitlements &amp; module matrix</span>
+                            </li>
+
+                            <li class="dash-timeline-item">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <a th:href="@{/services}" class="text-dark font-weight-bold text-decoration-none">
+                                        <i class="bi bi-journal-text text-secondary me-1"></i> Service Catalog &amp; SLAs
+                                    </a>
+                                    <span class="small text-muted">Service Catalog</span>
+                                </div>
+                                <span class="d-block small text-muted">ITIL service requests &amp; SLA tiers</span>
+                            </li>
+
+                            <li class="dash-timeline-item">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <a th:href="@{/api-keys}" class="text-dark font-weight-bold text-decoration-none">
+                                        <i class="bi bi-key text-danger me-1"></i> API Key Governance
+                                    </a>
+                                    <span class="small text-muted">Gateway Rules</span>
+                                </div>
+                                <span class="d-block small text-muted">Rest API rate limits &amp; key scoping</span>
+                            </li>
+
+                        </ul>
+
+                    </div>
+
+                    <!-- COLUMN 2: KPI CARDS, ACTIVE CONTEXT & MODULE DISCOVERY -->
+                    <div class="dash-col-2">
+
+                        <!-- SECTION HEADING -->
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <h4 class="small text-uppercase text-muted font-weight-bold mb-0" style="letter-spacing: 1.5px;">Platform Analytics &amp; Metrics</h4>
+                            <span class="small text-muted"><i class="bi bi-arrow-repeat text-success me-1"></i> Live System Metrics</span>
+                        </div>
+
+                        <!-- KPI CARDS GRID (GLOBAL ADMIN) -->
+                        <div class="row g-3" th:if="${globalAdmin}">
+                            <div class="col-12 col-sm-6 col-lg-4">
+                                <div class="dash-metric-card olive">
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <span class="text-uppercase small text-white-50 font-weight-bold">Total Tenants</span>
+                                        <i class="bi bi-buildings fs-4 text-warning"></i>
+                                    </div>
+                                    <h2 class="display-6 font-weight-bold text-white mb-1" th:text="${totalTenants}">0</h2>
+                                    <span class="small text-white-50"><i class="bi bi-check-circle-fill text-success me-1"></i> Client Workspaces</span>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-sm-6 col-lg-4">
+                                <div class="dash-metric-card gold">
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <span class="text-uppercase small font-weight-bold text-dark-50">Active Tenants</span>
+                                        <i class="bi bi-check2-circle fs-4 text-dark"></i>
+                                    </div>
+                                    <h2 class="display-6 font-weight-bold text-dark mb-1" th:text="${activeTenants}">0</h2>
+                                    <span class="small text-dark-50"><i class="bi bi-shield-check me-1"></i> Provisioned &amp; Online</span>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-sm-6 col-lg-4">
+                                <div class="dash-metric-card">
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <span class="text-uppercase small text-muted font-weight-bold">Platform Users</span>
+                                        <i class="bi bi-people fs-4 text-primary"></i>
+                                    </div>
+                                    <h2 class="display-6 font-weight-bold text-dark mb-1" th:text="${totalUsers}">0</h2>
+                                    <span class="small text-muted"><i class="bi bi-person-check me-1"></i> Total User Accounts</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- KPI CARDS GRID (TENANT ADMIN) -->
+                        <div class="row g-3" th:unless="${globalAdmin}">
+                            <div class="col-12 col-sm-6">
+                                <div class="dash-metric-card olive">
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <span class="text-uppercase small text-white-50 font-weight-bold">Assigned Workspace</span>
+                                        <i class="bi bi-building fs-4 text-warning"></i>
+                                    </div>
+                                    <h3 class="h4 font-weight-bold text-white mb-1" th:text="${tenantName}">Assigned Workspace</h3>
+                                    <span class="small text-white-50"><i class="bi bi-shield-check text-success me-1"></i> Active Workspace</span>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-sm-6">
+                                <div class="dash-metric-card gold">
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <span class="text-uppercase small font-weight-bold text-dark-50">Workspace Users</span>
+                                        <i class="bi bi-people fs-4 text-dark"></i>
+                                    </div>
+                                    <h2 class="display-6 font-weight-bold text-dark mb-1" th:text="${tenantUsers}">0</h2>
+                                    <span class="small text-dark-50"><i class="bi bi-person-fill me-1"></i> Enrolled Members</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- OPERATIONAL CONTEXT BANNER -->
+                        <div class="dash-context-banner">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="bg-white rounded-circle p-2 d-flex align-items-center justify-content-center text-dark" style="width: 44px; height: 44px;">
+                                    <i class="bi bi-cpu-fill fs-5 text-warning"></i>
+                                </div>
+                                <div>
+                                    <span class="text-uppercase small text-warning font-weight-bold d-block" style="letter-spacing: 1px;">Active Operational Scope</span>
+                                    <h4 class="h6 text-white mb-0" th:text="${globalAdmin ? 'Global Platform Administration Mode' : 'Tenant Workspace: ' + tenantName}">Global Platform Administration Mode</h4>
+                                </div>
+                            </div>
+
+                            <a href="http://localhost:8761" target="_blank" class="btn btn-sm btn-outline-warning text-nowrap" sec:authorize="hasAuthority('TENANT_VIEW')">
+                                <i class="bi bi-hdd-network me-1"></i> Service Registry
+                            </a>
+                        </div>
+
+                        <!-- DISCOVER ENTERPRISE PLATFORM MODULES -->
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <h4 class="small text-uppercase text-muted font-weight-bold mb-0" style="letter-spacing: 1.5px;">Discover Platform Services</h4>
+                            <a th:href="@{/modules}" class="small text-primary text-decoration-none">View All Modules &rarr;</a>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-12 col-sm-6 col-md-4">
+                                <a th:href="@{/employees}" class="text-decoration-none">
+                                    <div class="dash-discover-card">
+                                        <div class="d-flex align-items-center justify-content-between mb-2">
+                                            <i class="bi bi-person-badge text-primary fs-4"></i>
+                                            <span class="badge bg-light text-muted small">HCM</span>
+                                        </div>
+                                        <h5 class="h6 text-dark font-weight-bold mb-1">Core HCM &amp; Directory</h5>
+                                        <p class="small text-muted mb-0">Employees, org units &amp; roles</p>
+                                    </div>
+                                </a>
+                            </div>
+
+                            <div class="col-12 col-sm-6 col-md-4">
+                                <a th:href="@{/contracts}" class="text-decoration-none">
+                                    <div class="dash-discover-card">
+                                        <div class="d-flex align-items-center justify-content-between mb-2">
+                                            <i class="bi bi-file-earmark-text text-success fs-4"></i>
+                                            <span class="badge bg-light text-muted small">Commercial</span>
+                                        </div>
+                                        <h5 class="h6 text-dark font-weight-bold mb-1">Contract Lifecycle</h5>
+                                        <p class="small text-muted mb-0">SLA milestones &amp; agreements</p>
+                                    </div>
+                                </a>
+                            </div>
+
+                            <div class="col-12 col-sm-6 col-md-4">
+                                <a th:href="@{/billing/dashboard}" class="text-decoration-none">
+                                    <div class="dash-discover-card">
+                                        <div class="d-flex align-items-center justify-content-between mb-2">
+                                            <i class="bi bi-receipt-cutoff text-warning fs-4"></i>
+                                            <span class="badge bg-light text-muted small">Finance</span>
+                                        </div>
+                                        <h5 class="h6 text-dark font-weight-bold mb-1">Finance &amp; Invoicing</h5>
+                                        <p class="small text-muted mb-0">Accounts, payments &amp; ledger</p>
+                                    </div>
+                                </a>
+                            </div>
+
+                            <div class="col-12 col-sm-6 col-md-4">
+                                <a th:href="@{/services}" class="text-decoration-none">
+                                    <div class="dash-discover-card">
+                                        <div class="d-flex align-items-center justify-content-between mb-2">
+                                            <i class="bi bi-headset text-info fs-4"></i>
+                                            <span class="badge bg-light text-muted small">Service Desk</span>
+                                        </div>
+                                        <h5 class="h6 text-dark font-weight-bold mb-1">Service Catalog</h5>
+                                        <p class="small text-muted mb-0">ITIL service requests &amp; SLAs</p>
+                                    </div>
+                                </a>
+                            </div>
+
+                            <div class="col-12 col-sm-6 col-md-4">
+                                <a th:href="@{/master-data}" class="text-decoration-none">
+                                    <div class="dash-discover-card">
+                                        <div class="d-flex align-items-center justify-content-between mb-2">
+                                            <i class="bi bi-sliders text-secondary fs-4"></i>
+                                            <span class="badge bg-light text-muted small">Config</span>
+                                        </div>
+                                        <h5 class="h6 text-dark font-weight-bold mb-1">Master Data</h5>
+                                        <p class="small text-muted mb-0">System codes &amp; categories</p>
+                                    </div>
+                                </a>
+                            </div>
+
+                            <div class="col-12 col-sm-6 col-md-4">
+                                <a th:href="@{/api-keys}" class="text-decoration-none">
+                                    <div class="dash-discover-card">
+                                        <div class="d-flex align-items-center justify-content-between mb-2">
+                                            <i class="bi bi-shield-lock text-danger fs-4"></i>
+                                            <span class="badge bg-light text-muted small">Security</span>
+                                        </div>
+                                        <h5 class="h6 text-dark font-weight-bold mb-1">API Key Gateway</h5>
+                                        <p class="small text-muted mb-0">Scoped tokens &amp; webhooks</p>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+
+                    </div>
+
                 </div>
-            </section>
 
-            <section class="metric-grid masonry-grid" th:if="${globalAdmin}">
-                <div class="metric-card masonry-card">
-                    <span class="metric-icon blue">
-                        <i class="bi bi-buildings"></i>
-                    </span>
-                    <div>
-                        <small>Total Tenants</small>
-                        <strong th:text="${totalTenants}">0</strong>
-                    </div>
-                </div>
+            </div>
 
-                <div class="metric-card masonry-card">
-                    <span class="metric-icon green">
-                        <i class="bi bi-check-circle"></i>
-                    </span>
-                    <div>
-                        <small>Active Tenants</small>
-                        <strong th:text="${activeTenants}">0</strong>
-                    </div>
-                </div>
-
-                <div class="metric-card masonry-card">
-                    <span class="metric-icon amber">
-                        <i class="bi bi-people"></i>
-                    </span>
-                    <div>
-                        <small>Total Users</small>
-                        <strong th:text="${totalUsers}">0</strong>
-                    </div>
-                </div>
-            </section>
-
-            <section class="metric-grid masonry-grid" th:unless="${globalAdmin}">
-                <div class="metric-card masonry-card">
-                    <span class="metric-icon blue">
-                        <i class="bi bi-building"></i>
-                    </span>
-                    <div>
-                        <small>Tenant</small>
-                        <strong th:text="${tenantName}">Assigned Tenant</strong>
-                    </div>
-                </div>
-
-                <div class="metric-card masonry-card">
-                    <span class="metric-icon green">
-                        <i class="bi bi-people"></i>
-                    </span>
-                    <div>
-                        <small>Tenant Users</small>
-                        <strong th:text="${tenantUsers}">0</strong>
-                    </div>
-                </div>
-            </section>
-
-            <section class="quick-grid masonry-grid mt-4">
-                <a th:href="@{/tenants}"
-                   class="quick-card masonry-card"
-                   sec:authorize="hasAuthority('TENANT_VIEW')">
-                    <div class="quick-icon blue">
-                        <i class="bi bi-buildings"></i>
-                    </div>
-
-                    <div>
-                        <h3>Tenants</h3>
-                        <p>View and manage client tenant records.</p>
-                    </div>
-
-                    <i class="bi bi-arrow-right-short fs-4"></i>
-                </a>
-
-                <a th:href="@{/users}"
-                   class="quick-card masonry-card"
-                   sec:authorize="hasAuthority('USER_VIEW')">
-                    <div class="quick-icon green">
-                        <i class="bi bi-people"></i>
-                    </div>
-
-                    <div>
-                        <h3>Users</h3>
-                        <p>Manage admins and tenant users.</p>
-                    </div>
-
-                    <i class="bi bi-arrow-right-short fs-4"></i>
-                </a>
-
-                <a href="http://localhost:8761"
-                   target="_blank"
-                   class="quick-card masonry-card"
-                   sec:authorize="hasAuthority('TENANT_VIEW')">
-                    <div class="quick-icon amber">
-                        <i class="bi bi-hdd-network"></i>
-                    </div>
-
-                    <div>
-                        <h3>Service Registry</h3>
-                        <p>Open Eureka service discovery.</p>
-                    </div>
-
-                    <i class="bi bi-box-arrow-up-right fs-5"></i>
-                </a>
-            </section>
         </main>
 
         <div th:replace="~{fragments/footer :: footer}"></div>

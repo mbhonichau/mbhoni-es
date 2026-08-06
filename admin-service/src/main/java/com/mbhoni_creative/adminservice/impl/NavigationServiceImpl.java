@@ -51,7 +51,8 @@ public class NavigationServiceImpl implements NavigationService {
                 globalAdminItem("Tenants", "/tenants", "bi-buildings", null, requestPath, "TENANT_VIEW", "ROLE_ADMIN"),
                 guardedItem("Subscriptions", "/subscriptions/tenants", "bi-receipt", null, requestPath, "SUBSCRIPTION_VIEW", "ROLE_ADMIN", "ROLE_TENANT_ADMIN"),
                 globalAdminItem("Plans", "/subscriptions/plans", "bi-credit-card", null, requestPath, "SUBSCRIPTION_VIEW", "ROLE_ADMIN"),
-                guardedItem("Billing", "/billing", "bi-cash-coin", null, requestPath, "BILLING_VIEW", "ROLE_ADMIN", "ROLE_TENANT_ADMIN")
+                guardedItem("Billing Invoices", "/billing", "bi-cash-coin", null, requestPath, "BILLING_VIEW", "ROLE_ADMIN", "ROLE_TENANT_ADMIN"),
+                guardedItem("Expenses & Ledger", "/billing/expenses", "bi-wallet2", null, requestPath, "BILLING_VIEW", "ROLE_ADMIN", "ROLE_TENANT_ADMIN")
         ));
 
         addSection(sections, "Access", "bi-shield-check", candidates(
@@ -70,6 +71,9 @@ public class NavigationServiceImpl implements NavigationService {
         addSection(sections, "Business Modules", "bi-briefcase", candidates(
                 moduleItem("Organization", "/organization", "bi-diagram-2", "ORG", requestPath, "ORG_VIEW", "ROLE_ADMIN", "ROLE_TENANT_ADMIN"),
                 moduleItem("Employees", "/employees", "bi-person-vcard", "EMPLOYEE", requestPath, "EMPLOYEE_VIEW", "ROLE_ADMIN", "ROLE_TENANT_ADMIN"),
+                moduleItem("Payroll & Payslips", "/employees/payslips", "bi-calculator", "EMPLOYEE", requestPath, "EMPLOYEE_VIEW", "ROLE_ADMIN", "ROLE_TENANT_ADMIN"),
+                guardedItem("Invoices & Billing", "/tenant/invoices", "bi-receipt-cutoff", null, requestPath, "BILLING_VIEW", "SERVICE_VIEW", "CONTRACT_VIEW", "ROLE_ADMIN", "ROLE_TENANT_ADMIN", "ROLE_USER"),
+                guardedItem("Quotations & Estimates", "/tenant/quotations", "bi-file-earmark-spreadsheet", null, requestPath, "BILLING_VIEW", "SERVICE_VIEW", "CONTRACT_VIEW", "ROLE_ADMIN", "ROLE_TENANT_ADMIN", "ROLE_USER"),
                 moduleItem("Contracts", "/contracts", "bi-file-earmark-text", "CONTRACT", requestPath, "CONTRACT_VIEW", "ROLE_ADMIN", "ROLE_TENANT_ADMIN"),
                 moduleItem("Master Data", "/master-data", "bi-database-gear", "MASTER_DATA", requestPath, "MASTER_DATA_VIEW", "ROLE_ADMIN", "ROLE_TENANT_ADMIN"),
                 moduleItem("Services", "/services", "bi-diagram-3", "SERVICE", requestPath, "SERVICE_VIEW", "ROLE_ADMIN", "ROLE_TENANT_ADMIN")

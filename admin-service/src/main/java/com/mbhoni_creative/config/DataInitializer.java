@@ -21,6 +21,8 @@ import com.mbhoni_creative.adminentity.Tenant;
 import com.mbhoni_creative.adminentity.TenantModule;
 import com.mbhoni_creative.adminentity.TenantSubscription;
 import com.mbhoni_creative.adminentity.User;
+import com.mbhoni_creative.adminentity.IndustryProfile;
+import com.mbhoni_creative.adminrepository.IndustryProfileRepository;
 import com.mbhoni_creative.adminrepository.PermissionRepository;
 import com.mbhoni_creative.adminrepository.PlatformModuleRepository;
 import com.mbhoni_creative.adminrepository.RoleRepository;
@@ -43,6 +45,7 @@ public class DataInitializer implements CommandLineRunner {
     private final SubscriptionPlanModuleRepository subscriptionPlanModuleRepository;
     private final TenantSubscriptionRepository tenantSubscriptionRepository;
     private final TenantModuleRepository tenantModuleRepository;
+    private final IndustryProfileRepository industryProfileRepository;
     private final PasswordEncoder passwordEncoder;
 
     public DataInitializer(
@@ -55,6 +58,7 @@ public class DataInitializer implements CommandLineRunner {
             SubscriptionPlanModuleRepository subscriptionPlanModuleRepository,
             TenantSubscriptionRepository tenantSubscriptionRepository,
             TenantModuleRepository tenantModuleRepository,
+            IndustryProfileRepository industryProfileRepository,
             PasswordEncoder passwordEncoder) {
 
         this.userRepository = userRepository;
@@ -66,6 +70,7 @@ public class DataInitializer implements CommandLineRunner {
         this.subscriptionPlanModuleRepository = subscriptionPlanModuleRepository;
         this.tenantSubscriptionRepository = tenantSubscriptionRepository;
         this.tenantModuleRepository = tenantModuleRepository;
+        this.industryProfileRepository = industryProfileRepository;
         this.passwordEncoder = passwordEncoder;
     }
 

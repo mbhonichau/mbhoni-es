@@ -21,5 +21,7 @@ public interface UserService {
 
     String generatePasswordResetToken(Long userId);
 
+    boolean requestPasswordReset(String usernameOrEmail);
+
     boolean resetPasswordWithToken(String token, String newPassword);
 }
