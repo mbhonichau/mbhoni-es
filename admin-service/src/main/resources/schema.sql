@@ -356,6 +356,17 @@ CREATE TABLE IF NOT EXISTS `tenant_customizations` (
     `secondary_color` VARCHAR(50) DEFAULT '#6c757d',
     `theme_mode` VARCHAR(20) DEFAULT 'LIGHT',
     `custom_domain` VARCHAR(255),
+    `payslip_template_html` LONGTEXT,
+    `payslip_excel_template` LONGBLOB,
+    `payslip_excel_file_name` VARCHAR(255),
+    `payslip_engine_type` VARCHAR(20) DEFAULT 'EXCEL',
+    `payslip_word_template` LONGBLOB,
+    `payslip_word_file_name` VARCHAR(255),
+    `invoice_engine_type` VARCHAR(20) DEFAULT 'EXCEL',
+    `invoice_excel_template` LONGBLOB,
+    `invoice_excel_file_name` VARCHAR(255),
+    `invoice_word_template` LONGBLOB,
+    `invoice_word_file_name` VARCHAR(255),
     `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
     `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE
@@ -405,9 +416,81 @@ CREATE TABLE IF NOT EXISTS `tenant_content` (
     `tenant_id` BIGINT NOT NULL,
     `content_name` VARCHAR(255),
     `content_type` VARCHAR(100),
-    `content_value` TEXT,
+    `ip_address` VARCHAR(100),
     `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Tenant Invoices & Items
+CREATE TABLE IF NOT EXISTS `tenant_invoices` (
+    `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+    `tenant_id` BIGINT NOT NULL,
+    `invoice_number` VARCHAR(80) NOT NULL,
+    `customer_name` VARCHAR(255),
+    `customer_email` VARCHAR(255),
+    `customer_phone` VARCHAR(50),
+    `customer_address` VARCHAR(500),
+    `customer_tax_number` VARCHAR(80),
+    `status` VARCHAR(40) NOT NULL DEFAULT 'DRAFT',
+    `issue_date` DATE,
+    `due_date` DATE,
+    `subtotal` DECIMAL(12,2) DEFAULT 0.00,
+    `tax_amount` DECIMAL(12,2) DEFAULT 0.00,
+    `total_amount` DECIMAL(12,2) DEFAULT 0.00,
+    `amount_paid` DECIMAL(12,2) DEFAULT 0.00,
+    `notes` TEXT,
+    `payment_terms` VARCHAR(500),
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `tenant_invoice_items` (
+    `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+    `invoice_id` BIGINT NOT NULL,
+    `description` VARCHAR(255) NOT NULL,
+    `quantity` DECIMAL(12,2) NOT NULL DEFAULT 1.00,
+    `unit_price` DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+    `tax_rate` DECIMAL(5,2) NOT NULL DEFAULT 15.00,
+    `total_amount` DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (`invoice_id`) REFERENCES `tenant_invoices`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Tenant Quotations & Items
+CREATE TABLE IF NOT EXISTS `tenant_quotations` (
+    `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+    `tenant_id` BIGINT NOT NULL,
+    `quotation_number` VARCHAR(80) NOT NULL,
+    `customer_name` VARCHAR(255),
+    `customer_email` VARCHAR(255),
+    `customer_phone` VARCHAR(50),
+    `customer_address` VARCHAR(500),
+    `status` VARCHAR(40) NOT NULL DEFAULT 'DRAFT',
+    `issue_date` DATE,
+    `valid_until_date` DATE,
+    `subtotal` DECIMAL(12,2) DEFAULT 0.00,
+    `tax_amount` DECIMAL(12,2) DEFAULT 0.00,
+    `total_amount` DECIMAL(12,2) DEFAULT 0.00,
+    `notes` TEXT,
+    `converted_invoice_id` BIGINT,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `tenant_quotation_items` (
+    `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+    `quotation_id` BIGINT NOT NULL,
+    `description` VARCHAR(255) NOT NULL,
+    `quantity` DECIMAL(12,2) NOT NULL DEFAULT 1.00,
+    `unit_price` DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+    `tax_rate` DECIMAL(5,2) NOT NULL DEFAULT 15.00,
+    `total_amount` DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (`quotation_id`) REFERENCES `tenant_quotations`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS `tenant_metrics` (

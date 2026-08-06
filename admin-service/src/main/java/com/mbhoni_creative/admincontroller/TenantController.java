@@ -17,6 +17,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.mbhoni_creative.admindto.PageMeta;
 import com.mbhoni_creative.admindto.TenantDto;
 import com.mbhoni_creative.admindto.TenantSubscriptionView;
+import com.mbhoni_creative.adminentity.IndustryProfile;
 import com.mbhoni_creative.adminentity.TenantSubscription;
 import com.mbhoni_creative.adminrepository.IndustryProfileRepository;
 import com.mbhoni_creative.adminrepository.TenantSubscriptionRepository;
@@ -47,10 +48,6 @@ public class TenantController {
         this.industryProfileRepository = industryProfileRepository;
         this.industryTemplateService = industryTemplateService;
     }
-
-    // =====================================================
-    // LIST TENANTS
-    // =====================================================
 
     @GetMapping
     @PreAuthorize("hasAuthority('TENANT_VIEW')")
@@ -243,6 +240,41 @@ public class TenantController {
 
         return tenant.getSubscriptionStatus() != null
                 && subscriptionStatus.equalsIgnoreCase(tenant.getSubscriptionStatus().name());
+    }
+
+    @PostMapping("/industries/create")
+    @PreAuthorize("hasAuthority('TENANT_EDIT')")
+    public String createIndustryProfile(
+            @RequestParam String name,
+            @RequestParam(required = false) String code,
+            @RequestParam(required = false) String description,
+            @RequestParam(required = false, defaultValue = "/tenants/create") String redirectUrl,
+            RedirectAttributes redirectAttributes) {
+
+        if (name == null || name.isBlank()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Industry name is required.");
+            return "redirect:" + redirectUrl;
+        }
+
+        String normalizedCode = (code != null && !code.isBlank())
+                ? code.trim().toUpperCase()
+                : name.trim().toUpperCase().replaceAll("[^A-Z0-9]", "_");
+
+        if (industryProfileRepository.findByCode(normalizedCode).isPresent()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "An industry profile with code '" + normalizedCode + "' already exists.");
+            return "redirect:" + redirectUrl;
+        }
+
+        IndustryProfile profile = new IndustryProfile();
+        profile.setCode(normalizedCode);
+        profile.setName(name.trim());
+        profile.setDescription(description);
+        profile.setActive(true);
+
+        industryProfileRepository.save(profile);
+        redirectAttributes.addFlashAttribute("successMessage", "Industry Profile '" + profile.getName() + "' created successfully.");
+
+        return "redirect:" + redirectUrl;
     }
 
     private boolean contains(String value, String search) {

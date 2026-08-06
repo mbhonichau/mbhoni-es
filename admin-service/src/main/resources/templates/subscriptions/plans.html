@@ -164,70 +164,100 @@
 
                                                 <!-- Architectural Pillar 1: Identity, Access & Governance -->
                                                 <div class="mb-3 p-3 rounded border bg-white shadow-sm">
-                                                    <div class="d-flex align-items-center gap-2 mb-2 text-dark border-bottom pb-2">
+                                                    <div class="d-flex align-items-center gap-2 mb-3 text-dark border-bottom pb-2">
                                                         <i class="bi bi-shield-lock-fill text-primary fs-5"></i>
                                                         <strong class="text-uppercase small">1. Identity, Access &amp; Security Governance (IAM)</strong>
                                                     </div>
-                                                    <div class="row g-2 small">
-                                                        <div class="col-md-6 d-flex align-items-center gap-2">
-                                                            <i class="bi bi-check-circle-fill text-success"></i>
-                                                            <span><strong>Role-Based Access Control (RBAC):</strong> Custom Roles &amp; Delegated Admin</span>
+                                                    <div class="row g-3 small">
+                                                        <div class="col-12 col-md-6 d-flex align-items-start gap-2">
+                                                            <i class="bi bi-check-circle-fill text-success flex-shrink-0 mt-1"></i>
+                                                            <div>
+                                                                <strong>Role-Based Access Control (RBAC):</strong>
+                                                                <span class="text-muted d-block">Custom Roles &amp; Delegated Admin</span>
+                                                            </div>
                                                         </div>
-                                                        <div class="col-md-6 d-flex align-items-center gap-2">
-                                                            <i class="bi bi-check-circle-fill text-success"></i>
-                                                            <span><strong>Security Enforcement:</strong> Multi-Factor Auth (MFA) &amp; OAuth2 / SSO Support</span>
+                                                        <div class="col-12 col-md-6 d-flex align-items-start gap-2">
+                                                            <i class="bi bi-check-circle-fill text-success flex-shrink-0 mt-1"></i>
+                                                            <div>
+                                                                <strong>Security Enforcement:</strong>
+                                                                <span class="text-muted d-block">Multi-Factor Auth (MFA) &amp; OAuth2 / SSO Support</span>
+                                                            </div>
                                                         </div>
-                                                        <div class="col-md-6 d-flex align-items-center gap-2">
-                                                            <i class="bi bi-check-circle-fill text-success"></i>
-                                                            <span><strong>Audit &amp; Compliance:</strong> Immutable Event Logs &amp; User Action Tracing</span>
+                                                        <div class="col-12 col-md-6 d-flex align-items-start gap-2">
+                                                            <i class="bi bi-check-circle-fill text-success flex-shrink-0 mt-1"></i>
+                                                            <div>
+                                                                <strong>Audit &amp; Compliance:</strong>
+                                                                <span class="text-muted d-block">Immutable Event Logs &amp; User Action Tracing</span>
+                                                            </div>
                                                         </div>
-                                                        <div class="col-md-6 d-flex align-items-center gap-2">
-                                                            <i class="bi bi-check-circle-fill text-success"></i>
-                                                            <span><strong>User Provisioning:</strong> <span th:text="${plan.maxUsers != null ? plan.maxUsers + ' User Limit Enforcement' : 'Unlimited User Seat Licensing'}">500 User Seats</span></span>
+                                                        <div class="col-12 col-md-6 d-flex align-items-start gap-2">
+                                                            <i class="bi bi-check-circle-fill text-success flex-shrink-0 mt-1"></i>
+                                                            <div>
+                                                                <strong>User Provisioning:</strong>
+                                                                <span class="text-muted d-block" th:text="${plan.maxUsers != null ? plan.maxUsers + ' User Limit Enforcement' : 'Unlimited User Seat Licensing'}">500 User Seats</span>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
 
                                                 <!-- Architectural Pillar 2: Integration & API Ecosystem -->
                                                 <div class="mb-3 p-3 rounded border bg-white shadow-sm">
-                                                    <div class="d-flex align-items-center gap-2 mb-2 text-dark border-bottom pb-2">
+                                                    <div class="d-flex align-items-center gap-2 mb-3 text-dark border-bottom pb-2">
                                                         <i class="bi bi-diagram-3-fill text-info fs-5"></i>
                                                         <strong class="text-uppercase small">2. Integration, Extensibility &amp; API Ecosystem</strong>
                                                     </div>
-                                                    <div class="row g-2 small">
-                                                        <div class="col-md-6 d-flex align-items-center gap-2">
-                                                            <i th:class="${plan.apiAccessEnabled ? 'bi bi-check-circle-fill text-success' : 'bi bi-x-circle-fill text-danger'}"></i>
-                                                            <span><strong>REST API Gateway:</strong> <span th:text="${plan.apiAccessEnabled ? 'Full Programmatic Access &amp; Webhooks' : 'Disabled for this tier'}">Full Access</span></span>
+                                                    <div class="row g-3 small">
+                                                        <div class="col-12 col-md-6 d-flex align-items-start gap-2">
+                                                            <i th:class="${plan.apiAccessEnabled ? 'bi bi-check-circle-fill text-success flex-shrink-0 mt-1' : 'bi bi-x-circle-fill text-danger flex-shrink-0 mt-1'}"></i>
+                                                            <div>
+                                                                <strong>REST API Gateway:</strong>
+                                                                <span class="text-muted d-block" th:text="${plan.apiAccessEnabled ? 'Full Programmatic Access &amp; Webhooks' : 'Disabled for this tier'}">Full Access</span>
+                                                            </div>
                                                         </div>
-                                                        <div class="col-md-6 d-flex align-items-center gap-2">
-                                                            <i th:class="${plan.apiAccessEnabled ? 'bi bi-check-circle-fill text-success' : 'bi bi-x-circle-fill text-danger'}"></i>
-                                                            <span><strong>API Key Governance:</strong> Hashed Keys &amp; Scoped Permissions</span>
+                                                        <div class="col-12 col-md-6 d-flex align-items-start gap-2">
+                                                            <i th:class="${plan.apiAccessEnabled ? 'bi bi-check-circle-fill text-success flex-shrink-0 mt-1' : 'bi bi-x-circle-fill text-danger flex-shrink-0 mt-1'}"></i>
+                                                            <div>
+                                                                <strong>API Key Governance:</strong>
+                                                                <span class="text-muted d-block">Hashed Keys &amp; Scoped Permissions</span>
+                                                            </div>
                                                         </div>
-                                                        <div class="col-md-6 d-flex align-items-center gap-2">
-                                                            <i class="bi bi-check-circle-fill text-success"></i>
-                                                            <span><strong>Rate Limiting:</strong> 1,000 req/min burst capacity &amp; SLA Guarantee</span>
+                                                        <div class="col-12 col-md-6 d-flex align-items-start gap-2">
+                                                            <i class="bi bi-check-circle-fill text-success flex-shrink-0 mt-1"></i>
+                                                            <div>
+                                                                <strong>Rate Limiting:</strong>
+                                                                <span class="text-muted d-block">1,000 req/min burst capacity &amp; SLA Guarantee</span>
+                                                            </div>
                                                         </div>
-                                                        <div class="col-md-6 d-flex align-items-center gap-2">
-                                                            <i class="bi bi-check-circle-fill text-success"></i>
-                                                            <span><strong>OpenAPI Standard:</strong> Swagger Compliant Endpoint Contracts</span>
+                                                        <div class="col-12 col-md-6 d-flex align-items-start gap-2">
+                                                            <i class="bi bi-check-circle-fill text-success flex-shrink-0 mt-1"></i>
+                                                            <div>
+                                                                <strong>OpenAPI Standard:</strong>
+                                                                <span class="text-muted d-block">Swagger Compliant Endpoint Contracts</span>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
 
                                                 <!-- Architectural Pillar 3: Tenant Customization & Domain Isolation -->
                                                 <div class="mb-3 p-3 rounded border bg-white shadow-sm">
-                                                    <div class="d-flex align-items-center gap-2 mb-2 text-dark border-bottom pb-2">
+                                                    <div class="d-flex align-items-center gap-2 mb-3 text-dark border-bottom pb-2">
                                                         <i class="bi bi-palette-fill text-warning fs-5"></i>
                                                         <strong class="text-uppercase small">3. Enterprise Branding &amp; Domain Routing Policy</strong>
                                                     </div>
-                                                    <div class="row g-2 small">
-                                                        <div class="col-md-6 d-flex align-items-center gap-2">
-                                                            <i th:class="${plan.brandingEnabled ? 'bi bi-check-circle-fill text-success' : 'bi bi-x-circle-fill text-muted'}"></i>
-                                                            <span><strong>White-Label UI:</strong> <span th:text="${plan.brandingEnabled ? 'Custom Logo, Brand Colors &amp; Light/Dark Themes' : 'Standard Shared UI Styling'}">White-Labeling</span></span>
+                                                    <div class="row g-3 small">
+                                                        <div class="col-12 col-md-6 d-flex align-items-start gap-2">
+                                                            <i th:class="${plan.brandingEnabled ? 'bi bi-check-circle-fill text-success flex-shrink-0 mt-1' : 'bi bi-x-circle-fill text-muted flex-shrink-0 mt-1'}"></i>
+                                                            <div>
+                                                                <strong>White-Label UI:</strong>
+                                                                <span class="text-muted d-block" th:text="${plan.brandingEnabled ? 'Custom Logo, Brand Colors &amp; Light/Dark Themes' : 'Standard Shared UI Styling'}">White-Labeling</span>
+                                                            </div>
                                                         </div>
-                                                        <div class="col-md-6 d-flex align-items-center gap-2">
-                                                            <i th:class="${plan.customDomainEnabled ? 'bi bi-check-circle-fill text-success' : 'bi bi-x-circle-fill text-muted'}"></i>
-                                                            <span><strong>Custom Domain Mapping:</strong> <span th:text="${plan.customDomainEnabled ? 'Supported (e.g. tenant.company.com)' : 'Subdomain Only (tenant.platform.com)'}">Custom Domain</span></span>
+                                                        <div class="col-12 col-md-6 d-flex align-items-start gap-2">
+                                                            <i th:class="${plan.customDomainEnabled ? 'bi bi-check-circle-fill text-success flex-shrink-0 mt-1' : 'bi bi-x-circle-fill text-muted flex-shrink-0 mt-1'}"></i>
+                                                            <div>
+                                                                <strong>Custom Domain Mapping:</strong>
+                                                                <span class="text-muted d-block" th:text="${plan.customDomainEnabled ? 'Supported (e.g. tenant.company.com)' : 'Subdomain Only (tenant.platform.com)'}">Custom Domain</span>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>

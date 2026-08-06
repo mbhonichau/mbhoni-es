@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="https://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/head :: head('Invoices Management')}"></head>
+
+<body>
+<div class="admin-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <main class="admin-content">
+            <div class="page-shell">
+
+                <!-- Header Banner -->
+                <div class="page-header d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <div class="eyebrow">Business Modules</div>
+                        <h1 class="page-title mb-0"><i class="bi bi-receipt-cutoff text-primary me-2"></i> Invoices & Billing</h1>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a th:href="@{/tenant/quotations}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-file-earmark-spreadsheet me-1"></i> Quotations
+                        </a>
+                        <a th:href="@{/tenant/invoices/builder}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-palette me-1"></i> Invoice Studio
+                        </a>
+                        <button type="button" class="btn btn-primary btn-sm px-3" data-bs-toggle="modal" data-bs-target="#newInvoiceModal">
+                            <i class="bi bi-plus-lg me-1"></i> Create Invoice
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Alert Messages -->
+                <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i> <span th:text="${successMessage}">Success</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                    <i class="bi bi-exclamation-circle-fill me-2"></i> <span th:text="${errorMessage}">Error</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
+                <!-- Stats Overview Cards -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="data-panel p-3 border-start border-4 border-primary">
+                            <div class="text-muted small text-uppercase font-weight-bold">Total Invoiced</div>
+                            <h3 class="fw-bold text-dark mb-0" th:text="'R ' + ${#numbers.formatDecimal(totalRevenue, 1, 'COMMA', 2, 'POINT')}">R 0.00</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="data-panel p-3 border-start border-4 border-success">
+                            <div class="text-muted small text-uppercase font-weight-bold">Total Collected</div>
+                            <h3 class="fw-bold text-success mb-0" th:text="'R ' + ${#numbers.formatDecimal(totalPaid, 1, 'COMMA', 2, 'POINT')}">R 0.00</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="data-panel p-3 border-start border-4 border-danger">
+                            <div class="text-muted small text-uppercase font-weight-bold">Outstanding Balance</div>
+                            <h3 class="fw-bold text-danger mb-0" th:text="'R ' + ${#numbers.formatDecimal(totalUnpaid, 1, 'COMMA', 2, 'POINT')}">R 0.00</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Invoices Table -->
+                <div class="data-panel p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Invoice #</th>
+                                    <th>Customer / Client</th>
+                                    <th>Issue Date</th>
+                                    <th>Due Date</th>
+                                    <th>Total Amount</th>
+                                    <th>Amount Paid</th>
+                                    <th>Balance Due</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="inv : ${invoices}">
+                                    <td><strong class="text-primary" th:text="${inv.invoiceNumber}">INV-001</strong></td>
+                                    <td>
+                                        <div class="font-weight-bold text-dark" th:text="${inv.customerName != null ? inv.customerName : 'Walk-in Client'}">Customer</div>
+                                        <small class="text-muted d-block" th:text="${inv.customerEmail}">email@client.com</small>
+                                    </td>
+                                    <td th:text="${inv.issueDate}">2026-08-01</td>
+                                    <td th:text="${inv.dueDate}">2026-08-31</td>
+                                    <td class="fw-bold" th:text="'R ' + ${#numbers.formatDecimal(inv.totalAmount, 1, 'COMMA', 2, 'POINT')}">R 0.00</td>
+                                    <td class="text-success" th:text="'R ' + ${#numbers.formatDecimal(inv.amountPaid, 1, 'COMMA', 2, 'POINT')}">R 0.00</td>
+                                    <td class="text-danger fw-bold" th:text="'R ' + ${#numbers.formatDecimal(inv.balanceDue, 1, 'COMMA', 2, 'POINT')}">R 0.00</td>
+                                    <td>
+                                        <span class="badge"
+                                              th:classappend="${inv.status.name() == 'PAID' ? 'bg-success' : (inv.status.name() == 'OVERDUE' ? 'bg-danger' : 'bg-warning text-dark')}"
+                                              th:text="${inv.status}">DRAFT</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="btn-group btn-group-sm">
+                                            <a th:href="@{'/tenant/invoices/' + ${inv.id} + '/print'}" target="_blank" class="btn btn-outline-secondary" title="Print / PDF">
+                                                <i class="bi bi-printer"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" th:data-bs-target="'#payModal-' + ${inv.id}" title="Record Payment">
+                                                <i class="bi bi-cash"></i>
+                                            </button>
+                                            <form th:action="@{'/tenant/invoices/' + ${inv.id} + '/delete'}" method="post" class="d-inline" onsubmit="return confirm('Delete this invoice?');">
+                                                <button type="submit" class="btn btn-outline-danger" title="Delete">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+
+                                        <!-- Payment Modal for Invoice -->
+                                        <div class="modal fade text-start" th:id="'payModal-' + ${inv.id}" tabindex="-1" aria-hidden="true">
+                                            <div class="modal-dialog modal-dialog-centered">
+                                                <div class="modal-content">
+                                                    <form th:action="@{'/tenant/invoices/' + ${inv.id} + '/pay'}" method="post">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title fw-bold">Record Payment for Invoice <span th:text="${inv.invoiceNumber}"></span></h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <p class="small text-muted mb-2">Total Amount: <strong class="text-dark" th:text="'R ' + ${inv.totalAmount}"></strong> | Outstanding: <strong class="text-danger" th:text="'R ' + ${inv.balanceDue}"></strong></p>
+                                                            <div class="mb-3">
+                                                                <label class="form-label font-weight-bold">Payment Amount (R)</label>
+                                                                <input type="number" step="0.01" name="paymentAmount" th:value="${inv.balanceDue}" class="form-control" required>
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                            <button type="submit" class="btn btn-success">Record Payment</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr th:if="${#lists.isEmpty(invoices)}">
+                                    <td colspan="9" class="text-center text-muted py-5">
+                                        <i class="bi bi-receipt fs-1 d-block mb-2 text-secondary"></i>
+                                        No invoices created yet. Click <strong>Create Invoice</strong> above to issue your first commercial invoice!
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Modal: Create New Invoice -->
+<div class="modal fade" id="newInvoiceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <form th:action="@{/tenant/invoices/save}" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-plus-circle text-primary me-2"></i> Create New Commercial Invoice</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold">Customer Name *</label>
+                            <input type="text" name="customerName" class="form-control" placeholder="Acme Corporation / John Doe" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold">Customer Email</label>
+                            <input type="email" name="customerEmail" class="form-control" placeholder="billing@acme.com">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold">Customer Phone</label>
+                            <input type="text" name="customerPhone" class="form-control" placeholder="+27 82 000 0000">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold">VAT / Tax Number</label>
+                            <input type="text" name="customerTaxNumber" class="form-control" placeholder="4880192001">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label font-weight-bold">Billing Address</label>
+                            <input type="text" name="customerAddress" class="form-control" placeholder="100 Enterprise Way, Sandton, Johannesburg">
+                        </div>
+                    </div>
+
+                    <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">Line Items</h6>
+                    <div id="invoiceItemsContainer">
+                        <div class="row g-2 mb-2 item-row">
+                            <div class="col-md-6">
+                                <input type="text" name="itemDescription" class="form-control" placeholder="Item / Service description" required>
+                            </div>
+                            <div class="col-md-2">
+                                <input type="number" step="1" name="itemQuantity" class="form-control" value="1" placeholder="Qty" required>
+                            </div>
+                            <div class="col-md-3">
+                                <input type="number" step="0.01" name="itemUnitPrice" class="form-control" placeholder="Unit Price (R)" required>
+                            </div>
+                            <div class="col-md-1 text-end">
+                                <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="removeRow(this)"><i class="bi bi-x"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm mb-4" onclick="addInvoiceRow()"><i class="bi bi-plus"></i> Add Line Item</button>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold">Issue Date</label>
+                            <input type="date" name="issueDate" class="form-control" th:value="${#temporals.format(#temporals.createToday(), 'yyyy-MM-dd')}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold">Due Date</label>
+                            <input type="date" name="dueDate" class="form-control" th:value="${#temporals.format(#temporals.createToday().plusDays(30), 'yyyy-MM-dd')}">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label font-weight-bold">Invoice Notes / Payment Instructions</label>
+                            <textarea name="notes" class="form-control" rows="2" placeholder="Thank you for your business! Please use Invoice # as reference."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4">Generate & Save Invoice</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/admin.js}"></script>
+<script>
+    function addInvoiceRow() {
+        const container = document.getElementById('invoiceItemsContainer');
+        const row = document.createElement('div');
+        row.className = 'row g-2 mb-2 item-row';
+        row.innerHTML = `
+            <div class="col-md-6">
+                <input type="text" name="itemDescription" class="form-control" placeholder="Item / Service description" required>
+            </div>
+            <div class="col-md-2">
+                <input type="number" step="1" name="itemQuantity" class="form-control" value="1" placeholder="Qty" required>
+            </div>
+            <div class="col-md-3">
+                <input type="number" step="0.01" name="itemUnitPrice" class="form-control" placeholder="Unit Price (R)" required>
+            </div>
+            <div class="col-md-1 text-end">
+                <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="removeRow(this)"><i class="bi bi-x"></i></button>
+            </div>
+        `;
+        container.appendChild(row);
+    }
+    function removeRow(btn) {
+        const rows = document.querySelectorAll('.item-row');
+        if (rows.length > 1) {
+            btn.closest('.item-row').remove();
+        }
+    }
+</script>
+</body>
+</html>

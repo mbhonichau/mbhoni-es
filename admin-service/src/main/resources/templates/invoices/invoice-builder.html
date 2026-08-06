@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="https://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/head :: head('Tenant Invoice & Quotation Studio')}"></head>
+
+<body>
+<div class="admin-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <main class="admin-content">
+            <div class="page-shell">
+
+                <!-- Header Banner -->
+                <div class="page-header d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <div class="eyebrow">Tenant Sales & Billing Designer</div>
+                        <h1 class="page-title mb-0"><i class="bi bi-receipt-cutoff text-primary me-2"></i> Tenant Invoice & Quotation Studio</h1>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a th:href="@{/billing/invoices}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-arrow-left me-1"></i> Back to Invoices
+                        </a>
+                        <a th:href="@{/tenant/invoices/excel/sample}" class="btn btn-success btn-sm px-3">
+                            <i class="bi bi-file-earmark-excel me-1"></i> Download Sample Excel (.xlsx)
+                        </a>
+                        <a th:href="@{/tenant/invoices/word/sample}" class="btn btn-primary btn-sm px-3">
+                            <i class="bi bi-file-earmark-word me-1"></i> Download Sample Word (.docx)
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Alert Messages -->
+                <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i> <span th:text="${successMessage}">Success</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                    <i class="bi bi-exclamation-circle-fill me-2"></i> <span th:text="${errorMessage}">Error</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
+                <!-- Active Engine Banner -->
+                <div class="data-panel p-3 mb-4 bg-light border">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-3">
+                            <h6 class="font-weight-bold text-dark mb-0">Active Invoice Engine:</h6>
+                            <span th:if="${engineType == 'WORD'}" class="badge bg-primary font-weight-bold fs-6 px-3 py-1.5">
+                                <i class="bi bi-file-earmark-word me-1"></i> Microsoft Word (.docx) Engine
+                            </span>
+                            <span th:unless="${engineType == 'WORD'}" class="badge bg-success font-weight-bold fs-6 px-3 py-1.5">
+                                <i class="bi bi-file-earmark-excel me-1"></i> Microsoft Excel (.xlsx) Engine
+                            </span>
+                        </div>
+                        <small class="text-muted">Choose your preferred document format below to upload custom company Invoice/Quotation templates for your business.</small>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    <!-- Left Column: Engine Choice & Upload Form -->
+                    <div class="col-lg-6">
+                        <div class="data-panel p-4 h-100">
+                            <!-- Engine Tabs Header -->
+                            <ul class="nav nav-pills nav-fill mb-4" id="engineTabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button th:class="${engineType != 'WORD' ? 'nav-link active font-weight-bold py-2' : 'nav-link font-weight-bold py-2'}" id="excel-tab" data-bs-toggle="tab" data-bs-target="#tab-excel" type="button" role="tab">
+                                        <i class="bi bi-file-earmark-excel text-success me-1"></i> 1. Excel Engine (.xlsx)
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button th:class="${engineType == 'WORD' ? 'nav-link active font-weight-bold py-2' : 'nav-link font-weight-bold py-2'}" id="word-tab" data-bs-toggle="tab" data-bs-target="#tab-word" type="button" role="tab">
+                                        <i class="bi bi-file-earmark-word text-primary me-1"></i> 2. Word Engine (.docx)
+                                    </button>
+                                </li>
+                            </ul>
+
+                            <div class="tab-content" id="engineTabsContent">
+                                <!-- TAB 1: EXCEL ENGINE -->
+                                <div th:class="${engineType != 'WORD' ? 'tab-pane fade show active' : 'tab-pane fade'}" id="tab-excel" role="tabpanel">
+                                    <h6 class="font-weight-bold text-dark mb-2">Microsoft Excel Invoice Engine</h6>
+                                    <p class="text-muted small mb-4">
+                                        Design your tenant invoice or quotation in Excel using custom headers, borders, colors, and math formulas, then upload your <code>.xlsx</code> file.
+                                    </p>
+
+                                    <div class="p-3 mb-4 rounded border bg-light">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span th:if="${hasCustomExcel}" class="badge bg-success font-weight-bold">Custom Excel Active</span>
+                                            <span th:unless="${hasCustomExcel}" class="badge bg-secondary font-weight-bold">System Default Excel</span>
+                                            <span class="small font-weight-bold text-dark" th:text="${uploadedExcelFileName != null ? uploadedExcelFileName : 'Default Template'}">Excel File</span>
+                                        </div>
+                                    </div>
+
+                                    <form th:action="@{/tenant/invoices/builder/save}" method="post" enctype="multipart/form-data">
+                                        <input type="hidden" name="engineType" value="EXCEL">
+                                        <div class="mb-4">
+                                            <label for="excelFile" class="form-label font-weight-bold">Select Excel Spreadsheet (.xlsx)</label>
+                                            <input type="file" id="excelFile" name="excelFile" accept=".xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" class="form-control">
+                                        </div>
+                                        <button type="submit" class="btn btn-success px-4">
+                                            <i class="bi bi-cloud-upload me-1"></i> Apply Excel Invoice Template
+                                        </button>
+                                    </form>
+                                </div>
+
+                                <!-- TAB 2: WORD ENGINE -->
+                                <div th:class="${engineType == 'WORD' ? 'tab-pane fade show active' : 'tab-pane fade'}" id="tab-word" role="tabpanel">
+                                    <h6 class="font-weight-bold text-dark mb-2">Microsoft Word Invoice Engine</h6>
+                                    <p class="text-muted small mb-4">
+                                        Design your tenant invoice or quotation in Word using company letterheads, tables, and document styles, then upload your <code>.docx</code> file.
+                                    </p>
+
+                                    <div class="p-3 mb-4 rounded border bg-light">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span th:if="${hasCustomWord}" class="badge bg-primary font-weight-bold">Custom Word Active</span>
+                                            <span th:unless="${hasCustomWord}" class="badge bg-secondary font-weight-bold">System Default Word</span>
+                                            <span class="small font-weight-bold text-dark" th:text="${uploadedWordFileName != null ? uploadedWordFileName : 'Default Template'}">Word File</span>
+                                        </div>
+                                    </div>
+
+                                    <form th:action="@{/tenant/invoices/builder/save}" method="post" enctype="multipart/form-data">
+                                        <input type="hidden" name="engineType" value="WORD">
+                                        <div class="mb-4">
+                                            <label for="wordFile" class="form-label font-weight-bold">Select Word Document (.docx)</label>
+                                            <input type="file" id="wordFile" name="wordFile" accept=".docx, application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="form-control">
+                                        </div>
+                                        <button type="submit" class="btn btn-primary px-4">
+                                            <i class="bi bi-cloud-upload me-1"></i> Apply Word Invoice Template
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Placeholder Cheat Sheet -->
+                    <div class="col-lg-6">
+                        <div class="data-panel p-4">
+                            <h5 class="font-weight-bold text-dark mb-3">
+                                <i class="bi bi-code-slash text-success me-2"></i> Invoice & Quotation Placeholders Cheat Sheet
+                            </h5>
+                            <p class="text-muted small mb-3">
+                                Place any of these placeholder tags inside your Excel cells or Word document paragraphs. The system will automatically substitute them when printing invoices or quotations for your clients.
+                            </p>
+
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover align-middle small mb-0 border">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Description</th>
+                                            <th>Placeholder Tag (Place in Cell / Document)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td>Company / Biller Name</td><td><code>${tenantName}</code></td></tr>
+                                        <tr><td>Client / Customer Name</td><td><code>${clientName}</code></td></tr>
+                                        <tr><td>Invoice Reference #</td><td><code>${invoiceNumber}</code></td></tr>
+                                        <tr><td>Invoice Status (PAID/DRAFT)</td><td><code>${status}</code></td></tr>
+                                        <tr><td>Issue Date</td><td><code>${issueDate}</code></td></tr>
+                                        <tr><td>Payment Due Date</td><td><code>${dueDate}</code></td></tr>
+                                        <tr><td>Subtotal Amount</td><td><code>${subtotal}</code></td></tr>
+                                        <tr><td>VAT Tax Amount (15%)</td><td><code>${taxAmount}</code></td></tr>
+                                        <tr><td>Total Amount Due</td><td><code>${totalAmount}</code></td></tr>
+                                        <tr><td>Amount Paid</td><td><code>${amountPaid}</code></td></tr>
+                                        <tr><td>Outstanding Balance Due</td><td><code>${balanceDue}</code></td></tr>
+                                        <tr><td>Invoice Notes / Terms</td><td><code>${notes}</code></td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+</div>
+
+<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/admin.js}"></script>
+</body>
+</html>

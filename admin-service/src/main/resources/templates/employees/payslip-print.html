@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="'Payslip #' + (${payslip != null ? payslip.payslipNumber : 'Preview'})">Confidential Salary Payslip</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Inter', system-ui, -apple-system, sans-serif; color: #1b1e15; }
+        .payslip-card { background: #ffffff; border-radius: 12px; border: 1px solid #e8e6dc; max-width: 860px; margin: 40px auto; padding: 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        .payslip-header { border-bottom: 2px solid #E3A857; padding-bottom: 20px; margin-bottom: 24px; }
+        .brand-badge { background: linear-gradient(135deg, #1b1e15 0%, #262A1D 100%); color: #ffffff; padding: 6px 14px; border-radius: 6px; font-weight: 750; font-size: 0.85rem; letter-spacing: 0.05em; display: inline-block; }
+        .payslip-title { font-size: 1.6rem; font-weight: 800; color: #262A1D; text-transform: uppercase; letter-spacing: 0.05em; }
+        .table-payslip th { background: linear-gradient(135deg, #262A1D 0%, #3a3f2c 100%); color: #ffffff; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; border: none; }
+        .table-payslip td { font-size: 0.9rem; padding: 10px 14px; border-bottom: 1px solid #e8e6dc; }
+        .net-pay-box { background: linear-gradient(135deg, #1b1e15 0%, #262A1D 100%); color: #ffffff; border-radius: 8px; padding: 20px; }
+        @media print {
+            body { background: #ffffff !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            img, .print-logo { display: inline-block !important; max-height: 75px !important; visibility: visible !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            .payslip-card, .excel-payslip-wrapper { border: none !important; box-shadow: none !important; margin: 0 !important; max-width: 100% !important; padding: 0 !important; }
+            .excel-payslip-table { width: 100% !important; border-collapse: collapse !important; }
+            .excel-payslip-table td { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container py-3 no-print">
+    <div class="d-flex justify-content-between align-items-center max-width-860 mx-auto" style="max-width: 860px;">
+        <a th:href="@{/employees/payslips}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Back to Payslips
+        </a>
+        <button onclick="window.print()" class="btn btn-primary btn-sm px-4">
+            <i class="bi bi-printer me-1"></i> Print / Save as PDF
+        </button>
+    </div>
+</div>
+
+<div class="payslip-card p-4 bg-white rounded shadow-sm border" th:if="${customPayslipHtml != null}">
+    <div th:utext="${customPayslipHtml}"></div>
+</div>
+
+<div class="payslip-card" th:if="${customPayslipHtml == null && payslip != null}">
+    <!-- Header -->
+    <div class="payslip-header d-flex justify-content-between align-items-start">
+        <div class="d-flex align-items-center gap-3">
+            <img th:src="@{/images/logo.png}" alt="Logo" class="print-logo" style="height: 55px; width: auto; object-fit: contain; display: inline-block;">
+            <div>
+                <div class="brand-badge mb-1">MBHONI ENTERPRISE SUITE</div>
+                <h3 class="mb-0 font-weight-bold text-dark" th:text="${payslip.tenant != null ? payslip.tenant.name : 'Employer Business Name'}">Employer Company</h3>
+                <p class="text-muted small mb-0">Confidential Employee Salary Statement</p>
+            </div>
+        </div>
+        <div class="text-end">
+            <h2 class="payslip-title mb-1">PAYSLIP</h2>
+            <p class="small text-muted mb-0"><strong class="text-dark">Payslip #:</strong> <span th:text="${payslip.payslipNumber}">PAY-001</span></p>
+            <p class="small text-muted mb-0"><strong class="text-dark">Pay Period:</strong> <span th:text="${payslip.payPeriod}">August 2026</span></p>
+            <p class="small text-muted mb-0"><strong class="text-dark">Pay Date:</strong> <span th:text="${payslip.payDate}">2026-08-25</span></p>
+        </div>
+    </div>
+
+    <!-- Employee Info Box -->
+    <div class="row g-3 mb-4 p-3 bg-light rounded-3 border">
+        <div class="col-md-6">
+            <p class="small text-muted mb-1">Employee Name:</p>
+            <h5 class="fw-bold mb-2 text-dark" th:text="${payslip.employee != null ? payslip.employee.firstName + ' ' + payslip.employee.lastName : 'Employee'}">John Doe</h5>
+            <p class="small text-muted mb-0"><strong>Employee #:</strong> <span th:text="${payslip.employee != null ? payslip.employee.employeeNumber : 'EMP-001'}">EMP-001</span></p>
+            <p class="small text-muted mb-0"><strong>Designation:</strong> <span th:text="${payslip.employee != null ? payslip.employee.jobTitle : 'Specialist'}">Specialist</span></p>
+        </div>
+        <div class="col-md-6 text-md-end">
+            <p class="small text-muted mb-1">Bank Disbursement Details:</p>
+            <p class="small text-dark mb-0"><strong>Bank Name:</strong> <span th:text="${payslip.bankName != null ? payslip.bankName : 'Commercial Bank'}">Commercial Bank</span></p>
+            <p class="small text-dark mb-0"><strong>Account #:</strong> <span th:text="${payslip.accountNumber != null ? payslip.accountNumber : '**** 9012'}">**** 9012</span></p>
+            <span class="badge bg-success mt-2">Status: PAID</span>
+        </div>
+    </div>
+
+    <!-- Earnings & Deductions Breakdown Grid -->
+    <div class="row g-4 mb-4">
+        <!-- Earnings Column -->
+        <div class="col-md-6">
+            <h6 class="text-uppercase text-dark font-weight-bold mb-3"><i class="bi bi-plus-circle-fill text-success me-1"></i> Gross Earnings</h6>
+            <table class="table table-payslip">
+                <thead>
+                <tr>
+                    <th>Item Description</th>
+                    <th class="text-end">Amount</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>Basic Salary</td>
+                    <td class="text-end fw-bold" th:text="'R ' + ${payslip.basicSalary}">R 0.00</td>
+                </tr>
+                <tr>
+                    <td>Housing / Travel Allowance</td>
+                    <td class="text-end" th:text="'R ' + ${payslip.allowances}">R 0.00</td>
+                </tr>
+                <tr>
+                    <td>Overtime Pay</td>
+                    <td class="text-end" th:text="'R ' + ${payslip.overtime}">R 0.00</td>
+                </tr>
+                <tr class="table-secondary font-weight-bold">
+                    <td class="fw-bold">TOTAL GROSS PAY</td>
+                    <td class="text-end fw-bold fs-6 text-success" th:text="'R ' + ${payslip.grossPay}">R 0.00</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Deductions Column -->
+        <div class="col-md-6">
+            <h6 class="text-uppercase text-dark font-weight-bold mb-3"><i class="bi bi-dash-circle-fill text-danger me-1"></i> Payroll Deductions</h6>
+            <table class="table table-payslip">
+                <thead>
+                <tr>
+                    <th>Deduction Item</th>
+                    <th class="text-end">Amount</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>Income Tax (PAYE)</td>
+                    <td class="text-end text-danger" th:text="'R ' + ${payslip.taxPaye}">R 0.00</td>
+                </tr>
+                <tr>
+                    <td>Unemployment Insurance (UIF 1%)</td>
+                    <td class="text-end text-danger" th:text="'R ' + ${payslip.uifDeduction}">R 0.00</td>
+                </tr>
+                <tr>
+                    <td>Medical Aid / Other Deductions</td>
+                    <td class="text-end text-danger" th:text="'R ' + ${payslip.otherDeductions}">R 0.00</td>
+                </tr>
+                <tr class="table-secondary font-weight-bold">
+                    <td class="fw-bold">TOTAL DEDUCTIONS</td>
+                    <td class="text-end fw-bold fs-6 text-danger" th:text="'R ' + ${payslip.totalDeductions}">R 0.00</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Net Pay Highlight -->
+    <div class="net-pay-box d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h5 class="mb-0 text-white-50 text-uppercase small font-weight-bold">Net Remuneration Take-Home</h5>
+            <small class="text-white-50">Transferred to employee bank account</small>
+        </div>
+        <div>
+            <h2 class="mb-0 font-weight-bold text-warning" th:text="'R ' + ${payslip.netPay}">R 0.00</h2>
+        </div>
+    </div>
+
+    <!-- Signatures -->
+    <div class="row pt-4 mt-4 border-top">
+        <div class="col-6">
+            <div class="border-bottom pb-4 mb-1" style="width: 200px;"></div>
+            <small class="text-muted">Employer Authorized Signature</small>
+        </div>
+        <div class="col-6 text-end">
+            <div class="border-bottom pb-4 mb-1 ms-auto" style="width: 200px;"></div>
+            <small class="text-muted">Employee Acknowledgement</small>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

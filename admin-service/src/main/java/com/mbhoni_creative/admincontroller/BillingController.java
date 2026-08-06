@@ -9,6 +9,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.mbhoni_creative.admindto.PageMeta;
@@ -17,8 +21,14 @@ import com.mbhoni_creative.adminentity.BillingAccount;
 import com.mbhoni_creative.adminentity.Invoice;
 import com.mbhoni_creative.adminentity.InvoiceStatus;
 import com.mbhoni_creative.adminentity.PaymentMethod;
+import com.mbhoni_creative.adminentity.Expense;
+import com.mbhoni_creative.adminentity.TenantCustomization;
+import com.mbhoni_creative.adminrepository.BillingAccountRepository;
+import com.mbhoni_creative.adminrepository.ExpenseRepository;
 import com.mbhoni_creative.adminservice.BillingService;
 import com.mbhoni_creative.adminservice.TenantService;
+import com.mbhoni_creative.adminservice.TenantCustomizationService;
+import com.mbhoni_creative.adminservice.InvoiceDocumentService;
 import com.mbhoni_creative.config.TenantSecurityService;
 
 @Controller
@@ -28,15 +38,27 @@ public class BillingController {
     private final BillingService billingService;
     private final TenantService tenantService;
     private final TenantSecurityService tenantSecurityService;
+    private final ExpenseRepository expenseRepository;
+    private final BillingAccountRepository billingAccountRepository;
+    private final TenantCustomizationService customizationService;
+    private final InvoiceDocumentService invoiceDocumentService;
 
     public BillingController(
             BillingService billingService,
             TenantService tenantService,
-            TenantSecurityService tenantSecurityService) {
+            TenantSecurityService tenantSecurityService,
+            ExpenseRepository expenseRepository,
+            BillingAccountRepository billingAccountRepository,
+            TenantCustomizationService customizationService,
+            InvoiceDocumentService invoiceDocumentService) {
 
         this.billingService = billingService;
         this.tenantService = tenantService;
         this.tenantSecurityService = tenantSecurityService;
+        this.expenseRepository = expenseRepository;
+        this.billingAccountRepository = billingAccountRepository;
+        this.customizationService = customizationService;
+        this.invoiceDocumentService = invoiceDocumentService;
     }
 
     @GetMapping("/accounts")
@@ -257,16 +279,24 @@ public class BillingController {
         return "billing/dashboard";
     }
     
-    @PostMapping("/invoices/print")
-    @PreAuthorize("hasAuthority('BILLING_VIEW')")
-    public String printInvoice(
-            @RequestParam Long id,
-            Model model) {
-
-        model.addAttribute("invoice", billingService.getInvoiceById(id));
+    @GetMapping("/invoices/{id}/print")
+    @PreAuthorize("hasAuthority('BILLING_VIEW') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN')")
+    public String printInvoiceGet(@PathVariable Long id, Model model) {
+        Invoice invoice = billingService.getInvoiceById(id);
+        model.addAttribute("invoice", invoice);
         model.addAttribute("payments", billingService.getPaymentsForInvoice(id));
 
+        if (invoice != null && invoice.getTenant() != null) {
+            model.addAttribute("billingAccount", billingAccountRepository.findByTenantId(invoice.getTenant().getId()).orElse(null));
+        }
+
         return "billing/invoice-print";
+    }
+
+    @PostMapping("/invoices/print")
+    @PreAuthorize("hasAuthority('BILLING_VIEW')")
+    public String printInvoicePost(@RequestParam Long id, Model model) {
+        return printInvoiceGet(id, model);
     }
 
     private List<TenantDto> getAccessibleTenants() {
@@ -327,5 +357,83 @@ public class BillingController {
 
     private boolean contains(String value, String search) {
         return value != null && value.toLowerCase(Locale.ROOT).contains(search);
+    }
+
+    // =====================================================
+    // SMALL BUSINESS EXPENSES & LEDGER TRACKER
+    // =====================================================
+
+    @GetMapping("/expenses")
+    @PreAuthorize("hasAuthority('BILLING_VIEW') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN')")
+    public String expenses(Model model) {
+        Long tenantId = tenantSecurityService.getCurrentTenantId();
+        List<Expense> expenses;
+
+        if (tenantSecurityService.isGlobalAdmin() && tenantId == null) {
+            expenses = expenseRepository.findAll();
+        } else if (tenantId != null) {
+            expenses = expenseRepository.findByTenantIdOrderByExpenseDateDesc(tenantId);
+        } else {
+            expenses = List.of();
+        }
+
+        BigDecimal totalExpenses = expenses.stream()
+                .map(Expense::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // Revenue from invoices
+        List<Invoice> invoices = billingService.getAllInvoices();
+        BigDecimal totalPaidRevenue = invoices.stream()
+                .filter(inv -> inv.getStatus() == InvoiceStatus.PAID)
+                .map(Invoice::getTotalAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal netProfit = totalPaidRevenue.subtract(totalExpenses);
+
+        model.addAttribute("expenses", expenses);
+        model.addAttribute("totalExpenses", totalExpenses);
+        model.addAttribute("totalPaidRevenue", totalPaidRevenue);
+        model.addAttribute("netProfit", netProfit);
+        model.addAttribute("newExpense", new Expense());
+        model.addAttribute("categories", List.of("OFFICE_RENT", "UTILITIES", "SALARIES", "SOFTWARE_SERVICES", "SUPPLIES", "TRAVEL_TRANSPORT", "EQUIPMENT", "MARKETING"));
+
+        return "billing/expenses";
+    }
+
+    @PostMapping("/expenses/create")
+    @PreAuthorize("hasAuthority('BILLING_EDIT') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN')")
+    public String createExpense(
+            @ModelAttribute Expense expense,
+            RedirectAttributes redirectAttributes) {
+
+        Long tenantId = tenantSecurityService.getCurrentTenantId();
+        if (tenantId != null && expense.getTenant() == null) {
+            com.mbhoni_creative.adminentity.Tenant t = new com.mbhoni_creative.adminentity.Tenant();
+            t.setId(tenantId);
+            expense.setTenant(t);
+        } else if (expense.getTenant() == null && !tenantService.getAllTenants().isEmpty()) {
+            com.mbhoni_creative.adminentity.Tenant t = new com.mbhoni_creative.adminentity.Tenant();
+            t.setId(tenantService.getAllTenants().get(0).getId());
+            expense.setTenant(t);
+        }
+
+        if (expense.getExpenseDate() == null) {
+            expense.setExpenseDate(LocalDate.now());
+        }
+
+        expenseRepository.save(expense);
+        redirectAttributes.addFlashAttribute("successMessage", "Business expense recorded successfully.");
+        return "redirect:/billing/expenses";
+    }
+
+    @PostMapping("/expenses/delete")
+    @PreAuthorize("hasAuthority('BILLING_EDIT') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN')")
+    public String deleteExpense(
+            @RequestParam Long id,
+            RedirectAttributes redirectAttributes) {
+
+        expenseRepository.deleteById(id);
+        redirectAttributes.addFlashAttribute("successMessage", "Expense entry deleted.");
+        return "redirect:/billing/expenses";
     }
 }

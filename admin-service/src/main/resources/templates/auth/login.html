@@ -7,6 +7,7 @@
     <link rel="icon" type="image/png" th:href="@{/images/logo.png}">
     <link rel="stylesheet" th:href="@{/vendor/bootstrap/css/bootstrap.min.css}">
     <link rel="stylesheet" th:href="@{/vendor/bootstrap-icons/bootstrap-icons.css}">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
 
     <style>
         * {
@@ -16,9 +17,9 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             overflow: hidden;
-            background: #dfddd1;
+            background: #171a12;
             color: #dfddd1;
         }
 
@@ -37,41 +38,47 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(38, 42, 29, 0.88);
+            background: rgba(38, 42, 29, 0.78);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            padding: 42px 45px;
-            border-radius: 20px;
-            border: 1.5px solid rgba(223, 221, 209, 0.25);
+            padding: 40px 42px;
+            border-radius: var(--radius-lg);
+            border: 1.5px solid rgba(227, 168, 87, 0.35);
             width: 90%;
             max-width: 440px;
-            box-shadow: 0 0 80px rgba(113, 53, 25, 0.3), inset 0 0 40px rgba(223, 221, 209, 0.05);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5), inset 0 0 40px rgba(223, 221, 209, 0.06);
             z-index: 10;
             animation: glowPulse 3.5s ease-in-out infinite;
         }
 
         @keyframes glowPulse {
-            0%, 100% { box-shadow: 0 0 70px rgba(113, 53, 25, 0.25), inset 0 0 40px rgba(223, 221, 209, 0.05); }
-            50% { box-shadow: 0 0 110px rgba(113, 53, 25, 0.45), inset 0 0 60px rgba(223, 221, 209, 0.1); }
+            0%, 100% { box-shadow: 0 10px 40px rgba(113, 53, 25, 0.35), inset 0 0 40px rgba(223, 221, 209, 0.05); }
+            50% { box-shadow: 0 15px 65px rgba(113, 53, 25, 0.55), inset 0 0 60px rgba(223, 221, 209, 0.12); }
         }
 
-        .login-brand-title {
-            color: #ffffff;
-            margin-bottom: 2px;
-            font-size: 28px;
+        .brand-logo {
+            transition: transform 0.2s ease;
+            filter: brightness(0) invert(1);
+        }
+
+        .brand:hover .brand-logo {
+            transform: scale(1.05);
+        }
+
+        .brand-text {
+            display: block;
             font-weight: 800;
-            letter-spacing: 1.5px;
-            background: linear-gradient(135deg, #ffffff, #dfddd1);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            letter-spacing: .05em;
+            font-size: 1.2rem;
+            color: #ffffff;
         }
 
-        .login-brand-subtitle {
+        .brand-copy small {
+            display: block;
             color: #dfddd1;
+            font-size: 0.75rem;
+            font-weight: 600;
             opacity: 0.85;
-            font-size: 13px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
         }
 
         .form-group {
@@ -81,84 +88,120 @@
 
         .form-group label {
             display: block;
-            color: #dfddd1;
-            font-size: 13px;
-            margin-bottom: 8px;
-            font-weight: 600;
+            color: #E3A857;
+            font-size: 0.72rem;
+            margin-bottom: 6px;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.8px;
+            letter-spacing: 0.08em;
         }
 
         .form-group input {
             width: 100%;
-            padding: 13px 16px;
-            background: rgba(223, 221, 209, 0.08);
-            border: 1.5px solid rgba(223, 221, 209, 0.25);
-            border-radius: 10px;
+            padding: 10px 40px 10px 14px;
+            height: 42px;
+            background: rgba(223, 221, 209, 0.1);
+            border: 1px solid rgba(223, 221, 209, 0.25);
+            border-radius: var(--radius-sm);
             color: #ffffff;
-            font-size: 15px;
-            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
         }
 
         .form-group input:focus {
             outline: none;
-            background: rgba(223, 221, 209, 0.14);
-            border-color: #713519;
-            box-shadow: 0 0 25px rgba(113, 53, 25, 0.4);
+            background: rgba(223, 221, 209, 0.22);
+            border-color: #ffffff !important;
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.4) !important;
         }
 
         .form-group input::placeholder {
-            color: rgba(223, 221, 209, 0.45);
+            color: rgba(223, 221, 209, 0.5);
+        }
+
+        .password-toggle-btn {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: rgba(223, 221, 209, 0.75);
+            cursor: pointer;
+            z-index: 5;
+            font-size: 1.1rem;
+            transition: color 0.2s ease;
+        }
+
+        .password-toggle-btn:hover {
+            color: #ffffff;
+        }
+
+        .forgot-link {
+            color: #dfddd1;
+            opacity: 0.85;
+            font-size: 0.75rem;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .forgot-link:hover {
+            opacity: 1;
+            color: #E3A857;
+            text-decoration: underline;
         }
 
         .login-btn {
             width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #713519 0%, #994d1c 100%);
-            border: none;
-            border-radius: 10px;
+            padding: 12px;
+            height: 44px;
+            background: linear-gradient(135deg, #713519 0%, #a64722 100%);
+            border: 1px solid #713519;
+            border-radius: var(--radius-sm);
             color: #ffffff;
-            font-size: 15px;
+            font-size: 0.9rem;
             font-weight: 700;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
             margin-top: 10px;
             text-transform: uppercase;
-            letter-spacing: 1.2px;
-            box-shadow: 0 0 35px rgba(113, 53, 25, 0.45);
+            letter-spacing: 0.08em;
+            box-shadow: 0 4px 12px rgba(113, 53, 25, 0.35);
         }
 
         .login-btn:hover {
-            transform: translateY(-3px);
-            background: linear-gradient(135deg, #853e1e 0%, #ad5821 100%);
-            box-shadow: 0 0 50px rgba(113, 53, 25, 0.65);
+            transform: translateY(-2px);
+            background: linear-gradient(135deg, #853d1d 0%, #b85026 100%);
+            box-shadow: 0 6px 18px rgba(113, 53, 25, 0.55);
         }
 
         .login-btn:active {
-            transform: translateY(-1px);
+            transform: translateY(1px);
         }
 
         .google-btn {
             width: 100%;
-            padding: 12px;
+            padding: 11px;
+            height: 42px;
             background: rgba(223, 221, 209, 0.08);
-            border: 1.5px solid rgba(223, 221, 209, 0.25);
-            border-radius: 10px;
+            border: 1px solid rgba(223, 221, 209, 0.25);
+            border-radius: var(--radius-sm);
             color: #dfddd1;
-            font-size: 14px;
+            font-size: 0.88rem;
             font-weight: 650;
             text-decoration: none;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
         }
 
         .google-btn:hover {
             background: rgba(223, 221, 209, 0.16);
             color: #ffffff;
             border-color: #dfddd1;
+            transform: translateY(-2px);
         }
     </style>
 </head>
@@ -167,12 +210,12 @@
 <canvas id="canvas"></canvas>
 
 <div class="login-container text-center">
-    <div class="d-flex align-items-center justify-content-center gap-3 mb-4">
-        <img th:src="@{/images/logo.png}" alt="Mbhoni Creative Logo" style="height: 48px; width: 44px; object-fit: cover; border-radius: 8px;">
-        <div class="text-start">
-            <h1 class="login-brand-title">MBHONI</h1>
-            <p class="login-brand-subtitle">Creative Enterprise</p>
-        </div>
+    <div class="brand d-flex align-items-center justify-content-center gap-2 mb-4">
+        <img th:src="@{/images/logo.png}" alt="Mbhoni Creative" class="brand-logo" style="height: auto; width: 46px; object-fit: cover;">
+        <span class="brand-copy text-start">
+            <span class="brand-text fw-bold text-white fs-3 d-block" style="letter-spacing: 1.5px; line-height: 1.1;">MBHONI</span>
+            <small class="d-block text-grey" style="font-size: 0.68rem; margin-left: -15px; color: #dfddd1; opacity: 0.85; text-transform: uppercase;">Creative Enterprise -----------</small>
+        </span>
     </div>
 
     <form th:action="@{/login}" method="post" id="loginForm">
@@ -184,14 +227,26 @@
             You have been signed out.
         </div>
 
+        <div th:if="${param.resetSent}" class="alert alert-info py-2 mb-3" style="font-size: 0.85rem;">
+            If the account exists, password reset instructions have been sent.
+        </div>
+
         <div class="form-group">
             <label for="username">Username</label>
             <input type="text" id="username" name="username" placeholder="Enter username" required autofocus>
         </div>
 
         <div class="form-group">
-            <label for="password">Password</label>
-            <input type="password" id="password" name="password" placeholder="••••••••" required>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <label for="password" class="mb-0">Password</label>
+                <a href="#" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal" class="forgot-link">Forgot Password?</a>
+            </div>
+            <div class="position-relative">
+                <input type="password" id="password" name="password" placeholder="••••••••" required>
+                <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibilityInline(this)" title="Show/Hide Password">
+                    <i class="bi bi-eye"></i>
+                </button>
+            </div>
         </div>
 
         <button type="submit" class="login-btn">Sign In</button>
@@ -203,7 +258,93 @@
             Sign in with Google
         </a>
     </form>
+
+    <div class="login-footer d-flex align-items-center justify-content-between pt-3 mt-4 border-top border-secondary border-opacity-25" style="font-size: 0.78rem; color: #dfddd1; opacity: 0.8;">
+        <div class="d-flex align-items-center gap-2">
+            <img th:src="@{/images/logo.png}" alt="Mbhoni Creative" style="height: 16px; width: 16px; border-radius: 3px; object-fit: cover;">
+            <span>MBHONI Creative Enterprise Solutions &copy; 2026</span>
+        </div>
+        <span>v1.0.0</span>
+    </div>
 </div>
+
+<!-- Modal: Forgot Password Request -->
+<div class="modal fade text-start" id="forgotPasswordModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background: rgba(27, 30, 21, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(223, 221, 209, 0.3); color: #ffffff; border-radius: 16px;">
+            <form th:action="@{/forgot-password}" method="post">
+                <div class="modal-header border-bottom-0 pb-0">
+                    <h5 class="modal-title font-weight-bold text-white"><i class="bi bi-key text-warning me-2"></i> Reset Password</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body py-4">
+                    <p class="small text-white-50 mb-3">Enter your registered email address or username below. We will send password reset instructions to your email.</p>
+                    <div class="mb-3">
+                        <label class="form-label text-uppercase fs-7 font-weight-bold text-white">Username or Email</label>
+                        <input type="text" name="username" class="form-control" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #fff;" placeholder="username or user@enterprise.com" required>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 pt-0">
+                    <button type="button" class="btn btn-outline-light btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning btn-sm px-4 fw-bold">Send Reset Link</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Password Reset Sent Success Validation Popup -->
+<div class="modal fade text-start" id="resetSuccessModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-center p-2" style="background: rgba(27, 30, 21, 0.96); backdrop-filter: blur(20px); border: 1.5px solid rgba(223, 221, 209, 0.35); color: #ffffff; border-radius: 20px; box-shadow: 0 0 80px rgba(0,0,0,0.6);">
+            <div class="modal-header border-bottom-0 pb-0 justify-content-center d-block">
+                <div class="rounded-circle bg-success bg-opacity-25 d-inline-flex align-items-center justify-content-center mb-3 mt-3" style="width: 70px; height: 70px; border: 2px solid #2ea043;">
+                    <i class="bi bi-check-lg text-success fs-1"></i>
+                </div>
+                <h4 class="modal-title font-weight-bold text-white mb-1">Email Sent Successfully!</h4>
+                <p class="small text-white-50 mb-0">Password Reset Instructions Dispatched</p>
+            </div>
+            <div class="modal-body py-3 px-4">
+                <p style="color: #dfddd1; font-size: 14px; line-height: 1.6;">
+                    If an account matching the provided username or email exists, password reset instructions with a secure link have been sent to the email address.
+                </p>
+                <div class="p-3 rounded-3 text-start small mb-2" style="background: rgba(223, 221, 209, 0.08); border: 1px solid rgba(223, 221, 209, 0.2); color: #dfddd1;">
+                    <i class="bi bi-info-circle-fill text-warning me-2"></i>
+                    <strong>Security Notice:</strong> Please check your inbox and spam folder. The activation token link expires in 24 hours.
+                </div>
+            </div>
+            <div class="modal-footer border-top-0 justify-content-center pb-4 pt-0">
+                <button type="button" class="btn btn-success px-5 fw-bold rounded-pill" data-bs-dismiss="modal">Got it, thanks!</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script>
+    function togglePasswordVisibilityInline(btn) {
+        const input = btn.previousElementSibling;
+        const icon = btn.querySelector('i');
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.className = 'bi bi-eye-slash text-warning';
+        } else {
+            input.type = 'password';
+            icon.className = 'bi bi-eye';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('resetSent')) {
+            const modalEl = document.getElementById('resetSuccessModal');
+            if (modalEl && typeof bootstrap !== 'undefined') {
+                const modal = new bootstrap.Modal(modalEl);
+                modal.show();
+            }
+        }
+    });
+</script>
 
 <!-- Three.js 3D Canvas Background Engine -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>

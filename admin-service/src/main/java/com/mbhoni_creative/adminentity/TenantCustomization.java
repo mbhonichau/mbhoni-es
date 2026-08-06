@@ -37,7 +37,78 @@ public class TenantCustomization extends BaseEntity {
 
     private boolean active = true;
 
+    @Lob
+    @Column(name = "payslip_template_html", columnDefinition = "LONGTEXT", length = 10485760)
+    private String payslipTemplateHtml;
+
+    @Lob
+    @Column(name = "payslip_excel_template", columnDefinition = "LONGBLOB")
+    private byte[] payslipExcelTemplate;
+
+    @Column(name = "payslip_excel_file_name")
+    private String payslipExcelFileName;
+
+    @Column(name = "payslip_engine_type", length = 20)
+    private String payslipEngineType = "EXCEL";
+
+    @Lob
+    @Column(name = "payslip_word_template", columnDefinition = "LONGBLOB")
+    private byte[] payslipWordTemplate;
+
+    @Column(name = "payslip_word_file_name")
+    private String payslipWordFileName;
+
+    @Column(name = "invoice_engine_type", length = 20)
+    private String invoiceEngineType = "EXCEL";
+
+    @Lob
+    @Column(name = "invoice_excel_template", columnDefinition = "LONGBLOB")
+    private byte[] invoiceExcelTemplate;
+
+    @Column(name = "invoice_excel_file_name")
+    private String invoiceExcelFileName;
+
+    @Lob
+    @Column(name = "invoice_word_template", columnDefinition = "LONGBLOB")
+    private byte[] invoiceWordTemplate;
+
+    @Column(name = "invoice_word_file_name")
+    private String invoiceWordFileName;
+
     public Long getId() { return id; }
+
+    public String getPayslipTemplateHtml() { return payslipTemplateHtml; }
+    public void setPayslipTemplateHtml(String payslipTemplateHtml) { this.payslipTemplateHtml = payslipTemplateHtml; }
+
+    public byte[] getPayslipExcelTemplate() { return payslipExcelTemplate; }
+    public void setPayslipExcelTemplate(byte[] payslipExcelTemplate) { this.payslipExcelTemplate = payslipExcelTemplate; }
+
+    public String getPayslipExcelFileName() { return payslipExcelFileName; }
+    public void setPayslipExcelFileName(String payslipExcelFileName) { this.payslipExcelFileName = payslipExcelFileName; }
+
+    public String getPayslipEngineType() { return payslipEngineType != null ? payslipEngineType : "EXCEL"; }
+    public void setPayslipEngineType(String payslipEngineType) { this.payslipEngineType = payslipEngineType; }
+
+    public byte[] getPayslipWordTemplate() { return payslipWordTemplate; }
+    public void setPayslipWordTemplate(byte[] payslipWordTemplate) { this.payslipWordTemplate = payslipWordTemplate; }
+
+    public String getPayslipWordFileName() { return payslipWordFileName; }
+    public void setPayslipWordFileName(String payslipWordFileName) { this.payslipWordFileName = payslipWordFileName; }
+
+    public String getInvoiceEngineType() { return invoiceEngineType != null ? invoiceEngineType : "EXCEL"; }
+    public void setInvoiceEngineType(String invoiceEngineType) { this.invoiceEngineType = invoiceEngineType; }
+
+    public byte[] getInvoiceExcelTemplate() { return invoiceExcelTemplate; }
+    public void setInvoiceExcelTemplate(byte[] invoiceExcelTemplate) { this.invoiceExcelTemplate = invoiceExcelTemplate; }
+
+    public String getInvoiceExcelFileName() { return invoiceExcelFileName; }
+    public void setInvoiceExcelFileName(String invoiceExcelFileName) { this.invoiceExcelFileName = invoiceExcelFileName; }
+
+    public byte[] getInvoiceWordTemplate() { return invoiceWordTemplate; }
+    public void setInvoiceWordTemplate(byte[] invoiceWordTemplate) { this.invoiceWordTemplate = invoiceWordTemplate; }
+
+    public String getInvoiceWordFileName() { return invoiceWordFileName; }
+    public void setInvoiceWordFileName(String invoiceWordFileName) { this.invoiceWordFileName = invoiceWordFileName; }
 
     public Tenant getTenant() { return tenant; }
     public void setTenant(Tenant tenant) { this.tenant = tenant; }

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="https://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/head :: head('Quotations & Estimates Management')}"></head>
+
+<body>
+<div class="admin-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <main class="admin-content">
+            <div class="page-shell">
+
+                <!-- Header Banner -->
+                <div class="page-header d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <div class="eyebrow">Business Modules</div>
+                        <h1 class="page-title mb-0"><i class="bi bi-file-earmark-spreadsheet text-primary me-2"></i> Quotations & Estimates</h1>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a th:href="@{/tenant/invoices}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-receipt me-1"></i> Invoices
+                        </a>
+                        <a th:href="@{/tenant/invoices/builder}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-palette me-1"></i> Template Studio
+                        </a>
+                        <button type="button" class="btn btn-primary btn-sm px-3" data-bs-toggle="modal" data-bs-target="#newQuotationModal">
+                            <i class="bi bi-plus-lg me-1"></i> Create Quotation
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Alert Messages -->
+                <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i> <span th:text="${successMessage}">Success</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                    <i class="bi bi-exclamation-circle-fill me-2"></i> <span th:text="${errorMessage}">Error</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
+                <!-- Stats Overview Card -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="data-panel p-3 border-start border-4 border-primary">
+                            <div class="text-muted small text-uppercase font-weight-bold">Total Quoted Value</div>
+                            <h3 class="fw-bold text-dark mb-0" th:text="'R ' + ${#numbers.formatDecimal(totalQuoted, 1, 'COMMA', 2, 'POINT')}">R 0.00</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="data-panel p-3 border-start border-4 border-info">
+                            <div class="text-muted small text-uppercase font-weight-bold">Active Quotations</div>
+                            <h3 class="fw-bold text-info mb-0" th:text="${#lists.size(quotations)}">0</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quotations Table -->
+                <div class="data-panel p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Quotation #</th>
+                                    <th>Client / Customer</th>
+                                    <th>Issue Date</th>
+                                    <th>Valid Until</th>
+                                    <th>Total Amount</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="q : ${quotations}">
+                                    <td><strong class="text-primary" th:text="${q.quotationNumber}">QT-001</strong></td>
+                                    <td>
+                                        <div class="font-weight-bold text-dark" th:text="${q.customerName != null ? q.customerName : 'Walk-in Client'}">Customer</div>
+                                        <small class="text-muted d-block" th:text="${q.customerEmail}">email@client.com</small>
+                                    </td>
+                                    <td th:text="${q.issueDate}">2026-08-01</td>
+                                    <td th:text="${q.validUntilDate}">2026-08-15</td>
+                                    <td class="fw-bold text-dark" th:text="'R ' + ${#numbers.formatDecimal(q.totalAmount, 1, 'COMMA', 2, 'POINT')}">R 0.00</td>
+                                    <td>
+                                        <span class="badge"
+                                              th:classappend="${q.status.name() == 'CONVERTED_TO_INVOICE' ? 'bg-success' : (q.status.name() == 'ACCEPTED' ? 'bg-info' : 'bg-secondary')}"
+                                              th:text="${q.status}">DRAFT</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="btn-group btn-group-sm">
+                                            <a th:href="@{'/tenant/quotations/' + ${q.id} + '/print'}" target="_blank" class="btn btn-outline-secondary" title="Print / PDF">
+                                                <i class="bi bi-printer"></i>
+                                            </a>
+                                            <form th:if="${q.status.name() != 'CONVERTED_TO_INVOICE'}" th:action="@{'/tenant/quotations/' + ${q.id} + '/convert'}" method="post" class="d-inline">
+                                                <button type="submit" class="btn btn-success" title="Convert to Invoice">
+                                                    <i class="bi bi-arrow-right-circle me-1"></i> Convert to Invoice
+                                                </button>
+                                            </form>
+                                            <form th:action="@{'/tenant/quotations/' + ${q.id} + '/delete'}" method="post" class="d-inline" onsubmit="return confirm('Delete this quotation?');">
+                                                <button type="submit" class="btn btn-outline-danger" title="Delete">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr th:if="${#lists.isEmpty(quotations)}">
+                                    <td colspan="7" class="text-center text-muted py-5">
+                                        <i class="bi bi-file-earmark-spreadsheet fs-1 d-block mb-2 text-secondary"></i>
+                                        No quotations created yet. Click <strong>Create Quotation</strong> above to send your first estimate!
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Modal: Create New Quotation -->
+<div class="modal fade" id="newQuotationModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <form th:action="@{/tenant/quotations/save}" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-plus-circle text-primary me-2"></i> Create New Commercial Quotation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold">Client / Customer Name *</label>
+                            <input type="text" name="customerName" class="form-control" placeholder="Acme Corporation / John Doe" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold">Client Email</label>
+                            <input type="email" name="customerEmail" class="form-control" placeholder="client@acme.com">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold">Client Phone</label>
+                            <input type="text" name="customerPhone" class="form-control" placeholder="+27 82 000 0000">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold">Valid Until Date</label>
+                            <input type="date" name="validUntilDate" class="form-control" th:value="${#temporals.format(#temporals.createToday().plusDays(14), 'yyyy-MM-dd')}">
+                        </div>
+                    </div>
+
+                    <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">Line Items / Deliverables</h6>
+                    <div id="quotationItemsContainer">
+                        <div class="row g-2 mb-2 item-row">
+                            <div class="col-md-6">
+                                <input type="text" name="itemDescription" class="form-control" placeholder="Item / Scope of work description" required>
+                            </div>
+                            <div class="col-md-2">
+                                <input type="number" step="1" name="itemQuantity" class="form-control" value="1" placeholder="Qty" required>
+                            </div>
+                            <div class="col-md-3">
+                                <input type="number" step="0.01" name="itemUnitPrice" class="form-control" placeholder="Unit Price (R)" required>
+                            </div>
+                            <div class="col-md-1 text-end">
+                                <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="removeRow(this)"><i class="bi bi-x"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm mb-4" onclick="addQuotationRow()"><i class="bi bi-plus"></i> Add Line Item</button>
+
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Quotation Scope & Terms</label>
+                        <textarea name="notes" class="form-control" rows="2" placeholder="Estimate valid for 14 days. Prices inclusive of VAT."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4">Generate & Save Quotation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/admin.js}"></script>
+<script>
+    function addQuotationRow() {
+        const container = document.getElementById('quotationItemsContainer');
+        const row = document.createElement('div');
+        row.className = 'row g-2 mb-2 item-row';
+        row.innerHTML = `
+            <div class="col-md-6">
+                <input type="text" name="itemDescription" class="form-control" placeholder="Item / Scope of work description" required>
+            </div>
+            <div class="col-md-2">
+                <input type="number" step="1" name="itemQuantity" class="form-control" value="1" placeholder="Qty" required>
+            </div>
+            <div class="col-md-3">
+                <input type="number" step="0.01" name="itemUnitPrice" class="form-control" placeholder="Unit Price (R)" required>
+            </div>
+            <div class="col-md-1 text-end">
+                <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="removeRow(this)"><i class="bi bi-x"></i></button>
+            </div>
+        `;
+        container.appendChild(row);
+    }
+    function removeRow(btn) {
+        const rows = document.querySelectorAll('.item-row');
+        if (rows.length > 1) {
+            btn.closest('.item-row').remove();
+        }
+    }
+</script>
+</body>
+</html>

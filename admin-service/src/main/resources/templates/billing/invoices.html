@@ -257,6 +257,13 @@
 							            View
 							        </button>
 							    </form>
+							    <a th:href="@{/billing/invoices/{id}/print(id=${invoice.id})}"
+							       target="_blank"
+							       class="btn btn-sm btn-outline-primary ms-1"
+							       title="Print / Save Tax Invoice PDF">
+							        <i class="bi bi-printer"></i>
+							        Print
+							    </a>
 							</td>
                         </tr>
 

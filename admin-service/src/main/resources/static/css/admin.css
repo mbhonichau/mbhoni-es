@@ -53,7 +53,7 @@ html, body {
 .admin-sidebar {
   width: var(--sidebar-width);
   min-height: 100vh;
-  background: var(--nav-bg);
+  background: linear-gradient(180deg, #262a1d 0%, #1b1e15 45%, #0d0f0a 100%);
   color: var(--nav-text);
   padding: 16px 12px;
   position: fixed;
@@ -61,6 +61,7 @@ html, body {
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(223,221,209,.22) transparent;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
   z-index: 1000;
   transition: transform 0.25s ease-in-out;
 }
@@ -186,8 +187,9 @@ html, body {
 .sidebar-nav .nav-link.active {
   color: #ffffff;
   opacity: 1;
-  background: var(--btn-primary);
-  box-shadow: 0 3px 8px rgba(113, 53, 25, 0.35);
+  background: linear-gradient(135deg, #3a3f2c 0%, #262A1D 100%);
+  border-left: 3px solid #E3A857;
+  box-shadow: 0 3px 8px rgba(38, 42, 29, 0.4);
 }
 
 .sidebar-nav .nav-link i {
@@ -219,17 +221,21 @@ html, body {
 
 .admin-topbar {
   height: 56px;
-  background: #ffffff;
-  border-bottom: 1px solid var(--panel-border);
+  position: sticky;
+  top: 0;
+  z-index: 990;
+  background: linear-gradient(90deg, #262a1d 0%, #1b1e15 45%, #0d0f0a 100%);
+  color: #ffffff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 20px;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
 }
 
 .eyebrow {
-  color: var(--muted);
+  color: #E3A857;
   font-size: 0.68rem;
   text-transform: uppercase;
   letter-spacing: .08em;
@@ -240,7 +246,7 @@ html, body {
 .page-shell-title {
   font-size: 1.05rem;
   font-weight: 750;
-  color: var(--ink);
+  color: #ffffff;
 }
 
 .admin-content {
@@ -592,14 +598,14 @@ html, body {
 }
 
 .table th {
-  background: #fbfbfa;
-  color: var(--muted);
-  font-size: 0.72rem;
+  background: linear-gradient(135deg, #262A1D 0%, #3a3f2c 100%);
+  color: #ffffff;
+  font-size: 0.74rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .05em;
-  border-bottom: 1px solid var(--panel-border);
-  padding: 8px 12px;
+  border-bottom: 2px solid #E3A857;
+  padding: 10px 12px;
   white-space: nowrap;
 }
 
@@ -799,4 +805,196 @@ html, body {
     margin-left: 0;
     width: 100%;
   }
+}
+
+/* ==========================================================================
+   Dropdown Placement & Positioning Controls (Force Downward Direction)
+   ========================================================================== */
+
+.dropdown,
+.btn-group {
+  position: relative !important;
+}
+
+/* Force Bootstrap dropdown menus to open downwards */
+.dropdown-menu,
+.dropdown-menu[data-bs-popper] {
+  top: 100% !important;
+  bottom: auto !important;
+  transform: translateY(0) !important;
+  margin-top: 4px !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+  border: 1px solid var(--panel-border);
+  z-index: 1050 !important;
+}
+
+/* Prevent container overflow clipping for dropdown menus in tables */
+.table-responsive {
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+/* ==========================================================================
+   Enterprise Redesigned Dashboard Styles (2-Column Premium Architecture)
+   ========================================================================== */
+
+.dash-container {
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid var(--panel-border);
+  box-shadow: 0 10px 30px rgba(38, 42, 29, 0.06);
+  overflow: hidden;
+  margin-bottom: 2rem;
+}
+
+.dash-topbar {
+  background: linear-gradient(135deg, #1b1e15 0%, #262A1D 100%);
+  color: #ffffff;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dash-brand-badge {
+  background: linear-gradient(135deg, #E3A857 0%, #c48b3b 100%);
+  color: #1b1e15;
+  font-weight: 800;
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+}
+
+.dash-body {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  min-height: 550px;
+}
+
+@media (max-width: 992px) {
+  .dash-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dash-col-1 {
+  background: #fdfdfd;
+  border-right: 1px solid var(--panel-border);
+  padding: 1.75rem;
+}
+
+.dash-col-2 {
+  background: #ffffff;
+  padding: 1.75rem;
+}
+
+.dash-user-avatar-badge {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #262A1D 0%, #E3A857 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  box-shadow: 0 4px 12px rgba(227, 168, 87, 0.3);
+}
+
+.dash-timeline {
+  list-style: none;
+  padding: 0;
+  margin: 1.25rem 0 0 0;
+  position: relative;
+}
+
+.dash-timeline::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 11px;
+  width: 2px;
+  background: #e2e8f0;
+}
+
+.dash-timeline-item {
+  position: relative;
+  padding-left: 2rem;
+  margin-bottom: 1.25rem;
+}
+
+.dash-timeline-item::before {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 6px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #E3A857;
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 0 2px rgba(227, 168, 87, 0.3);
+}
+
+.dash-timeline-item.active::before {
+  background: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+}
+
+.dash-metric-card {
+  background: #ffffff;
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 1.25rem;
+  transition: all 0.2s ease-in-out;
+  position: relative;
+  overflow: hidden;
+}
+
+.dash-metric-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(38, 42, 29, 0.08);
+  border-color: #E3A857;
+}
+
+.dash-metric-card.olive {
+  background: linear-gradient(135deg, #262A1D 0%, #3a3f2c 100%);
+  color: #ffffff;
+  border: none;
+}
+
+.dash-metric-card.gold {
+  background: linear-gradient(135deg, #E3A857 0%, #d49540 100%);
+  color: #1b1e15;
+  border: none;
+}
+
+.dash-context-banner {
+  background: linear-gradient(135deg, #1b1e15 0%, #262A1D 100%);
+  color: #ffffff;
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+  margin: 1.5rem 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 6px 20px rgba(38, 42, 29, 0.15);
+}
+
+.dash-discover-card {
+  background: #f8fafc;
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 1rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.dash-discover-card:hover {
+  background: #ffffff;
+  border-color: #E3A857;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(38, 42, 29, 0.06);
 }

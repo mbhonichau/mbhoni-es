@@ -36,7 +36,15 @@
                         </div>
                         
                         <div>
-						    <label class="form-label">Industry Profile</label>
+						    <div class="d-flex justify-content-between align-items-center mb-1">
+						        <label class="form-label mb-0">Industry Profile</label>
+						        <button type="button" 
+						                class="btn btn-link btn-sm p-0 text-decoration-none" 
+						                data-bs-toggle="modal" 
+						                data-bs-target="#createIndustryModal">
+						            <i class="bi bi-plus-circle me-1"></i>+ Add New Industry
+						        </button>
+						    </div>
 						    <select th:field="*{industryProfileId}" class="form-select">
 						        <option value="">General / Not assigned</option>
 						        <option th:each="profile : ${industryProfiles}"
@@ -72,6 +80,58 @@
         </main>
 
         <div th:replace="~{fragments/footer :: footer}"></div>
+    </div>
+</div>
+
+<!-- Modal: Create New Industry Sector Profile -->
+<div class="modal fade" id="createIndustryModal" tabindex="-1" aria-labelledby="createIndustryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form th:action="@{/tenants/industries/create}" method="post">
+                <input type="hidden" name="redirectUrl" value="/tenants/create">
+                <div class="modal-header">
+                    <h5 class="modal-title d-flex align-items-center gap-2" id="createIndustryModalLabel">
+                        <i class="bi bi-building-add text-primary"></i>
+                        <span>Add New Industry Sector Profile</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-start">
+                    <div class="mb-3">
+                        <label class="form-label">Industry Name <span class="text-danger">*</span></label>
+                        <input type="text"
+                               name="name"
+                               class="form-control"
+                               placeholder="e.g. Agriculture &amp; Farming, Mining &amp; Minerals"
+                               required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Code (Optional)</label>
+                        <input type="text"
+                               name="code"
+                               class="form-control"
+                               placeholder="e.g. AGRICULTURE, MINING"
+                               style="text-transform: uppercase;">
+                        <div class="form-text">Unique uppercase code identifier. Auto-generated if left empty.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea name="description"
+                                  class="form-control"
+                                  rows="2"
+                                  placeholder="Brief description of business operations and industry context."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-1"></i> Create Industry Profile
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 

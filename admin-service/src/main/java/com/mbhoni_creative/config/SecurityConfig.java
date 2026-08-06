@@ -99,6 +99,7 @@ public class SecurityConfig {
 
                 .requestMatchers(HttpMethod.GET, "/users/reset-password").permitAll()
                 .requestMatchers(HttpMethod.POST, "/users/reset-password/token").permitAll()
+                .requestMatchers(HttpMethod.POST, "/forgot-password", "/users/forgot-password").permitAll()
 
                 .requestMatchers("/super-admin/**")
                         .hasRole("SUPER_ADMIN")
