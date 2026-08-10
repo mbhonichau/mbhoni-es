@@ -76,7 +76,7 @@
                 </form>
             </section>
 
-            <section class="form-panel mb-4">
+            <section class="form-panel mb-4" th:if="${isGlobalAdmin}">
                 <form th:action="@{/subscriptions/tenants/assign}" method="post">
                     <div class="form-grid">
                         <div>

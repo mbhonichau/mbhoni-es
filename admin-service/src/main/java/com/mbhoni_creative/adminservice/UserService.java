@@ -24,4 +24,6 @@ public interface UserService {
     boolean requestPasswordReset(String usernameOrEmail);
 
     boolean resetPasswordWithToken(String token, String newPassword);
+
+    void registerUser(String username, String email, String password, Long tenantId);
 }

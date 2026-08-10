@@ -1,6 +1,7 @@
 package com.mbhoni_creative.admincontroller;
 
 import java.util.Set;
+import java.util.List;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
@@ -12,6 +13,8 @@ import com.mbhoni_creative.adminservice.ModuleService;
 import com.mbhoni_creative.adminservice.TenantService;
 
 import com.mbhoni_creative.adminentity.PlatformModule;
+import com.mbhoni_creative.config.TenantSecurityService;
+import com.mbhoni_creative.config.TenantAccessService;
 
 @Controller
 @RequestMapping("/modules")
@@ -19,20 +22,26 @@ public class ModuleController {
 
     private final ModuleService moduleService;
     private final TenantService tenantService;
+    private final TenantSecurityService tenantSecurityService;
+    private final TenantAccessService tenantAccessService;
 
     public ModuleController(
             ModuleService moduleService,
-            TenantService tenantService) {
+            TenantService tenantService,
+            TenantSecurityService tenantSecurityService,
+            TenantAccessService tenantAccessService) {
 
         this.moduleService = moduleService;
         this.tenantService = tenantService;
+        this.tenantSecurityService = tenantSecurityService;
+        this.tenantAccessService = tenantAccessService;
     }
 
     @GetMapping
     @PreAuthorize("hasAuthority('MODULE_VIEW')")
     public String index(Model model) {
 
-        model.addAttribute("tenants", tenantService.getAllTenants());
+        model.addAttribute("tenants", getAccessibleTenants());
 
         return "modules/index";
     }
@@ -44,6 +53,7 @@ public class ModuleController {
             RedirectAttributes redirectAttributes) {
 
         try {
+            enforceGlobalAdmin();
             moduleService.createModule(module);
             redirectAttributes.addFlashAttribute("successMessage", "Platform module '" + module.getName() + "' created successfully.");
         } catch (Exception e) {
@@ -59,7 +69,8 @@ public class ModuleController {
             @RequestParam Long tenantId,
             Model model) {
 
-        model.addAttribute("tenants", tenantService.getAllTenants());
+        tenantAccessService.requireAccess(tenantId);
+        model.addAttribute("tenants", getAccessibleTenants());
         model.addAttribute("selectedTenantId", tenantId);
         model.addAttribute("modules", moduleService.getTenantModuleViews(tenantId));
 
@@ -73,10 +84,26 @@ public class ModuleController {
             @RequestParam(required = false) Set<Long> enabledModuleIds,
             RedirectAttributes redirectAttributes) {
 
+        tenantAccessService.requireAccess(tenantId);
         moduleService.updateTenantModules(tenantId, enabledModuleIds);
 
         redirectAttributes.addFlashAttribute("successMessage", "Tenant modules updated successfully.");
 
         return "redirect:/modules";
+    }
+
+    private void enforceGlobalAdmin() {
+        if (!tenantSecurityService.isGlobalAdmin()) {
+            throw new org.springframework.security.access.AccessDeniedException("Access denied: global admin only");
+        }
+    }
+
+    private List<com.mbhoni_creative.admindto.TenantDto> getAccessibleTenants() {
+        if (tenantSecurityService.isGlobalAdmin()) {
+            return tenantService.getAllTenants();
+        }
+
+        Long tenantId = tenantAccessService.getCurrentTenantId();
+        return tenantId == null ? List.of() : List.of(tenantService.getTenantById(tenantId));
     }
 }

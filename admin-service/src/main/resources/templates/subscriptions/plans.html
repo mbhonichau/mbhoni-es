@@ -25,7 +25,7 @@
 
                 <a th:href="@{/subscriptions/plans/create}"
                    class="btn btn-primary"
-                   sec:authorize="hasAuthority('SUBSCRIPTION_CREATE')">
+                   th:if="${isGlobalAdmin}">
                     <i class="bi bi-plus-circle"></i>
                     New Plan
                 </a>

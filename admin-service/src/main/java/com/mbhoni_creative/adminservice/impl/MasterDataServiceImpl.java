@@ -45,6 +45,13 @@ public class MasterDataServiceImpl implements MasterDataService {
 
     @Override
     @Transactional(readOnly = true)
+    public LookupCategory getCategoryById(Long categoryId) {
+        return categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new RuntimeException("Category not found with ID: " + categoryId));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public LookupCategory getCategoryByCode(String code) {
         return categoryRepository.findByCode(code)
                 .orElseThrow(() -> new RuntimeException("Category not found with code: " + code));
@@ -60,6 +67,13 @@ public class MasterDataServiceImpl implements MasterDataService {
     @Transactional(readOnly = true)
     public List<LookupCode> getLookupCodesByCategoryId(Long categoryId) {
         return codeRepository.findByCategoryIdOrderByDisplayOrderAsc(categoryId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public LookupCode getLookupCodeById(Long codeId) {
+        return codeRepository.findById(codeId)
+                .orElseThrow(() -> new RuntimeException("Lookup code not found with ID: " + codeId));
     }
 
     @Override

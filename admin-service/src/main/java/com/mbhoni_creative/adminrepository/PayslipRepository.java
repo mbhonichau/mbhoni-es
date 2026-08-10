@@ -9,4 +9,5 @@ public interface PayslipRepository extends JpaRepository<Payslip, Long> {
     List<Payslip> findByTenantIdOrderByPayDateDesc(Long tenantId);
     List<Payslip> findByEmployeeIdOrderByPayDateDesc(Long employeeId);
     Optional<Payslip> findByPayslipNumber(String payslipNumber);
+    void deleteByEmployeeId(Long employeeId);
 }

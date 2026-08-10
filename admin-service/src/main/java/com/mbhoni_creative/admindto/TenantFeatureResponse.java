@@ -22,6 +22,11 @@ public class TenantFeatureResponse {
     private boolean suspended;
     private boolean cancelled;
 
+    private TenantSettingsDto adminSettings;
+
+    public TenantSettingsDto getAdminSettings() { return adminSettings; }
+    public void setAdminSettings(TenantSettingsDto adminSettings) { this.adminSettings = adminSettings; }
+
     public Long getTenantId() { return tenantId; }
     public void setTenantId(Long tenantId) { this.tenantId = tenantId; }
 

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="https://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/head :: head('Employee Completeness Report')}"></head>
+
+<body>
+<div class="admin-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <main class="admin-content">
+            <!-- Page Heading & Quick Metrics -->
+            <section class="page-heading mb-4">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <div>
+                        <p class="eyebrow">Human Capital Compliance Audit</p>
+                        <h2 class="h3 fw-bold mb-0 text-dark">Employee Record Completeness Report</h2>
+                        <p class="text-muted mb-0">Audit missing required field values against tenant effective schema configurations.</p>
+                    </div>
+
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a th:href="@{/employee-fields}" class="btn btn-outline-secondary shadow-sm">
+                            <i class="bi bi-sliders me-1"></i> Field Configurator
+                        </a>
+                        <a th:href="@{/employees}" class="btn btn-primary shadow-sm">
+                            <i class="bi bi-person-vcard me-1"></i> Employee Roster
+                        </a>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Metrics Summary Cards -->
+            <div class="row g-3 mb-4">
+                <div class="col-12 col-sm-4">
+                    <div class="card border-0 shadow-sm rounded-3 p-3 bg-body">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <span class="text-muted small text-uppercase fw-bold">Audited Staff</span>
+                                <h3 class="fw-bold mb-0 text-dark" th:text="${totalCount}">0</h3>
+                            </div>
+                            <div class="rounded-3 p-3 text-primary bg-primary bg-opacity-10">
+                                <i class="bi bi-people fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-4">
+                    <div class="card border-0 shadow-sm rounded-3 p-3 bg-body">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <span class="text-muted small text-uppercase fw-bold">Fully Compliant</span>
+                                <h3 class="fw-bold mb-0 text-success" th:text="${completeCount}">0</h3>
+                            </div>
+                            <div class="rounded-3 p-3 text-success bg-success bg-opacity-10">
+                                <i class="bi bi-shield-check fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-4">
+                    <div class="card border-0 shadow-sm rounded-3 p-3 bg-body">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <span class="text-muted small text-uppercase fw-bold">Missing Required Data</span>
+                                <h3 class="fw-bold mb-0 text-danger" th:text="${incompleteCount}">0</h3>
+                            </div>
+                            <div class="rounded-3 p-3 text-danger bg-danger bg-opacity-10">
+                                <i class="bi bi-exclamation-triangle fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Completeness Audit Table -->
+            <div class="card shadow-sm border-0 rounded-3">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-clipboard-check text-primary me-2"></i>Completeness Gap Audit Roster</h5>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Employee Number &amp; Name</th>
+                            <th>Completeness Status</th>
+                            <th>Missing Required Fields (Gap List)</th>
+                            <th class="text-end pe-4">Action</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="r : ${report}">
+                            <td class="ps-4">
+                                <div class="fw-bold text-dark" th:text="${r.employeeName}">Jane Doe</div>
+                                <div class="small text-muted font-monospace" th:text="${r.employeeNumber}">EMP-1001</div>
+                            </td>
+                            <td>
+                                <span th:if="${r.complete}" class="badge bg-success text-white px-2.5 py-1.5 fw-bold">
+                                    <i class="bi bi-shield-check me-1"></i> 100% Compliant
+                                </span>
+                                <!-- Compliance-Blocking Gap: Crimson Red -->
+                                <span th:if="${!r.complete and (r.missingFieldKeys.contains('clearance_reference') or r.missingFieldKeys.contains('vetting_provider') or r.missingFieldKeys.contains('clearance_expiry_date'))}" 
+                                      class="badge bg-danger text-white px-2.5 py-1.5 fw-bold shadow-sm" style="background-color: #991b1b !important;">
+                                    <i class="bi bi-shield-x me-1"></i> Compliance Blocking Gap
+                                </span>
+                                <!-- Partial Gap: Amber Gold -->
+                                <span th:if="${!r.complete and !(r.missingFieldKeys.contains('clearance_reference') or r.missingFieldKeys.contains('vetting_provider') or r.missingFieldKeys.contains('clearance_expiry_date'))}" 
+                                      class="badge bg-warning text-dark px-2.5 py-1.5 fw-bold shadow-sm" style="background-color: #d97706 !important; color: #ffffff !important;">
+                                    <i class="bi bi-exclamation-triangle-fill me-1"></i> Partial Schema Gap
+                                </span>
+                            </td>
+                            <td>
+                                <div th:if="${r.complete}" class="text-muted small">All required schema fields fully populated.</div>
+                                <div th:if="${!r.complete}" class="d-flex flex-wrap gap-1">
+                                    <span th:each="lbl : ${r.missingFieldLabels}" 
+                                          class="badge" 
+                                          th:classappend="${lbl.toLowerCase().contains('clearance') or lbl.toLowerCase().contains('vetting') or lbl.toLowerCase().contains('background')} ? 'bg-danger text-white' : 'bg-warning text-dark'"
+                                          th:text="${lbl}">Missing Field</span>
+                                </div>
+                            </td>
+                            <td class="text-end pe-4">
+                                <a th:href="@{/employees}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-pencil-square me-1"></i> Edit Profile
+                                </a>
+                            </td>
+                        </tr>
+                        <tr th:if="${report == null or report.isEmpty()}">
+                            <td colspan="4" class="text-center text-muted py-5">
+                                <i class="bi bi-shield-check fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                                No employee record completeness gaps detected.
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+        <div th:replace="~{fragments/footer :: footer}"></div>
+    </div>
+</div>
+
+<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/sidebar.js}"></script>
+</body>
+</html>

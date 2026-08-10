@@ -166,6 +166,16 @@ admin-service/
 
 ## Getting Started & Local Setup
 
+### Configuration and secrets
+
+The application reads database, SMTP, admin-email, and Google OAuth credentials from environment variables. For local development, copy `.env.example` to a local `.env` file in the repository root and supply valid values; Spring Boot loads that file automatically. Alternatively, configure the variables in your IDE/runtime. Never commit actual credentials. Existing credentials that were previously stored in source control should be rotated before the next deployment.
+
+### Database migrations
+
+Flyway executes versioned migrations from `src/main/resources/db/migration`. On an existing database, it creates a Flyway history table at baseline version `0` and then applies the idempotent baseline migration. During the transition from legacy schema initialization, `JPA_DDL_AUTO` defaults to `update`; set it to `validate` in staging first, then production, once the live schema has been reconciled and every schema change is delivered through a Flyway migration.
+
+If a migration fails during local development, correct the migration before retrying and remove only its failed row from `flyway_schema_history` after taking a database backup. Flyway blocks startup by design until this repair is completed; never delete successful migration-history entries.
+
 ### Prerequisites
 - **JDK 21** or later installed
 - **Apache Maven 3.9+** installed

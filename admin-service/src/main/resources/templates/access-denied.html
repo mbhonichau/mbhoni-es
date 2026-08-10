@@ -10,18 +10,32 @@
         <div th:replace="~{fragments/navbar :: navbar}"></div>
 
         <main class="admin-content">
-            <section class="denied-panel">
-                <div class="quick-icon amber">
-                    <i class="bi bi-shield-lock"></i>
+            <div class="container-fluid px-4 py-4">
+                <div class="alert alert-danger admin-alert mb-4 d-flex align-items-center gap-2">
+                    <i class="bi bi-shield-lock-fill fs-5"></i>
+                    <div>
+                        <strong>Access Restricted:</strong> You do not have sufficient permissions to view or edit this resource.
+                    </div>
                 </div>
 
-                <h2>Access Denied</h2>
-                <p>You do not have permission to open this page.</p>
+                <section class="card shadow-sm border-0 p-5 text-center mx-auto" style="max-width: 600px; border-radius: 16px;">
+                    <div class="mb-3 mx-auto d-flex align-items-center justify-content-center" style="width: 72px; height: 72px; background: rgba(227, 168, 87, 0.15); color: #E3A857; border-radius: 50%;">
+                        <i class="bi bi-shield-lock fs-1"></i>
+                    </div>
 
-                <a th:href="@{/dashboard}" class="btn btn-primary">
-                    Back to Dashboard
-                </a>
-            </section>
+                    <h3 class="fw-bold text-dark mb-2">Access Denied</h3>
+                    <p class="text-muted mb-4 fs-6">Your role or account privileges do not permit performing this operation. Please contact your system administrator if you believe this is an error.</p>
+
+                    <div class="d-flex justify-content-center gap-3">
+                        <button onclick="window.history.back()" class="btn btn-outline-secondary px-4">
+                            <i class="bi bi-arrow-left me-1"></i> Go Back
+                        </button>
+                        <a th:href="@{/subscriptions/tenants}" class="btn btn-primary px-4">
+                            <i class="bi bi-house-door me-1"></i> View Subscriptions
+                        </a>
+                    </div>
+                </section>
+            </div>
         </main>
 
         <div th:replace="~{fragments/footer :: footer}"></div>

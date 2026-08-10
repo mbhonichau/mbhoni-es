@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Tenant Onboarding Fields')}"></head>
+
+<body>
+<div class="admin-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <main class="admin-content">
+            <div th:if="${successMessage}" class="alert alert-success admin-alert shadow-sm">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                <span th:text="${successMessage}">Success message</span>
+            </div>
+            <div th:if="${errorMessage}" class="alert alert-danger admin-alert shadow-sm">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <span th:text="${errorMessage}">Error message</span>
+            </div>
+
+            <section class="page-heading mb-4">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <div>
+                        <p class="eyebrow text-uppercase font-monospace tracking-wider text-muted mb-1">Dynamic Field Configurator</p>
+                        <h2 class="fw-bold tracking-tight mb-1">Onboarding &amp; Employee Sub-section Fields</h2>
+                        <p class="text-muted mb-0">
+                            Define, edit, reorder, and deactivate profile fields collected per section for 
+                            <strong th:text="${tenant.name}" class="text-dark">Tenant Name</strong>
+                            <span th:if="${tenant.industryProfileName != null}" class="badge bg-secondary-subtle text-secondary ms-2" th:text="${tenant.industryProfileName}">Industry</span>
+                        </p>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCustomFieldModal">
+                            <i class="bi bi-plus-lg me-1"></i> Add Custom Section Field
+                        </button>
+                        <a th:href="@{'/tenants/' + ${tenant.id} + '/settings'}" class="btn btn-outline-primary">
+                            <i class="bi bi-sliders me-1"></i> Admin Settings
+                        </a>
+                        <a th:href="@{/tenants}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i> Back to Tenants
+                        </a>
+                    </div>
+                </div>
+            </section>
+
+            <form th:action="@{${saveAction}}" method="post">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <ul class="nav nav-tabs card-header-tabs" id="fieldTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active fw-bold text-primary" id="employee-tab" data-bs-toggle="tab" data-bs-target="#employee-fields" type="button" role="tab" aria-controls="employee-fields" aria-selected="true">
+                                    <i class="bi bi-person-badge me-2"></i> Employee Sub-sections &amp; Onboarding
+                                    <span class="badge bg-primary rounded-pill ms-2" th:text="${schema.employeeFields.size()}">0</span>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link fw-bold text-secondary" id="user-tab" data-bs-toggle="tab" data-bs-target="#user-fields" type="button" role="tab" aria-controls="user-fields" aria-selected="false">
+                                    <i class="bi bi-people me-2"></i> User Account Fields
+                                    <span class="badge bg-secondary rounded-pill ms-2" th:text="${schema.userFields.size()}">0</span>
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="card-body p-0">
+                        <div class="tab-content" id="fieldTabsContent">
+                            
+                            <!-- EMPLOYEE FIELDS TAB -->
+                            <div class="tab-pane fade show active p-4" id="employee-fields" role="tabpanel">
+                                <div class="alert alert-info border-0 bg-info-subtle text-info-emphasis mb-4">
+                                    <i class="bi bi-info-circle-fill me-2 fs-5 align-middle"></i>
+                                    <span>Define, edit labels, reorder display order, or deactivate fields across Personal Identity, Qualifications/Licenses, Background Checks, Employment Status, Field Assignments, and Financials.</span>
+                                </div>
+
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle admin-table mb-0">
+                                        <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 8%;">Order</th>
+                                            <th style="width: 22%;">Field Key &amp; Help Text</th>
+                                            <th style="width: 18%;">Section / Category</th>
+                                            <th style="width: 24%;">Custom Field Label</th>
+                                            <th style="width: 23%;">Requirement State</th>
+                                            <th style="width: 5%;" class="text-end">Action</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        <tr th:each="field, stat : ${schema.employeeFields}">
+                                            <input type="hidden" th:name="|fields[${stat.index}].id|" th:value="${field.id}" />
+                                            <input type="hidden" th:name="|fields[${stat.index}].fieldKey|" th:value="${field.fieldKey}" />
+                                            <input type="hidden" th:name="|fields[${stat.index}].targetEntity|" value="EMPLOYEE" />
+
+                                            <td>
+                                                <input type="number" 
+                                                       class="form-control form-control-sm font-monospace text-center" 
+                                                       style="width: 65px;" 
+                                                       th:name="|fields[${stat.index}].displayOrder|" 
+                                                       th:value="${field.displayOrder}">
+                                            </td>
+                                            <td>
+                                                <div class="fw-bold text-dark" th:text="${field.fieldKey}">fieldKey</div>
+                                                <input type="text" 
+                                                       class="form-control form-control-sm mt-1 fs-7 text-muted" 
+                                                       th:name="|fields[${stat.index}].helpText|" 
+                                                       th:value="${field.helpText}" 
+                                                       placeholder="Help text / placeholder">
+                                            </td>
+                                            <td>
+                                                <select class="form-select form-select-sm" th:name="|fields[${stat.index}].fieldCategory|">
+                                                    <option value="IDENTITY" th:selected="${field.fieldCategory == 'IDENTITY'}">Personal &amp; Identity</option>
+                                                    <option value="CONTACT" th:selected="${field.fieldCategory == 'CONTACT'}">Contact &amp; Emergency</option>
+                                                    <option value="COMPLIANCE" th:selected="${field.fieldCategory == 'COMPLIANCE'}">Qualification &amp; License</option>
+                                                    <option value="BACKGROUND_CHECK" th:selected="${field.fieldCategory == 'BACKGROUND_CHECK'}">Background Check</option>
+                                                    <option value="EMPLOYMENT" th:selected="${field.fieldCategory == 'EMPLOYMENT'}">Employment Status</option>
+                                                    <option value="FIELD_ASSIGNMENT" th:selected="${field.fieldCategory == 'FIELD_ASSIGNMENT'}">Field Assignment</option>
+                                                    <option value="FINANCIAL" th:selected="${field.fieldCategory == 'FINANCIAL'}">Financial &amp; Tax</option>
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <input type="text" 
+                                                       class="form-control form-control-sm" 
+                                                       th:name="|fields[${stat.index}].fieldLabel|" 
+                                                       th:value="${field.fieldLabel}" 
+                                                       placeholder="Custom label">
+                                            </td>
+                                            <td>
+                                                <div class="btn-group w-100 req-state-toggle" role="group">
+                                                    <input type="radio" 
+                                                           class="btn-check" 
+                                                           th:name="|fields[${stat.index}].requirementState|" 
+                                                           th:id="|emp-dis-${stat.index}|" 
+                                                           value="DISABLED" 
+                                                           th:checked="${field.requirementState.name() == 'DISABLED'}">
+                                                    <label class="btn btn-sm btn-state-disabled" th:for="|emp-dis-${stat.index}|" title="Deactivate field completely">
+                                                        <i class="bi bi-slash-circle me-1"></i> Disabled
+                                                    </label>
+
+                                                    <input type="radio" 
+                                                           class="btn-check" 
+                                                           th:name="|fields[${stat.index}].requirementState|" 
+                                                           th:id="|emp-opt-${stat.index}|" 
+                                                           value="OPTIONAL" 
+                                                           th:checked="${field.requirementState.name() == 'OPTIONAL'}">
+                                                    <label class="btn btn-sm btn-state-optional" th:for="|emp-opt-${stat.index}|">
+                                                        <i class="bi bi-info-circle me-1"></i> Optional
+                                                    </label>
+
+                                                    <input type="radio" 
+                                                           class="btn-check" 
+                                                           th:name="|fields[${stat.index}].requirementState|" 
+                                                           th:id="|emp-req-${stat.index}|" 
+                                                           value="REQUIRED" 
+                                                           th:checked="${field.requirementState.name() == 'REQUIRED'}">
+                                                    <label class="btn btn-sm btn-state-required" th:for="|emp-req-${stat.index}|">
+                                                        <i class="bi bi-exclamation-triangle-fill me-1"></i> Required
+                                                    </label>
+                                                </div>
+                                            </td>
+                                            <td class="text-end">
+                                                <button type="button" 
+                                                        class="btn btn-sm btn-outline-danger border-0" 
+                                                        th:if="${field.id != null}"
+                                                        th:onclick="'deleteField(' + ${field.id} + ')'" 
+                                                        title="Delete Custom Field">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- USER FIELDS TAB -->
+                            <div class="tab-pane fade p-4" id="user-fields" role="tabpanel">
+                                <div class="alert alert-info border-0 bg-info-subtle text-info-emphasis mb-4">
+                                    <i class="bi bi-info-circle-fill me-2 fs-5 align-middle"></i>
+                                    <span>Configure profile fields presented to users during self-registration or portal profile setup.</span>
+                                </div>
+
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle admin-table mb-0">
+                                        <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 8%;">Order</th>
+                                            <th style="width: 22%;">Field Name &amp; Key</th>
+                                            <th style="width: 18%;">Category</th>
+                                            <th style="width: 24%;">Custom Field Label</th>
+                                            <th style="width: 23%;">Requirement State</th>
+                                            <th style="width: 5%;" class="text-end">Action</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        <tr th:each="field, stat : ${schema.userFields}">
+                                            <input type="hidden" th:name="|fields[${stat.index + schema.employeeFields.size()}].id|" th:value="${field.id}" />
+                                            <input type="hidden" th:name="|fields[${stat.index + schema.employeeFields.size()}].fieldKey|" th:value="${field.fieldKey}" />
+                                            <input type="hidden" th:name="|fields[${stat.index + schema.employeeFields.size()}].targetEntity|" value="USER" />
+
+                                            <td>
+                                                <input type="number" 
+                                                       class="form-control form-control-sm font-monospace text-center" 
+                                                       style="width: 65px;" 
+                                                       th:name="|fields[${stat.index + schema.employeeFields.size()}].displayOrder|" 
+                                                       th:value="${field.displayOrder}">
+                                            </td>
+                                            <td>
+                                                <div class="fw-bold text-dark" th:text="${field.fieldKey}">fieldKey</div>
+                                                <input type="text" 
+                                                       class="form-control form-control-sm mt-1 fs-7 text-muted" 
+                                                       th:name="|fields[${stat.index + schema.employeeFields.size()}].helpText|" 
+                                                       th:value="${field.helpText}" 
+                                                       placeholder="Help text">
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-light text-dark border" th:text="${field.fieldCategory}">IDENTITY</span>
+                                            </td>
+                                            <td>
+                                                <input type="text" 
+                                                       class="form-control form-control-sm" 
+                                                       th:name="|fields[${stat.index + schema.employeeFields.size()}].fieldLabel|" 
+                                                       th:value="${field.fieldLabel}" 
+                                                       placeholder="Custom label">
+                                            </td>
+                                            <td>
+                                                <div class="btn-group w-100 req-state-toggle" role="group">
+                                                    <input type="radio" 
+                                                           class="btn-check" 
+                                                           th:name="|fields[${stat.index + schema.employeeFields.size()}].requirementState|" 
+                                                           th:id="|usr-dis-${stat.index}|" 
+                                                           value="DISABLED" 
+                                                           th:checked="${field.requirementState.name() == 'DISABLED'}">
+                                                    <label class="btn btn-sm btn-state-disabled" th:for="|usr-dis-${stat.index}|">
+                                                        <i class="bi bi-slash-circle me-1"></i> Disabled
+                                                    </label>
+
+                                                    <input type="radio" 
+                                                           class="btn-check" 
+                                                           th:name="|fields[${stat.index + schema.employeeFields.size()}].requirementState|" 
+                                                           th:id="|usr-opt-${stat.index}|" 
+                                                           value="OPTIONAL" 
+                                                           th:checked="${field.requirementState.name() == 'OPTIONAL'}">
+                                                    <label class="btn btn-sm btn-state-optional" th:for="|usr-opt-${stat.index}|">
+                                                        <i class="bi bi-info-circle me-1"></i> Optional
+                                                    </label>
+
+                                                    <input type="radio" 
+                                                           class="btn-check" 
+                                                           th:name="|fields[${stat.index + schema.employeeFields.size()}].requirementState|" 
+                                                           th:id="|usr-req-${stat.index}|" 
+                                                           value="REQUIRED" 
+                                                           th:checked="${field.requirementState.name() == 'REQUIRED'}">
+                                                    <label class="btn btn-sm btn-state-required" th:for="|usr-req-${stat.index}|">
+                                                        <i class="bi bi-exclamation-triangle-fill me-1"></i> Required
+                                                    </label>
+                                                </div>
+                                            </td>
+                                            <td class="text-end">
+                                                <button type="button" 
+                                                        class="btn btn-sm btn-outline-danger border-0" 
+                                                        th:if="${field.id != null}"
+                                                        th:onclick="'deleteField(' + ${field.id} + ')'" 
+                                                        title="Delete Custom Field">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BOTTOM SAVE BAR -->
+                <div class="card shadow-sm border-0 mt-4 bg-white sticky-bottom">
+                    <div class="card-body p-3 d-flex justify-content-between align-items-center">
+                        <span class="text-muted fs-7">
+                            <i class="bi bi-info-circle me-1"></i> Field configurations and display orders take effect immediately across all Employee &amp; User forms.
+                        </span>
+                        <div class="d-flex gap-2">
+                            <a th:href="@{/tenants}" class="btn btn-outline-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary px-4 fw-semibold">
+                                <i class="bi bi-save me-1"></i> Save All Field Configurations &amp; Reorders
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </main>
+        <div th:replace="~{fragments/footer :: footer}"></div>
+    </div>
+</div>
+
+<!-- Modal: Define New Custom Field -->
+<div class="modal fade" id="addCustomFieldModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form th:action="@{'/tenants/' + ${tenant.id} + '/onboarding-fields/add-custom'}" method="post" class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-plus-circle-fill me-2 text-primary"></i>Define Custom Section Field</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body row g-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Target Record Entity</label>
+                    <select name="targetEntity" class="form-select" required>
+                        <option value="EMPLOYEE">Employee Module</option>
+                        <option value="USER">User Account</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Sub-section / Category</label>
+                    <select name="fieldCategory" class="form-select" required>
+                        <option value="IDENTITY">Personal &amp; Identity</option>
+                        <option value="CONTACT">Contact &amp; Emergency</option>
+                        <option value="COMPLIANCE">Qualification &amp; License</option>
+                        <option value="BACKGROUND_CHECK">Background Check</option>
+                        <option value="EMPLOYMENT">Employment Status</option>
+                        <option value="FIELD_ASSIGNMENT">Field Assignment</option>
+                        <option value="FINANCIAL">Financial &amp; Tax</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Field Key (Identifier)</label>
+                    <input type="text" name="fieldKey" class="form-control font-monospace" placeholder="e.g. safetyCertNum" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Display Order</label>
+                    <input type="number" name="displayOrder" class="form-control" value="90" required>
+                </div>
+                <div class="col-12">
+                    <label class="form-label fw-semibold">Custom Field Label</label>
+                    <input type="text" name="fieldLabel" class="form-control" placeholder="e.g. Mining Safety Clearance #" required>
+                </div>
+                <div class="col-12">
+                    <label class="form-label fw-semibold">Requirement State</label>
+                    <select name="requirementState" class="form-select">
+                        <option value="OPTIONAL">Optional</option>
+                        <option value="REQUIRED">Required</option>
+                        <option value="DISABLED">Disabled (Deactivated)</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <label class="form-label fw-semibold">Help Text / Placeholder</label>
+                    <input type="text" name="helpText" class="form-control" placeholder="Optional instructions for candidate or admin">
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary px-4">Define &amp; Save Field</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Form Helper -->
+<form id="deleteFieldForm" th:action="@{'/tenants/' + ${tenant.id} + '/onboarding-fields/delete'}" method="post">
+    <input type="hidden" id="deleteFieldId" name="fieldId">
+</form>
+
+<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/sidebar.js}"></script>
+<script>
+    function deleteField(fieldId) {
+        if (confirm('Are you sure you want to remove this field configuration?')) {
+            document.getElementById('deleteFieldId').value = fieldId;
+            document.getElementById('deleteFieldForm').submit();
+        }
+    }
+</script>
+</body>
+</html>

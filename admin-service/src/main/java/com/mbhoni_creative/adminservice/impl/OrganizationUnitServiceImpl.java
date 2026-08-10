@@ -26,7 +26,7 @@ public class OrganizationUnitServiceImpl implements OrganizationUnitService {
     @Override
     @Transactional(readOnly = true)
     public List<OrganizationUnit> getOrganizationUnitsByTenant(Long tenantId) {
-        return orgRepository.findByTenantId(tenantId);
+        return tenantId != null ? orgRepository.findByTenantId(tenantId) : orgRepository.findAll();
     }
 
     @Override

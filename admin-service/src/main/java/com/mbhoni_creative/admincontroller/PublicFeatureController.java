@@ -9,19 +9,24 @@ import com.mbhoni_creative.adminentity.TenantSubscription;
 import com.mbhoni_creative.adminrepository.TenantRepository;
 import com.mbhoni_creative.adminrepository.TenantSubscriptionRepository;
 
+import com.mbhoni_creative.adminservice.TenantSettingsService;
+
 @RestController
 @RequestMapping("/api/public/features")
 public class PublicFeatureController {
 
     private final TenantRepository tenantRepository;
     private final TenantSubscriptionRepository subscriptionRepository;
+    private final TenantSettingsService settingsService;
 
     public PublicFeatureController(
             TenantRepository tenantRepository,
-            TenantSubscriptionRepository subscriptionRepository) {
+            TenantSubscriptionRepository subscriptionRepository,
+            TenantSettingsService settingsService) {
 
         this.tenantRepository = tenantRepository;
         this.subscriptionRepository = subscriptionRepository;
+        this.settingsService = settingsService;
     }
 
     @GetMapping("/{tenantId}")
@@ -35,6 +40,7 @@ public class PublicFeatureController {
 
         response.setTenantId(tenant.getId());
         response.setTenantName(tenant.getName());
+        response.setAdminSettings(settingsService.getSettingsForTenant(tenantId));
 
         TenantSubscription subscription = subscriptionRepository.findByTenantId(tenantId)
                 .orElse(null);

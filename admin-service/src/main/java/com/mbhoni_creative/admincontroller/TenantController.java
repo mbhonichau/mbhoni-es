@@ -24,6 +24,7 @@ import com.mbhoni_creative.adminrepository.TenantSubscriptionRepository;
 import com.mbhoni_creative.adminrepository.UserRepository;
 import com.mbhoni_creative.adminservice.IndustryTemplateService;
 import com.mbhoni_creative.adminservice.TenantService;
+import com.mbhoni_creative.config.TenantSecurityService;
 
 @Controller
 @RequestMapping("/tenants")
@@ -34,19 +35,22 @@ public class TenantController {
     private final UserRepository userRepository;
     private final IndustryProfileRepository industryProfileRepository;
     private final IndustryTemplateService industryTemplateService;
+    private final TenantSecurityService tenantSecurityService;
 
     public TenantController(
             TenantService tenantService,
             TenantSubscriptionRepository tenantSubscriptionRepository,
             UserRepository userRepository,
             IndustryProfileRepository industryProfileRepository,
-            IndustryTemplateService industryTemplateService) {
+            IndustryTemplateService industryTemplateService,
+            TenantSecurityService tenantSecurityService) {
 
         this.tenantService = tenantService;
         this.tenantSubscriptionRepository = tenantSubscriptionRepository;
         this.userRepository = userRepository;
         this.industryProfileRepository = industryProfileRepository;
         this.industryTemplateService = industryTemplateService;
+        this.tenantSecurityService = tenantSecurityService;
     }
 
     @GetMapping
@@ -59,7 +63,7 @@ public class TenantController {
             @RequestParam(defaultValue = "25") int size,
             Model model) {
 
-        List<TenantSubscriptionView> tenantViews = tenantService.getAllTenants()
+        List<TenantSubscriptionView> tenantViews = getAccessibleTenants()
                 .stream()
                 .map(tenant -> {
                     TenantSubscriptionView view = new TenantSubscriptionView();
@@ -115,6 +119,7 @@ public class TenantController {
             @RequestParam Long id,
             RedirectAttributes redirectAttributes) {
 
+        enforceGlobalAdmin();
         industryTemplateService.applyTemplateToTenant(id);
 
         redirectAttributes.addFlashAttribute("successMessage", "Industry template applied successfully.");
@@ -251,6 +256,7 @@ public class TenantController {
             @RequestParam(required = false, defaultValue = "/tenants/create") String redirectUrl,
             RedirectAttributes redirectAttributes) {
 
+        enforceGlobalAdmin();
         if (name == null || name.isBlank()) {
             redirectAttributes.addFlashAttribute("errorMessage", "Industry name is required.");
             return "redirect:" + redirectUrl;
@@ -279,5 +285,20 @@ public class TenantController {
 
     private boolean contains(String value, String search) {
         return value != null && value.toLowerCase(Locale.ROOT).contains(search);
+    }
+
+    private List<TenantDto> getAccessibleTenants() {
+        if (tenantSecurityService.isGlobalAdmin()) {
+            return tenantService.getAllTenants();
+        }
+
+        Long tenantId = tenantSecurityService.getCurrentTenantId();
+        return tenantId == null ? List.of() : List.of(tenantService.getTenantById(tenantId));
+    }
+
+    private void enforceGlobalAdmin() {
+        if (!tenantSecurityService.isGlobalAdmin()) {
+            throw new org.springframework.security.access.AccessDeniedException("Access denied: global admin only");
+        }
     }
 }

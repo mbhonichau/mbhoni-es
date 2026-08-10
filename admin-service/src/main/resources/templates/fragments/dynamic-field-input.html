@@ -1,0 +1,77 @@
+<th:block xmlns:th="http://www.thymeleaf.org" th:fragment="dynamicInput(field, currentValue)">
+    <div class="mb-3" th:if="${field != null and field.active}">
+        <label class="form-label fw-semibold">
+            <span th:text="${field.label}">Field Label</span>
+            <span class="text-danger" th:if="${field.required}">*</span>
+        </label>
+
+        <!-- TEXT -->
+        <input th:if="${field.dataType.name() == 'TEXT'}" 
+               type="text" 
+               th:name="|fieldValues[${field.fieldKey}]|" 
+               class="form-control" 
+               th:value="${currentValue}" 
+               th:placeholder="${field.label}"
+               th:required="${field.required}">
+
+        <!-- NUMBER -->
+        <input th:if="${field.dataType.name() == 'NUMBER'}" 
+               type="number" step="any" 
+               th:name="|fieldValues[${field.fieldKey}]|" 
+               class="form-control" 
+               th:value="${currentValue}" 
+               th:placeholder="${field.label}"
+               th:required="${field.required}">
+
+        <!-- DATE -->
+        <input th:if="${field.dataType.name() == 'DATE'}" 
+               type="date" 
+               th:name="|fieldValues[${field.fieldKey}]|" 
+               class="form-control" 
+               th:value="${currentValue}" 
+               th:required="${field.required}">
+
+        <!-- BOOLEAN / CHECKBOX -->
+        <div th:if="${field.dataType.name() == 'BOOLEAN'}" class="form-check form-switch mt-1">
+            <input type="checkbox" 
+                   th:name="|fieldValues[${field.fieldKey}]|" 
+                   class="form-check-input" 
+                   value="true"
+                   th:checked="${currentValue == 'true'}"
+                   th:required="${field.required}">
+            <span class="form-check-label text-muted" th:text="${field.label}">Check if applicable</span>
+        </div>
+
+        <!-- SELECT -->
+        <select th:if="${field.dataType.name() == 'SELECT'}" 
+                th:name="|fieldValues[${field.fieldKey}]|" 
+                class="form-select" 
+                th:required="${field.required}">
+            <option value="">-- Select Option --</option>
+            <option th:each="opt : ${field.selectOptions != null ? #strings.arraySplit(#strings.replace(#strings.replace(#strings.replace(field.selectOptions, '[', ''), ']', ''), '&quot;', ''), ',') : {}}" 
+                    th:value="${#strings.trim(opt)}" 
+                    th:text="${#strings.trim(opt)}"
+                    th:selected="${currentValue == #strings.trim(opt)}"></option>
+        </select>
+
+        <!-- FILE -->
+        <input th:if="${field.dataType.name() == 'FILE'}" 
+               type="text" 
+               th:name="|fieldValues[${field.fieldKey}]|" 
+               class="form-control font-monospace" 
+               placeholder="Document URL / Storage Reference" 
+               th:value="${currentValue}"
+               th:required="${field.required}">
+
+        <!-- GPS_COORD -->
+        <input th:if="${field.dataType.name() == 'GPS_COORD'}" 
+               type="text" 
+               th:name="|fieldValues[${field.fieldKey}]|" 
+               class="form-control font-monospace" 
+               placeholder="e.g. -26.2041, 28.0473" 
+               th:value="${currentValue}"
+               th:required="${field.required}">
+
+        <small class="text-muted d-block mt-1" th:if="${field.validationRule != null and !field.validationRule.isBlank()}" th:text="'Format rule: ' + ${field.validationRule}">Validation rule</small>
+    </div>
+</th:block>

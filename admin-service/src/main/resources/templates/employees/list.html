@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="https://www.thymeleaf.org/extras/spring-security">
-<head th:replace="~{fragments/head :: head('Employee Management')}"></head>
+<head th:replace="~{fragments/head :: head('Employee Directory')}"></head>
 
 <body>
 <div class="admin-shell">
@@ -11,63 +11,219 @@
         <div th:replace="~{fragments/navbar :: navbar}"></div>
 
         <main class="admin-content">
-            <section class="page-heading d-flex justify-content-between align-items-center">
-                <div>
-                    <p class="eyebrow">Human Capital Management</p>
-                    <h2>Employee Directory & HCM</h2>
-                    <p class="text-muted mb-0">Manage personnel records, job titles, department assignments, and employment status.</p>
+            <!-- Alert Messages -->
+            <div th:if="${successMessage}" class="alert alert-success admin-alert shadow-sm">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                <span th:text="${successMessage}">Success message</span>
+            </div>
+            <div th:if="${errorMessage}" class="alert alert-danger admin-alert shadow-sm">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <span th:text="${errorMessage}">Error message</span>
+            </div>
+
+            <!-- Page Heading & Quick Metrics -->
+            <section class="page-heading mb-4">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <div>
+                        <p class="eyebrow">Human Capital Management</p>
+                        <h2 class="h3 fw-bold mb-0 text-dark">Employee Directory &amp; HCM</h2>
+                    </div>
+
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a th:href="@{/employee-fields}" class="btn btn-outline-secondary shadow-sm" sec:authorize="hasAuthority('EMPLOYEE_FIELD_SCHEMA_MANAGE') or hasAuthority('EMPLOYEE_FIELD_SCHEMA_VIEW') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN')">
+                            <i class="bi bi-sliders me-1"></i> Field Configurator
+                        </a>
+                        <a th:href="@{/employees/completeness-report}" class="btn btn-outline-secondary shadow-sm" sec:authorize="hasAuthority('EMPLOYEE_COMPLETENESS_VIEW') or hasAuthority('EMPLOYEE_VIEW') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN')">
+                            <i class="bi bi-clipboard-check me-1"></i> Completeness Report
+                        </a>
+                        <a th:href="@{/employees/payslips}" class="btn btn-outline-secondary shadow-sm" sec:authorize="hasAuthority('EMPLOYEE_VIEW') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN')">
+                            <i class="bi bi-calculator me-1"></i> Payslips
+                        </a>
+                        <button class="btn btn-primary shadow-sm px-3" data-bs-toggle="modal" data-bs-target="#newEmployeeModal" sec:authorize="hasAuthority('EMPLOYEE_EDIT') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN')">
+                            <i class="bi bi-person-plus-fill me-1"></i> New Employee
+                        </button>
+                    </div>
                 </div>
-                <button sec:authorize="hasAuthority('EMPLOYEE_EDIT') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN')" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newEmployeeModal">
-                    <i class="bi bi-plus-lg me-1"></i> New Employee
-                </button>
             </section>
 
-            <div class="card shadow-sm mt-4">
-                <div class="card-body p-0">
-                    <table class="table table-hover align-middle mb-0">
+            <!-- Metrics Summary Cards -->
+            <div class="row g-3 mb-4">
+                <div class="col-12 col-sm-6 col-md-3">
+                    <div class="card border-0 shadow-sm rounded-3 p-3 bg-body">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <span class="text-muted small text-uppercase fw-bold">Total Staff</span>
+                                <h3 class="fw-bold mb-0 text-dark" th:text="${employees != null ? employees.size() : 0}">0</h3>
+                            </div>
+                            <div class="rounded-3 p-3 text-primary bg-primary bg-opacity-10">
+                                <i class="bi bi-people fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-6 col-md-3">
+                    <div class="card border-0 shadow-sm rounded-3 p-3 bg-body">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <span class="text-muted small text-uppercase fw-bold">Active Staff</span>
+                                <h3 class="fw-bold mb-0 text-success" th:text="${activeCount}">0</h3>
+                            </div>
+                            <div class="rounded-3 p-3 text-success bg-success bg-opacity-10">
+                                <i class="bi bi-check-circle fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-6 col-md-3">
+                    <div class="card border-0 shadow-sm rounded-3 p-3 bg-body">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <span class="text-muted small text-uppercase fw-bold">Full Time</span>
+                                <h3 class="fw-bold mb-0 text-info" th:text="${fullTimeCount}">0</h3>
+                            </div>
+                            <div class="rounded-3 p-3 text-info bg-info bg-opacity-10">
+                                <i class="bi bi-briefcase fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-6 col-md-3">
+                    <div class="card border-0 shadow-sm rounded-3 p-3 bg-body">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <span class="text-muted small text-uppercase fw-bold">Active Onboarding Fields</span>
+                                <h3 class="fw-bold mb-0 text-warning" th:text="${onboardingFields != null ? onboardingFields.size() : 0}">0</h3>
+                            </div>
+                            <div class="rounded-3 p-3 text-warning bg-warning bg-opacity-10">
+                                <i class="bi bi-sliders fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Employee Directory Table Panel -->
+            <div class="card shadow-sm border-0 rounded-3">
+                <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-person-badge-fill text-primary me-2"></i>Personnel Roster</h5>
+                    <div class="d-flex align-items-center gap-2">
+                        <input type="text" id="employeeSearchInput" class="form-control form-control-sm" placeholder="Search employees..." onkeyup="filterEmployeesTable()" style="width: 220px;">
+                        <select id="statusFilterSelect" class="form-select form-select-sm" onchange="filterEmployeesTable()" style="width: 140px;">
+                            <option value="">All Statuses</option>
+                            <option th:each="st : ${statuses}" th:value="${st}" th:text="${st}">Status</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" id="employeesTable">
                         <thead class="table-light">
                         <tr>
-                            <th>Employee ID</th>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Job Title</th>
-                            <th>Organization Unit</th>
-                            <th>Type</th>
+                            <th class="ps-4">Employee</th>
+                            <th>Job Title &amp; Unit</th>
+                            <th>Contact Email / Work Phone</th>
+                            <th>Employment Type</th>
                             <th>Status</th>
-                            <th sec:authorize="hasAuthority('EMPLOYEE_EDIT') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN')" class="text-end">Actions</th>
+                            <th sec:authorize="hasAuthority('EMPLOYEE_EDIT') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN')" class="text-end pe-4">Actions</th>
                         </tr>
                         </thead>
                         <tbody>
                         <tr th:each="e : ${employees}">
-                            <td><code th:text="${e.employeeNumber}">EMP-1001</code></td>
-                            <td th:text="${e.firstName + ' ' + e.lastName}">John Doe</td>
-                            <td th:text="${e.email}">john.doe@enterprise.com</td>
-                            <td th:text="${e.jobTitle}">Architect</td>
-                            <td th:text="${e.organizationUnit != null ? e.organizationUnit.name : '-'}">Engineering</td>
-                            <td><span class="badge bg-info" th:text="${e.employmentType}">FULL_TIME</span></td>
-                            <td>
-                                <span th:classappend="${e.status != null and e.status.name() == 'ACTIVE'} ? 'bg-success' : 'bg-secondary'"
-                                      class="badge" th:text="${e.status}">ACTIVE</span>
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="avatar bg-primary bg-opacity-10 text-primary fw-bold rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                        <span th:text="${#strings.substring(e.firstName,0,1) + #strings.substring(e.lastName,0,1)}">JD</span>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-dark" th:text="${e.firstName + ' ' + e.lastName}">Jane Doe</div>
+                                        <div class="small text-muted font-monospace" th:text="${e.employeeNumber}">EMP-1001</div>
+                                    </div>
+                                </div>
                             </td>
-                            <td sec:authorize="hasAuthority('EMPLOYEE_EDIT') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN')" class="text-end">
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-display="static">
-                                        Status
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end">
-                                        <li th:each="st : ${statuses}">
-                                            <form th:action="@{/employees/status}" method="post" class="d-inline">
-                                                <input type="hidden" name="id" th:value="${e.id}"/>
-                                                <input type="hidden" name="status" th:value="${st}"/>
-                                                <button type="submit" class="dropdown-item" th:text="${#strings.capitalize(#strings.toLowerCase(st))}"></button>
-                                            </form>
-                                        </li>
-                                    </ul>
+                            <td>
+                                <div class="fw-semibold text-dark" th:text="${e.jobTitle != null ? e.jobTitle : 'Unassigned'}">Title</div>
+                                <div class="small text-muted" th:text="${e.organizationUnit != null ? e.organizationUnit.name : 'No Unit'}">Unit</div>
+                            </td>
+                            <td>
+                                <div class="text-dark" th:text="${e.email}">email@domain.com</div>
+                                <div class="small text-muted" th:text="${e.workPhone != null ? e.workPhone : '-'}">+27 11 000 0000</div>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border fw-normal" th:text="${e.employmentType}">FULL_TIME</span>
+                            </td>
+                            <td>
+                                <div>
+                                    <span th:classappend="${e.status != null and e.status.name() == 'ACTIVE' ? 'bg-success bg-opacity-10 text-success border border-success border-opacity-25' : (e.status != null and e.status.name() == 'PROBATION' ? 'bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25' : 'bg-secondary bg-opacity-10 text-secondary border')}"
+                                          class="badge px-2 py-1" th:text="${e.status}">ACTIVE</span>
+                                </div>
+                                <div class="mt-1">
+                                    <span th:classappend="${e.backgroundCheckStatus != null and e.backgroundCheckStatus.name() == 'PASSED' ? 'bg-success text-white' : (e.backgroundCheckStatus != null and e.backgroundCheckStatus.name() == 'FAILED' ? 'bg-danger text-white' : 'bg-light text-muted border')}"
+                                          class="badge rounded-pill fw-normal fs-7" th:text="${'Vetting: ' + (e.backgroundCheckStatus != null ? e.backgroundCheckStatus.name() : 'NOT_STARTED')}">Vetting: PASSED</span>
+                                </div>
+                            </td>
+                            <td sec:authorize="hasAuthority('EMPLOYEE_EDIT') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN')" class="text-end pe-4">
+                                <div class="d-flex align-items-center justify-content-end gap-1">
+                                     <!-- Edit Button -->
+                                     <button type="button" class="btn btn-sm btn-outline-primary btn-edit-employee"
+                                             title="Edit Employee Details"
+                                             th:data-id="${e.id}"
+                                             th:data-emp-num="${e.employeeNumber}"
+                                             th:data-first-name="${e.firstName}"
+                                             th:data-last-name="${e.lastName}"
+                                             th:data-email="${e.email}"
+                                             th:data-job-title="${e.jobTitle}"
+                                             th:data-org-unit-id="${e.organizationUnit != null ? e.organizationUnit.id : ''}"
+                                             th:data-manager-id="${e.manager != null ? e.manager.id : ''}"
+                                             th:data-employment-type="${e.employmentType}"
+                                             th:data-status="${e.status}"
+                                             th:data-hire-date="${e.hireDate}"
+                                             th:data-compliance-status="${e.complianceEmploymentStatus != null ? e.complianceEmploymentStatus.name() : 'PENDING_ONBOARDING'}"
+                                             th:data-vetting-status="${e.backgroundCheckStatus != null ? e.backgroundCheckStatus.name() : 'NOT_STARTED'}"
+                                             th:data-national-id="${e.nationalId}"
+                                             th:data-tax-number="${e.taxNumber}"
+                                             th:data-work-phone="${e.workPhone}"
+                                             th:data-cost-center="${e.costCenter}"
+                                             th:data-license-number="${e.licenseNumber}"
+                                             th:data-license-category="${e.licenseCategory}"
+                                             th:data-license-expiry="${e.licenseExpiryDate}"
+                                             th:data-emergency-name="${e.emergencyContactName}"
+                                             th:data-emergency-phone="${e.emergencyContactPhone}"
+                                             th:data-emergency-relation="${e.emergencyContactRelation}"
+                                             th:data-residential-address="${e.residentialAddress}">
+                                         <i class="bi bi-pencil-square me-1"></i> Edit
+                                     </button>
+
+                                    <!-- Status Toggle Dropdown -->
+                                    <div class="dropdown d-inline-block">
+                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                            Status
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                            <li th:each="st : ${statuses}">
+                                                <form th:action="@{/employees/status}" method="post">
+                                                    <input type="hidden" name="id" th:value="${e.id}"/>
+                                                    <input type="hidden" name="status" th:value="${st}"/>
+                                                    <button type="submit" class="dropdown-item py-1 text-capitalize" th:text="${#strings.toLowerCase(st)}"></button>
+                                                </form>
+                                            </li>
+                                        </ul>
+                                    </div>
+
+                                    <!-- Delete Button -->
+                                    <form th:action="@{/employees/delete}" method="post" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this employee? All dependent records (payslips and field values) will be disassociated and cleaned up.');">
+                                        <input type="hidden" name="id" th:value="${e.id}"/>
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Employee">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
                                 </div>
                             </td>
                         </tr>
-                        <tr th:if="${employees == null or employees.isEmpty()}">
-                            <td colspan="8" class="text-center text-muted py-4">No employees registered. Click 'New Employee' to add.</td>
+                        <tr id="noResultsRow" th:if="${employees == null or employees.isEmpty()}">
+                            <td colspan="6" class="text-center text-muted py-5">
+                                <i class="bi bi-people fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                                No personnel records found. Click <strong>'New Employee'</strong> to register staff.
+                            </td>
                         </tr>
                         </tbody>
                     </table>
@@ -79,57 +235,57 @@
     </div>
 </div>
 
-<!-- Modal: New Employee -->
+<!-- Modal: Register New Employee -->
 <div class="modal fade" id="newEmployeeModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <form th:action="@{/employees/save}" method="post" class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Register New Employee</h5>
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-person-plus-fill me-2 text-primary"></i>Register New Employee</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body row g-3">
                 <div class="col-md-6" th:if="${tenants != null and !tenants.isEmpty()}">
-                    <label class="form-label">Tenant</label>
+                    <label class="form-label fw-semibold">Tenant</label>
                     <select name="tenantId" class="form-select" required>
                         <option th:each="t : ${tenants}" th:value="${t.id}" th:text="${t.name}">Tenant</option>
                     </select>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">Employee Number</label>
+                    <label class="form-label fw-semibold">Employee Number <span class="text-danger">*</span></label>
                     <input type="text" name="employeeNumber" class="form-control" placeholder="e.g. EMP-1001" required>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">First Name</label>
+                    <label class="form-label fw-semibold">First Name <span class="text-danger">*</span></label>
                     <input type="text" name="firstName" class="form-control" required>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">Last Name</label>
+                    <label class="form-label fw-semibold">Last Name <span class="text-danger">*</span></label>
                     <input type="text" name="lastName" class="form-control" required>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">Email</label>
+                    <label class="form-label fw-semibold">Email Address <span class="text-danger">*</span></label>
                     <input type="email" name="email" class="form-control" required>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">Job Title</label>
+                    <label class="form-label fw-semibold">Job Title</label>
                     <input type="text" name="jobTitle" class="form-control" placeholder="e.g. Principal Architect">
                 </div>
                 <div class="col-md-6" th:if="${orgUnits != null}">
-                    <label class="form-label">Organization Unit</label>
+                    <label class="form-label fw-semibold">Organization Unit</label>
                     <select name="orgUnitId" class="form-select">
                         <option value="">-- Select Unit (Optional) --</option>
                         <option th:each="ou : ${orgUnits}" th:value="${ou.id}" th:text="${ou.name}"></option>
                     </select>
                 </div>
                 <div class="col-md-6" th:if="${managers != null}">
-                    <label class="form-label">Manager</label>
+                    <label class="form-label fw-semibold">Reporting Manager</label>
                     <select name="managerId" class="form-select">
                         <option value="">-- Select Manager (Optional) --</option>
                         <option th:each="m : ${managers}" th:value="${m.id}" th:text="${m.firstName + ' ' + m.lastName}"></option>
                     </select>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">Employment Type</label>
+                    <label class="form-label fw-semibold">Employment Type</label>
                     <select name="employmentType" class="form-select">
                         <option value="FULL_TIME">Full Time</option>
                         <option value="PART_TIME">Part Time</option>
@@ -138,12 +294,186 @@
                     </select>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">Hire Date</label>
+                    <label class="form-label fw-semibold">Hire Date</label>
                     <input type="date" name="hireDate" class="form-control">
                 </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Compliance Employment Status</label>
+                    <select name="complianceEmploymentStatus" class="form-select">
+                        <option value="PENDING_ONBOARDING">Pending Onboarding</option>
+                        <option value="ACTIVE">Active (Requires PASSED Background Check)</option>
+                        <option value="SUSPENDED">Suspended</option>
+                        <option value="ON_LEAVE">On Leave</option>
+                        <option value="TERMINATED">Terminated</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Background Check Vetting Status</label>
+                    <select name="backgroundCheckStatus" class="form-select">
+                        <option value="NOT_STARTED">Not Started</option>
+                        <option value="IN_PROGRESS">In Progress</option>
+                        <option value="PASSED">Passed</option>
+                        <option value="FAILED">Failed</option>
+                        <option value="EXPIRED">Expired</option>
+                    </select>
+                </div>
+
+                <!-- DYNAMIC FIELD SECTIONS DRIVEN BY FIELD DEFINITION ENGINE -->
+                <div class="col-12" th:if="${qualificationFields != null and !qualificationFields.isEmpty()}">
+                    <div th:replace="~{fragments/dynamic-field-section :: fieldSection('Qualification & License Details', ${qualificationFields}, null)}"></div>
+                </div>
+                <div class="col-12" th:if="${backgroundCheckFields != null and !backgroundCheckFields.isEmpty()}">
+                    <div th:replace="~{fragments/dynamic-field-section :: fieldSection('Background Check & Vetting Details', ${backgroundCheckFields}, null)}"></div>
+                </div>
+                <div class="col-12" th:if="${employmentStatusFields != null and !employmentStatusFields.isEmpty()}">
+                    <div th:replace="~{fragments/dynamic-field-section :: fieldSection('Employment Status & Probation Details', ${employmentStatusFields}, null)}"></div>
+                </div>
+                <div class="col-12" th:if="${fieldAssignmentFields != null and !fieldAssignmentFields.isEmpty()}">
+                    <div th:replace="~{fragments/dynamic-field-section :: fieldSection('Field Assignment & Site Records', ${fieldAssignmentFields}, null)}"></div>
+                </div>
+
+                <!-- DYNAMIC TENANT ONBOARDING FIELDS: ONLY ACTIVE FIELDS (OPTIONAL & REQUIRED) ARE RENDERED -->
+                <div class="col-12" th:if="${onboardingFields != null and !onboardingFields.isEmpty()}">
+                    <div class="p-3 bg-light rounded-3 border">
+                        <h6 class="fw-bold text-dark mb-3 d-flex align-items-center justify-content-between">
+                            <span><i class="bi bi-sliders text-warning me-2"></i>Active Tenant Onboarding &amp; Compliance Fields</span>
+                            <span class="badge bg-secondary rounded-pill" th:text="|${#lists.size(onboardingFields)} Active Fields|">0 Fields</span>
+                        </h6>
+                        <div class="row g-3">
+                            <!-- Each active field's label AND input are rendered together. Disabled fields are completely excluded -->
+                            <div class="col-md-6" th:each="f : ${onboardingFields}">
+                                <label class="form-label fw-semibold">
+                                    <span th:text="${f.fieldLabel}">Field Label</span>
+                                    <span class="text-danger" th:if="${f.requirementState.name() == 'REQUIRED'}">*</span>
+                                </label>
+
+                                <input th:if="${f.fieldKey == 'workPhone'}" type="text" name="workPhone" class="form-control" th:placeholder="${f.helpText}" th:required="${f.requirementState.name() == 'REQUIRED'}">
+                                <input th:if="${f.fieldKey == 'nationalId'}" type="text" name="nationalId" class="form-control" th:placeholder="${f.helpText}" th:required="${f.requirementState.name() == 'REQUIRED'}">
+                                <input th:if="${f.fieldKey == 'taxIdentificationNumber' or f.fieldKey == 'taxNumber'}" type="text" name="taxNumber" class="form-control" th:placeholder="${f.helpText}" th:required="${f.requirementState.name() == 'REQUIRED'}">
+                                <input th:if="${f.fieldKey == 'costCenter'}" type="text" name="costCenter" class="form-control" th:placeholder="${f.helpText}" th:required="${f.requirementState.name() == 'REQUIRED'}">
+                                <input th:if="${f.fieldKey == 'licenseNumber'}" type="text" name="licenseNumber" class="form-control" th:placeholder="${f.helpText}" th:required="${f.requirementState.name() == 'REQUIRED'}">
+                                <input th:if="${f.fieldKey == 'licenseCategory'}" type="text" name="licenseCategory" class="form-control" th:placeholder="${f.helpText}" th:required="${f.requirementState.name() == 'REQUIRED'}">
+                                <input th:if="${f.fieldKey == 'licenseExpiryDate'}" type="date" name="licenseExpiryDate" class="form-control" th:required="${f.requirementState.name() == 'REQUIRED'}">
+                                <input th:if="${f.fieldKey == 'emergencyContactName'}" type="text" name="emergencyContactName" class="form-control" th:placeholder="${f.helpText}" th:required="${f.requirementState.name() == 'REQUIRED'}">
+                                <input th:if="${f.fieldKey == 'emergencyContactPhone'}" type="text" name="emergencyContactPhone" class="form-control" th:placeholder="${f.helpText}" th:required="${f.requirementState.name() == 'REQUIRED'}">
+                                <input th:if="${f.fieldKey == 'emergencyContactRelation'}" type="text" name="emergencyContactRelation" class="form-control" th:placeholder="${f.helpText}" th:required="${f.requirementState.name() == 'REQUIRED'}">
+                                <input th:if="${f.fieldKey == 'residentialAddress'}" type="text" name="residentialAddress" class="form-control" th:placeholder="${f.helpText}" th:required="${f.requirementState.name() == 'REQUIRED'}">
+
+                                <small class="text-muted d-block mt-1" th:if="${f.helpText != null}" th:text="${f.helpText}">Help text</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="modal-footer">
-                <button type="submit" class="btn btn-primary">Save Employee</button>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary px-4">Register Employee</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Edit Employee -->
+<div class="modal fade" id="editEmployeeModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <form th:action="@{/employees/update}" method="post" class="modal-content">
+            <input type="hidden" id="editEmployeeId" name="id">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square me-2 text-primary"></i>Update Employee Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body row g-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Employee Number</label>
+                    <input type="text" id="editEmployeeNumber" name="employeeNumber" class="form-control font-monospace" required readonly>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Status</label>
+                    <select id="editEmployeeStatus" name="status" class="form-select">
+                        <option th:each="st : ${statuses}" th:value="${st}" th:text="${st}"></option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">First Name</label>
+                    <input type="text" id="editFirstName" name="firstName" class="form-control" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Last Name</label>
+                    <input type="text" id="editLastName" name="lastName" class="form-control" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Email Address</label>
+                    <input type="email" id="editEmail" name="email" class="form-control" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Job Title</label>
+                    <input type="text" id="editJobTitle" name="jobTitle" class="form-control">
+                </div>
+                <div class="col-md-6" th:if="${orgUnits != null}">
+                    <label class="form-label fw-semibold">Organization Unit</label>
+                    <select id="editOrgUnitId" name="orgUnitId" class="form-select">
+                        <option value="">-- Select Unit (Optional) --</option>
+                        <option th:each="ou : ${orgUnits}" th:value="${ou.id}" th:text="${ou.name}"></option>
+                    </select>
+                </div>
+                <div class="col-md-6" th:if="${managers != null}">
+                    <label class="form-label fw-semibold">Reporting Manager</label>
+                    <select id="editManagerId" name="managerId" class="form-select">
+                        <option value="">-- Select Manager (Optional) --</option>
+                        <option th:each="m : ${managers}" th:value="${m.id}" th:text="${m.firstName + ' ' + m.lastName}"></option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Employment Type</label>
+                    <select id="editEmploymentType" name="employmentType" class="form-select">
+                        <option value="FULL_TIME">Full Time</option>
+                        <option value="PART_TIME">Part Time</option>
+                        <option value="CONTRACTOR">Contractor</option>
+                        <option value="PROBATION">Probation</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Hire Date</label>
+                    <input type="date" id="editHireDate" name="hireDate" class="form-control">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Compliance Employment Status</label>
+                    <select id="editComplianceEmploymentStatus" name="complianceEmploymentStatus" class="form-select">
+                        <option value="PENDING_ONBOARDING">Pending Onboarding</option>
+                        <option value="ACTIVE">Active (Requires PASSED Background Check)</option>
+                        <option value="SUSPENDED">Suspended</option>
+                        <option value="ON_LEAVE">On Leave</option>
+                        <option value="TERMINATED">Terminated</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Background Check Vetting Status</label>
+                    <select id="editBackgroundCheckStatus" name="backgroundCheckStatus" class="form-select">
+                        <option value="NOT_STARTED">Not Started</option>
+                        <option value="IN_PROGRESS">In Progress</option>
+                        <option value="PASSED">Passed</option>
+                        <option value="FAILED">Failed</option>
+                        <option value="EXPIRED">Expired</option>
+                    </select>
+                </div>
+
+                <!-- DYNAMIC FIELD SECTIONS DRIVEN BY FIELD DEFINITION ENGINE FOR EDIT -->
+                <div class="col-12" th:if="${qualificationFields != null and !qualificationFields.isEmpty()}">
+                    <div th:replace="~{fragments/dynamic-field-section :: fieldSection('Qualification & License Details', ${qualificationFields}, null)}"></div>
+                </div>
+                <div class="col-12" th:if="${backgroundCheckFields != null and !backgroundCheckFields.isEmpty()}">
+                    <div th:replace="~{fragments/dynamic-field-section :: fieldSection('Background Check & Vetting Details', ${backgroundCheckFields}, null)}"></div>
+                </div>
+                <div class="col-12" th:if="${employmentStatusFields != null and !employmentStatusFields.isEmpty()}">
+                    <div th:replace="~{fragments/dynamic-field-section :: fieldSection('Employment Status & Probation Details', ${employmentStatusFields}, null)}"></div>
+                </div>
+                <div class="col-12" th:if="${fieldAssignmentFields != null and !fieldAssignmentFields.isEmpty()}">
+                    <div th:replace="~{fragments/dynamic-field-section :: fieldSection('Field Assignment & Site Records', ${fieldAssignmentFields}, null)}"></div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary px-4">Save Changes</button>
             </div>
         </form>
     </div>
@@ -151,5 +481,80 @@
 
 <script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
 <script th:src="@{/js/sidebar.js}"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Edit Employee button dataset handler
+        document.addEventListener('click', function(e) {
+            var btn = e.target.closest('.btn-edit-employee');
+            if (!btn) return;
+
+            var ds = btn.dataset;
+            document.getElementById('editEmployeeId').value = ds.id || '';
+            document.getElementById('editEmployeeNumber').value = ds.empNum || '';
+            document.getElementById('editFirstName').value = ds.firstName || '';
+            document.getElementById('editLastName').value = ds.lastName || '';
+            document.getElementById('editEmail').value = ds.email || '';
+            document.getElementById('editJobTitle').value = ds.jobTitle || '';
+            document.getElementById('editOrgUnitId').value = ds.orgUnitId || '';
+            document.getElementById('editManagerId').value = ds.managerId || '';
+            document.getElementById('editEmploymentType').value = ds.employmentType || 'FULL_TIME';
+            document.getElementById('editEmployeeStatus').value = ds.status || 'ACTIVE';
+            document.getElementById('editHireDate').value = ds.hireDate || '';
+            if (document.getElementById('editComplianceEmploymentStatus')) {
+                document.getElementById('editComplianceEmploymentStatus').value = ds.complianceStatus || 'PENDING_ONBOARDING';
+            }
+            if (document.getElementById('editBackgroundCheckStatus')) {
+                document.getElementById('editBackgroundCheckStatus').value = ds.vettingStatus || 'NOT_STARTED';
+            }
+            if (document.getElementById('editNationalId')) document.getElementById('editNationalId').value = ds.nationalId || '';
+            if (document.getElementById('editTaxNumber')) document.getElementById('editTaxNumber').value = ds.taxNumber || '';
+            if (document.getElementById('editWorkPhone')) document.getElementById('editWorkPhone').value = ds.workPhone || '';
+            if (document.getElementById('editCostCenter')) document.getElementById('editCostCenter').value = ds.costCenter || '';
+            if (document.getElementById('editLicenseNumber')) document.getElementById('editLicenseNumber').value = ds.licenseNumber || '';
+            if (document.getElementById('editLicenseCategory')) document.getElementById('editLicenseCategory').value = ds.licenseCategory || '';
+            if (document.getElementById('editLicenseExpiryDate')) document.getElementById('editLicenseExpiryDate').value = ds.licenseExpiry || '';
+            if (document.getElementById('editEmergencyContactName')) document.getElementById('editEmergencyContactName').value = ds.emergencyName || '';
+            if (document.getElementById('editEmergencyContactPhone')) document.getElementById('editEmergencyContactPhone').value = ds.emergencyPhone || '';
+            if (document.getElementById('editEmergencyContactRelation')) document.getElementById('editEmergencyContactRelation').value = ds.emergencyRelation || '';
+            if (document.getElementById('editResidentialAddress')) document.getElementById('editResidentialAddress').value = ds.residentialAddress || '';
+
+            var modalEl = document.getElementById('editEmployeeModal');
+            var editModal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+            editModal.show();
+        });
+
+        // System validation alerts auto-dismiss
+        setTimeout(function() {
+            var alerts = document.querySelectorAll('.admin-alert');
+            alerts.forEach(function(alert) {
+                if (window.bootstrap && bootstrap.Alert) {
+                    var bsAlert = bootstrap.Alert.getInstance(alert) || new bootstrap.Alert(alert);
+                    if (bsAlert) bsAlert.close();
+                }
+            });
+        }, 6000);
+    });
+
+    function filterEmployeesTable() {
+        var input = document.getElementById('employeeSearchInput').value.toLowerCase();
+        var statusFilter = document.getElementById('statusFilterSelect').value.toLowerCase();
+        var table = document.getElementById('employeesTable');
+        var trs = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+
+        for (var i = 0; i < trs.length; i++) {
+            if (trs[i].id === 'noResultsRow') continue;
+            var text = trs[i].innerText.toLowerCase();
+            var matchesSearch = text.indexOf(input) > -1;
+            var matchesStatus = !statusFilter || text.indexOf(statusFilter) > -1;
+
+            if (matchesSearch && matchesStatus) {
+                trs[i].style.display = '';
+            } else {
+                trs[i].style.display = 'none';
+            }
+        }
+    }
+</script>
 </body>
 </html>

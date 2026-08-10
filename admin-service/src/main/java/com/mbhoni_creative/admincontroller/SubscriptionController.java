@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -25,6 +26,7 @@ import com.mbhoni_creative.adminservice.PlanModuleService;
 import com.mbhoni_creative.adminservice.SubscriptionService;
 import com.mbhoni_creative.adminservice.TenantService;
 import com.mbhoni_creative.config.TenantSecurityService;
+import com.mbhoni_creative.config.TenantAccessService;
 
 @Controller
 @RequestMapping("/subscriptions")
@@ -34,29 +36,30 @@ public class SubscriptionController {
     private final TenantService tenantService;
     private final PlanModuleService planModuleService;
     private final TenantSecurityService tenantSecurityService;
+    private final TenantAccessService tenantAccessService;
 
     public SubscriptionController(
             SubscriptionService subscriptionService,
             TenantService tenantService,
             PlanModuleService planModuleService,
-            TenantSecurityService tenantSecurityService) {
+            TenantSecurityService tenantSecurityService,
+            TenantAccessService tenantAccessService) {
 
         this.subscriptionService = subscriptionService;
         this.tenantService = tenantService;
         this.planModuleService = planModuleService;
         this.tenantSecurityService = tenantSecurityService;
+        this.tenantAccessService = tenantAccessService;
     }
 
     @GetMapping("/plans")
-    @PreAuthorize("hasAuthority('SUBSCRIPTION_VIEW')")
+    @PreAuthorize("hasAuthority('SUBSCRIPTION_VIEW') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN')")
     public String listPlans(
             @RequestParam(required = false) String q,
             @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "25") int size,
             Model model) {
-
-        enforceGlobalAdmin();
 
         List<SubscriptionPlan> plans = subscriptionService.getAllPlans()
                 .stream()
@@ -70,6 +73,7 @@ public class SubscriptionController {
         int toIndex = Math.min(fromIndex + safeSize, plans.size());
 
         model.addAttribute("plans", plans.subList(fromIndex, toIndex));
+        model.addAttribute("isGlobalAdmin", tenantSecurityService.isGlobalAdmin());
         model.addAttribute("page", new PageMeta(
                 safePage,
                 safeSize,
@@ -145,7 +149,7 @@ public class SubscriptionController {
     }
 
     @GetMapping("/tenants")
-    @PreAuthorize("hasAuthority('SUBSCRIPTION_VIEW')")
+    @PreAuthorize("hasAuthority('SUBSCRIPTION_VIEW') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN')")
     public String tenantSubscriptions(
             @RequestParam(required = false) String q,
             @RequestParam(required = false) SubscriptionStatus status,
@@ -156,6 +160,9 @@ public class SubscriptionController {
 
         List<TenantSubscription> subscriptions = subscriptionService.getAllTenantSubscriptions()
                 .stream()
+                .filter(subscription -> tenantSecurityService.isGlobalAdmin()
+                        || (subscription.getTenant() != null
+                        && subscription.getTenant().getId().equals(tenantAccessService.getCurrentTenantId())))
                 .filter(subscription -> matchesSubscriptionSearch(subscription, q))
                 .filter(subscription -> status == null || subscription.getStatus() == status)
                 .filter(subscription -> billingCycle == null || subscription.getBillingCycle() == billingCycle)
@@ -167,6 +174,7 @@ public class SubscriptionController {
         int toIndex = Math.min(fromIndex + safeSize, subscriptions.size());
 
         model.addAttribute("subscriptions", subscriptions.subList(fromIndex, toIndex));
+        model.addAttribute("isGlobalAdmin", tenantSecurityService.isGlobalAdmin());
         model.addAttribute("page", new PageMeta(
                 safePage,
                 safeSize,
@@ -197,12 +205,8 @@ public class SubscriptionController {
             @RequestParam(defaultValue = "false") boolean autoRenew,
             RedirectAttributes redirectAttributes) {
 
-        if (!tenantSecurityService.isGlobalAdmin()) {
-            Long currentTenantId = tenantSecurityService.getCurrentTenantId();
-            if (currentTenantId == null || !currentTenantId.equals(tenantId)) {
-                throw new RuntimeException("Access denied: cannot modify other tenant subscriptions");
-            }
-        }
+        enforceGlobalAdmin();
+        tenantAccessService.requireAccess(tenantId);
 
         subscriptionService.assignTenantSubscription(
                 tenantId,
@@ -263,7 +267,7 @@ public class SubscriptionController {
 
     private void enforceGlobalAdmin() {
         if (!tenantSecurityService.isGlobalAdmin()) {
-            throw new RuntimeException("Access denied: global admin only");
+            throw new AccessDeniedException("Access denied: global admin only");
         }
     }
 

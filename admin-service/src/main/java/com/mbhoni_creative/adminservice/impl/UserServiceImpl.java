@@ -537,4 +537,16 @@ public class UserServiceImpl implements UserService {
         
         return true;
     }
+
+    @Override
+    @Transactional
+    public void registerUser(String username, String email, String password, Long tenantId) {
+        UserDto dto = new UserDto();
+        dto.setUsername(username != null && !username.isBlank() ? username.trim() : (email != null ? email.trim() : ""));
+        dto.setEmail(email != null ? email.trim() : "");
+        dto.setPassword(password);
+        dto.setTenantId(tenantId);
+        dto.setActive(true);
+        saveUser(dto);
+    }
 }

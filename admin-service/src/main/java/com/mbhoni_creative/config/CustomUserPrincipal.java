@@ -37,14 +37,23 @@ public class CustomUserPrincipal implements UserDetails {
 
         Set<GrantedAuthority> authorities = new HashSet<>();
 
-        for (Role role : user.getRoles()) {
+        if (user.isGlobalAdmin()) {
+            authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
+            authorities.add(new SimpleGrantedAuthority("ROLE_SUPER_ADMIN"));
+        }
 
-            // ROLE_ prefix ONCE only
-            authorities.add(new SimpleGrantedAuthority(role.getName()));
+        if (user.getRoles() != null) {
+            for (Role role : user.getRoles()) {
+                if (role.getName() != null && !role.getName().isBlank()) {
+                    authorities.add(new SimpleGrantedAuthority(role.getName()));
+                }
 
-            if (role.getPermissions() != null) {
-                for (Permission permission : role.getPermissions()) {
-                    authorities.add(new SimpleGrantedAuthority(permission.getName()));
+                if (role.getPermissions() != null) {
+                    for (Permission permission : role.getPermissions()) {
+                        if (permission.getName() != null && !permission.getName().isBlank()) {
+                            authorities.add(new SimpleGrantedAuthority(permission.getName()));
+                        }
+                    }
                 }
             }
         }

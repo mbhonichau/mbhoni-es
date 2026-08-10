@@ -8,6 +8,7 @@ import com.mbhoni_creative.adminentity.Tenant;
 import com.mbhoni_creative.adminentity.TenantQuota;
 import com.mbhoni_creative.adminrepository.TenantQuotaRepository;
 import com.mbhoni_creative.adminrepository.TenantRepository;
+import com.mbhoni_creative.config.TenantAccessService;
 
 @RestController
 @RequestMapping("/api/tenants/{tenantId}/quota")
@@ -15,17 +16,21 @@ public class TenantQuotaApiController {
 
     private final TenantQuotaRepository tenantQuotaRepository;
     private final TenantRepository tenantRepository;
+    private final TenantAccessService tenantAccessService;
 
     public TenantQuotaApiController(
             TenantQuotaRepository tenantQuotaRepository,
-            TenantRepository tenantRepository) {
+            TenantRepository tenantRepository,
+            TenantAccessService tenantAccessService) {
         this.tenantQuotaRepository = tenantQuotaRepository;
         this.tenantRepository = tenantRepository;
+        this.tenantAccessService = tenantAccessService;
     }
 
     @GetMapping
     @PreAuthorize("hasAuthority('TENANT_VIEW') or hasAuthority('API_KEY')")
     public ResponseEntity<TenantQuota> getQuota(@PathVariable Long tenantId) {
+        tenantAccessService.requireAccess(tenantId);
         TenantQuota quota = tenantQuotaRepository.findByTenantId(tenantId)
                 .orElseGet(() -> {
                     Tenant tenant = tenantRepository.findById(tenantId)
@@ -40,6 +45,7 @@ public class TenantQuotaApiController {
     @PutMapping
     @PreAuthorize("hasAuthority('TENANT_EDIT')")
     public ResponseEntity<TenantQuota> updateQuota(@PathVariable Long tenantId, @RequestBody TenantQuota quotaDetails) {
+        tenantAccessService.requireAccess(tenantId);
         TenantQuota quota = tenantQuotaRepository.findByTenantId(tenantId)
                 .orElseGet(() -> {
                     Tenant tenant = tenantRepository.findById(tenantId)

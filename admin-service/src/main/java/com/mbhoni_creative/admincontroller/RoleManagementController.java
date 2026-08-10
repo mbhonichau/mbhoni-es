@@ -1,19 +1,19 @@
 package com.mbhoni_creative.admincontroller;
 
+import java.util.List;
+import java.util.Locale;
+
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.mbhoni_creative.admindto.PageMeta;
 import com.mbhoni_creative.admindto.RoleDto;
 import com.mbhoni_creative.adminservice.RoleManagementService;
 import com.mbhoni_creative.adminservice.TenantService;
 import com.mbhoni_creative.config.TenantSecurityService;
-
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import java.util.List;
-import java.util.Locale;
 
 @Controller
 @RequestMapping("/roles")
@@ -100,10 +100,12 @@ public class RoleManagementController {
     @PostMapping("/update")
     @PreAuthorize("hasAuthority('ROLE_EDIT')")
     public String updateRole(
-            @RequestParam Long id,
+            @RequestParam(required = false) Long id,
             @ModelAttribute("role") RoleDto roleDto,
             RedirectAttributes redirectAttributes) {
-        roleDto.setId(id);
+        if (id != null) {
+            roleDto.setId(id);
+        }
         roleManagementService.updateRole(roleDto);
         redirectAttributes.addFlashAttribute("successMessage", "Role updated successfully.");
         return "redirect:/roles";

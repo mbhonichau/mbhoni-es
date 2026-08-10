@@ -102,22 +102,16 @@ public class RoleManagementServiceImpl implements RoleManagementService {
     public void updateRole(RoleDto dto) {
         Role role = getRoleWithAccessCheck(dto.getId());
 
-        if (role.isSystemRole()) {
-            throw new RuntimeException("System roles cannot be edited here");
-        }
-
         Tenant tenant = role.getTenant();
         String roleName = normalizeRoleName(dto.getName());
 
-        if (tenant == null) {
-            throw new RuntimeException("Global roles cannot be edited here");
+        if (tenant != null) {
+            roleRepository.findByNameAndTenantId(roleName, tenant.getId())
+                    .filter(existing -> !existing.getId().equals(role.getId()))
+                    .ifPresent(existing -> {
+                        throw new RuntimeException("Role already exists for this tenant");
+                    });
         }
-
-        roleRepository.findByNameAndTenantId(roleName, tenant.getId())
-                .filter(existing -> !existing.getId().equals(role.getId()))
-                .ifPresent(existing -> {
-                    throw new RuntimeException("Role already exists for this tenant");
-                });
 
         role.setName(roleName);
         role.setDescription(dto.getDescription());

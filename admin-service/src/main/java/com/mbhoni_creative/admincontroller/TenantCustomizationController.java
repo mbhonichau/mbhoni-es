@@ -11,6 +11,7 @@ import com.mbhoni_creative.adminentity.ThemeMode;
 import com.mbhoni_creative.adminservice.TenantCustomizationService;
 import com.mbhoni_creative.adminservice.TenantService;
 import com.mbhoni_creative.config.TenantSecurityService;
+import com.mbhoni_creative.config.TenantAccessService;
 
 @Controller
 @RequestMapping("/customizations")
@@ -19,15 +20,18 @@ public class TenantCustomizationController {
     private final TenantCustomizationService customizationService;
     private final TenantService tenantService;
     private final TenantSecurityService tenantSecurityService;
+    private final TenantAccessService tenantAccessService;
 
     public TenantCustomizationController(
             TenantCustomizationService customizationService,
             TenantService tenantService,
-            TenantSecurityService tenantSecurityService) {
+            TenantSecurityService tenantSecurityService,
+            TenantAccessService tenantAccessService) {
 
         this.customizationService = customizationService;
         this.tenantService = tenantService;
         this.tenantSecurityService = tenantSecurityService;
+        this.tenantAccessService = tenantAccessService;
     }
 
     @GetMapping
@@ -49,6 +53,7 @@ public class TenantCustomizationController {
             @RequestParam Long tenantId,
             Model model) {
 
+        tenantAccessService.requireAccess(tenantId);
         model.addAttribute("customization", customizationService.getOrCreateForTenant(tenantId));
         model.addAttribute("brandingAllowed", customizationService.brandingAllowed(tenantId));
         model.addAttribute("themeModes", ThemeMode.values());
@@ -64,6 +69,7 @@ public class TenantCustomizationController {
             @ModelAttribute TenantCustomization customization,
             RedirectAttributes redirectAttributes) {
 
+        tenantAccessService.requireAccess(tenantId);
         customizationService.saveForTenant(tenantId, customization);
         redirectAttributes.addFlashAttribute("successMessage", "Tenant customization saved successfully.");
 
