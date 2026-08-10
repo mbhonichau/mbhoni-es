@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Employee Profile Form')}"></head>
+
+<body>
+<div class="admin-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <main class="admin-content">
+            <section class="page-heading mb-4">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <div>
+                        <p class="eyebrow text-uppercase font-monospace tracking-wider text-muted mb-1">Employee Onboarding &amp; Profile</p>
+                        <h2 class="fw-bold tracking-tight mb-1" th:text="${employee != null and employee.id != null ? 'Edit Employee Profile' : 'New Employee Registration'}">Employee Profile Form</h2>
+                        <p class="text-muted mb-0">Capture identity invariants, hardcoded compliance states, and dynamic section schema fields.</p>
+                    </div>
+                    <a th:href="@{/employees}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i> Back to Roster
+                    </a>
+                </div>
+            </section>
+
+            <form th:action="@{/employees/save}" method="post" class="card shadow-sm border-0 rounded-3">
+                <input type="hidden" name="id" th:value="${employee != null ? employee.id : ''}">
+
+                <div class="card-body p-4">
+                    <!-- Core System Invariants -->
+                    <h5 class="fw-bold text-dark border-bottom pb-2 mb-3">Core Identity &amp; Status Invariants</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">First Name <span class="text-danger">*</span></label>
+                            <input type="text" name="firstName" class="form-control" th:value="${employee != null ? employee.firstName : ''}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Last Name <span class="text-danger">*</span></label>
+                            <input type="text" name="lastName" class="form-control" th:value="${employee != null ? employee.lastName : ''}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Email Address <span class="text-danger">*</span></label>
+                            <input type="email" name="email" class="form-control" th:value="${employee != null ? employee.email : ''}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Employee Number <span class="text-danger">*</span></label>
+                            <input type="text" name="employeeNumber" class="form-control font-monospace" th:value="${employee != null ? employee.employeeNumber : ''}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Compliance Employment Status</label>
+                            <select name="complianceEmploymentStatus" class="form-select">
+                                <option value="ACTIVE" th:selected="${employee != null and employee.complianceEmploymentStatus != null and employee.complianceEmploymentStatus.name() == 'ACTIVE'}">ACTIVE</option>
+                                <option value="PENDING_ONBOARDING" th:selected="${employee != null and employee.complianceEmploymentStatus != null and employee.complianceEmploymentStatus.name() == 'PENDING_ONBOARDING'}">PENDING_ONBOARDING</option>
+                                <option value="SUSPENDED" th:selected="${employee != null and employee.complianceEmploymentStatus != null and employee.complianceEmploymentStatus.name() == 'SUSPENDED'}">SUSPENDED</option>
+                                <option value="ON_LEAVE" th:selected="${employee != null and employee.complianceEmploymentStatus != null and employee.complianceEmploymentStatus.name() == 'ON_LEAVE'}">ON_LEAVE</option>
+                                <option value="TERMINATED" th:selected="${employee != null and employee.complianceEmploymentStatus != null and employee.complianceEmploymentStatus.name() == 'TERMINATED'}">TERMINATED</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Background Check Vetting Status</label>
+                            <select name="backgroundCheckStatus" class="form-select">
+                                <option value="NOT_STARTED" th:selected="${employee != null and employee.backgroundCheckStatus != null and employee.backgroundCheckStatus.name() == 'NOT_STARTED'}">NOT_STARTED</option>
+                                <option value="IN_PROGRESS" th:selected="${employee != null and employee.backgroundCheckStatus != null and employee.backgroundCheckStatus.name() == 'IN_PROGRESS'}">IN_PROGRESS</option>
+                                <option value="PASSED" th:selected="${employee != null and employee.backgroundCheckStatus != null and employee.backgroundCheckStatus.name() == 'PASSED'}">PASSED</option>
+                                <option value="FAILED" th:selected="${employee != null and employee.backgroundCheckStatus != null and employee.backgroundCheckStatus.name() == 'FAILED'}">FAILED</option>
+                                <option value="EXPIRED" th:selected="${employee != null and employee.backgroundCheckStatus != null and employee.backgroundCheckStatus.name() == 'EXPIRED'}">EXPIRED</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Section Schema Fields: qualification, background check, employment status, field assignment -->
+                    <div th:if="${effectiveSchema != null and !effectiveSchema.isEmpty()}" class="mt-4">
+                        <h5 class="fw-bold text-dark border-bottom pb-2 mb-3">Dynamic Configurable Section Fields</h5>
+                        <div class="row g-3">
+                            <div class="col-md-6" th:each="f : ${effectiveSchema}" th:if="${f.active}">
+                                <div th:replace="~{fragments/dynamic-field-input :: dynamicInput(${f}, ${valueMap != null ? valueMap.get(f.fieldKey) : ''})}"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-footer bg-light border-top text-end py-3">
+                    <a th:href="@{/employees}" class="btn btn-light me-2">Cancel</a>
+                    <button type="submit" class="btn btn-primary px-4">Save Employee Profile</button>
+                </div>
+            </form>
+        </main>
+        <div th:replace="~{fragments/footer :: footer}"></div>
+    </div>
+</div>
+
+<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/sidebar.js}"></script>
+</body>
+</html>

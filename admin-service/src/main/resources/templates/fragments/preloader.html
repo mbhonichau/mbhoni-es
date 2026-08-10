@@ -1,0 +1,56 @@
+<th:block xmlns:th="http://www.thymeleaf.org" th:fragment="preloader">
+
+<!-- MBHONI Logo Preloader (Active for Login Page First Load, Login Form Submit & Logout Form Submit) -->
+<div id="globalPreloader">
+    <div class="preloader-wrapper">
+        <div class="preloader-hex-ring"></div>
+        <img th:src="@{/images/logo.png}" alt="MBHONI" class="preloader-logo">
+    </div>
+    <div class="preloader-brand-title">MBHONI CREATIVE</div>
+    <div class="preloader-subtext">Enterprise Operations System</div>
+</div>
+
+<script>
+    (function() {
+        const preloader = document.getElementById('globalPreloader');
+        if (!preloader) return;
+
+        const path = window.location.pathname;
+        const isLoginPage = path === '/login' || path.endsWith('/login') || path === '/';
+
+        function hidePreloader() {
+            preloader.classList.add('preloader-hidden');
+        }
+
+        function showPreloader() {
+            preloader.classList.remove('preloader-hidden');
+        }
+
+        // On first load: animate preloader ONLY on the login page
+        if (isLoginPage) {
+            if (document.readyState === 'complete') {
+                setTimeout(hidePreloader, 350);
+            } else {
+                window.addEventListener('load', function() {
+                    setTimeout(hidePreloader, 350);
+                });
+            }
+        } else {
+            // All inner application pages start with preloader hidden immediately
+            hidePreloader();
+        }
+
+        // Show preloader transition when Login or Logout forms are submitted
+        document.addEventListener('submit', function(e) {
+            showPreloader();
+        });
+
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) {
+                hidePreloader();
+            }
+        });
+    })();
+</script>
+
+</th:block>

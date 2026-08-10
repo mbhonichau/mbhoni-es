@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Section Field Manager')}"></head>
+
+<body>
+<div class="admin-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <main class="admin-content">
+            <div th:if="${successMessage}" class="alert alert-success admin-alert shadow-sm">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                <span th:text="${successMessage}">Success message</span>
+            </div>
+            <div th:if="${errorMessage}" class="alert alert-danger admin-alert shadow-sm">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <span th:text="${errorMessage}">Error message</span>
+            </div>
+
+            <section class="page-heading mb-4">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <div>
+                        <p class="eyebrow text-uppercase font-monospace tracking-wider text-muted mb-1">Human Resource Governance</p>
+                        <h2 class="fw-bold tracking-tight mb-1">Tenant Field Manager &amp; Schema Configurator</h2>
+                        <p class="text-muted mb-0">Manage dynamic section fields, display order, and requirement toggles for employee records.</p>
+                    </div>
+
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a th:href="@{/employees}" class="btn btn-outline-secondary shadow-sm">
+                            <i class="bi bi-person-vcard me-1"></i> Employee Roster
+                        </a>
+                        <a th:href="@{/employees/completeness-report}" class="btn btn-outline-secondary shadow-sm">
+                            <i class="bi bi-clipboard-check me-1"></i> Completeness Report
+                        </a>
+                        <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#createFieldModal">
+                            <i class="bi bi-plus-lg me-1"></i> Add Custom Field
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section Field Manager Table -->
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between">
+                    <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-sliders text-primary me-2"></i>Dynamic Section Field Catalog</h5>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" id="fieldSchemaTable">
+                        <thead class="table-light">
+                        <tr>
+                            <th style="width: 5%;">Order</th>
+                            <th style="width: 18%;">Section</th>
+                            <th style="width: 20%;">Field Key</th>
+                            <th style="width: 22%;">Label</th>
+                            <th style="width: 12%;">Type</th>
+                            <th style="width: 10%;">Required Toggle</th>
+                            <th style="width: 8%;">Status</th>
+                            <th style="width: 5%;" class="text-end">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="f : ${allFields}">
+                            <td class="font-monospace fw-bold text-muted" th:text="${f.displayOrder}">10</td>
+                            <td>
+                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25" th:text="${f.section}">QUALIFICATION</span>
+                            </td>
+                            <td class="font-monospace fw-bold text-dark" th:text="${f.fieldKey}">license_number</td>
+                            <td class="fw-semibold text-dark" th:text="${f.label}">License Number</td>
+                            <td>
+                                <span class="badge bg-light text-dark border font-monospace" th:text="${f.dataType}">TEXT</span>
+                            </td>
+                            <td>
+                                <!-- iOS Style Toggle Switch for isRequired -->
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" role="switch" 
+                                           th:checked="${f.required}" disabled title="Server-enforced requirement toggle">
+                                    <span class="small text-muted" th:text="${f.required ? 'Required' : 'Optional'}">Optional</span>
+                                </div>
+                            </td>
+                            <td>
+                                <!-- iOS Style Toggle Switch for isActive -->
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" role="switch" 
+                                           th:checked="${f.active}" disabled title="Active state toggle">
+                                    <span class="small" th:classappend="${f.active ? 'text-success fw-bold' : 'text-muted'}" th:text="${f.active ? 'Active' : 'Disabled'}">Active</span>
+                                </div>
+                            </td>
+                            <td class="text-end">
+                                <form th:if="${f.active and f.id != null}" 
+                                      th:action="@{'/tenants/' + ${tenant != null ? tenant.id : 0} + '/employee-fields/' + ${f.id} + '/deactivate'}" 
+                                      method="post" class="d-inline field-deactivate-form" data-confirm="Deactivate this field definition? Existing recorded employee values will be safely preserved.">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger btn-deactivate-confirm" title="Deactivate Field">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        <tr th:if="${allFields == null or allFields.isEmpty()}">
+                            <td colspan="8" class="text-center text-muted py-5">
+                                <i class="bi bi-sliders fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                                No section field definitions configured.
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+        <div th:replace="~{fragments/footer :: footer}"></div>
+    </div>
+</div>
+
+<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/sidebar.js}"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Wire initGlobalCrudConfirmations on field deactivate action
+        var forms = document.querySelectorAll(".field-deactivate-form");
+        forms.forEach(function(f) {
+            f.addEventListener("submit", function(e) {
+                var msg = f.getAttribute("data-confirm") || "Are you sure you want to deactivate this item?";
+                if (!confirm(msg)) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        });
+    });
+</script>
+</body>
+</html>

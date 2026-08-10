@@ -1,6 +1,7 @@
 package com.mbhoni_creative.admincontroller;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
@@ -17,6 +18,8 @@ import com.mbhoni_creative.adminentity.EmployeeStatus;
 import com.mbhoni_creative.adminentity.Payslip;
 import com.mbhoni_creative.adminrepository.PayslipRepository;
 import com.mbhoni_creative.adminservice.EmployeeService;
+import com.mbhoni_creative.adminservice.EmployeeFieldValueService;
+import com.mbhoni_creative.adminservice.FieldDefinitionService;
 import com.mbhoni_creative.adminservice.OrganizationUnitService;
 import com.mbhoni_creative.adminservice.TenantService;
 import com.mbhoni_creative.config.TenantSecurityService;
@@ -31,6 +34,12 @@ import com.mbhoni_creative.adminservice.TenantCustomizationService;
 import com.mbhoni_creative.adminservice.PayslipExcelService;
 import com.mbhoni_creative.adminservice.PayslipWordService;
 
+import com.mbhoni_creative.adminservice.TenantOnboardingFieldService;
+import com.mbhoni_creative.admindto.TenantOnboardingFieldDto;
+import com.mbhoni_creative.adminentity.TargetEntity;
+import com.mbhoni_creative.adminentity.RequirementState;
+import java.util.stream.Collectors;
+
 @Controller
 @RequestMapping("/employees")
 public class EmployeeViewController {
@@ -43,6 +52,10 @@ public class EmployeeViewController {
     private final TenantCustomizationService customizationService;
     private final PayslipExcelService excelService;
     private final PayslipWordService wordService;
+    private final TenantOnboardingFieldService onboardingFieldService;
+
+    private final FieldDefinitionService fieldDefinitionService;
+    private final EmployeeFieldValueService fieldValueService;
 
     public EmployeeViewController(
             EmployeeService employeeService,
@@ -52,7 +65,10 @@ public class EmployeeViewController {
             PayslipRepository payslipRepository,
             TenantCustomizationService customizationService,
             PayslipExcelService excelService,
-            PayslipWordService wordService) {
+            PayslipWordService wordService,
+            TenantOnboardingFieldService onboardingFieldService,
+            FieldDefinitionService fieldDefinitionService,
+            EmployeeFieldValueService fieldValueService) {
         this.employeeService = employeeService;
         this.orgUnitService = orgUnitService;
         this.tenantService = tenantService;
@@ -61,13 +77,22 @@ public class EmployeeViewController {
         this.customizationService = customizationService;
         this.excelService = excelService;
         this.wordService = wordService;
+        this.onboardingFieldService = onboardingFieldService;
+        this.fieldDefinitionService = fieldDefinitionService;
+        this.fieldValueService = fieldValueService;
     }
 
     @GetMapping
     @PreAuthorize("@tenantEntitlementService.isModuleEnabled('EMPLOYEE') and (hasAuthority('EMPLOYEE_VIEW') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN') or hasAuthority('TENANT_VIEW'))")
     public String index(Model model) {
         Long tenantId = tenantSecurityService.getCurrentTenantId();
-        model.addAttribute("employees", employeeService.getEmployeesByTenant(tenantId));
+        List<Employee> employees = employeeService.getEmployeesByTenant(tenantId);
+        long activeCount = employees.stream().filter(e -> e.getStatus() != null && e.getStatus() == EmployeeStatus.ACTIVE).count();
+        long fullTimeCount = employees.stream().filter(e -> e.getEmploymentType() != null && e.getEmploymentType() == com.mbhoni_creative.adminentity.EmploymentType.FULL_TIME).count();
+
+        model.addAttribute("employees", employees);
+        model.addAttribute("activeCount", activeCount);
+        model.addAttribute("fullTimeCount", fullTimeCount);
         model.addAttribute("tenants", getAccessibleTenants());
         model.addAttribute("statuses", EmployeeStatus.values());
 
@@ -75,6 +100,23 @@ public class EmployeeViewController {
         if (effectiveTenantId != null) {
             model.addAttribute("orgUnits", orgUnitService.getOrganizationUnitsByTenant(effectiveTenantId));
             model.addAttribute("managers", employeeService.getEmployeesByTenant(effectiveTenantId));
+
+            // Fetch section-based field definitions via FieldDefinitionService
+            model.addAttribute("qualificationFields", fieldDefinitionService.getEffectiveSchema(effectiveTenantId, com.mbhoni_creative.adminentity.FieldSection.QUALIFICATION));
+            model.addAttribute("backgroundCheckFields", fieldDefinitionService.getEffectiveSchema(effectiveTenantId, com.mbhoni_creative.adminentity.FieldSection.BACKGROUND_CHECK));
+            model.addAttribute("employmentStatusFields", fieldDefinitionService.getEffectiveSchema(effectiveTenantId, com.mbhoni_creative.adminentity.FieldSection.EMPLOYMENT_STATUS));
+            model.addAttribute("fieldAssignmentFields", fieldDefinitionService.getEffectiveSchema(effectiveTenantId, com.mbhoni_creative.adminentity.FieldSection.FIELD_ASSIGNMENT));
+
+            // Legacy Onboarding field mapping compatibility
+            List<TenantOnboardingFieldDto> fields = onboardingFieldService.getFieldsForTenant(effectiveTenantId, TargetEntity.EMPLOYEE);
+            List<TenantOnboardingFieldDto> activeFields = fields.stream()
+                    .filter(f -> f.getRequirementState() != null && f.getRequirementState() != RequirementState.DISABLED)
+                    .collect(Collectors.toList());
+            model.addAttribute("onboardingFields", activeFields);
+
+            java.util.Map<String, TenantOnboardingFieldDto> onboardingFieldMap = activeFields.stream()
+                    .collect(Collectors.toMap(TenantOnboardingFieldDto::getFieldKey, f -> f, (f1, f2) -> f1));
+            model.addAttribute("onboardingFieldMap", onboardingFieldMap);
         }
 
         model.addAttribute("newEmployee", new Employee());
@@ -87,17 +129,112 @@ public class EmployeeViewController {
             @RequestParam(required = false) Long tenantId,
             @RequestParam(required = false) Long orgUnitId,
             @RequestParam(required = false) Long managerId,
-            @ModelAttribute Employee employee) {
-        Long targetTenantId = tenantId != null ? tenantId : tenantSecurityService.getCurrentTenantId();
-        
-        if (!tenantSecurityService.isGlobalAdmin()) {
-            Long currentTenantId = tenantSecurityService.getCurrentTenantId();
-            if (currentTenantId != null) {
+            @ModelAttribute Employee employee,
+            jakarta.servlet.http.HttpServletRequest request,
+            RedirectAttributes redirectAttributes) {
+        try {
+            Long targetTenantId = tenantId != null ? tenantId : tenantSecurityService.getCurrentTenantId();
+            
+            if (!tenantSecurityService.isGlobalAdmin()) {
+                Long currentTenantId = tenantSecurityService.getCurrentTenantId();
+                if (currentTenantId != null) {
+                    targetTenantId = currentTenantId;
+                }
+            }
+            
+            Employee saved = employeeService.saveEmployee(targetTenantId, orgUnitId, managerId, employee);
+
+            // Save dynamic section field values
+            Map<String, String[]> parameterMap = request.getParameterMap();
+            if (parameterMap != null) {
+                Map<String, String> dynamicValues = new java.util.HashMap<>();
+                for (Map.Entry<String, String[]> entry : parameterMap.entrySet()) {
+                    if (entry.getKey().startsWith("fieldValues[") && entry.getKey().endsWith("]")) {
+                        String key = entry.getKey().substring("fieldValues[".length(), entry.getKey().length() - 1);
+                        if (entry.getValue() != null && entry.getValue().length > 0) {
+                            dynamicValues.put(key, entry.getValue()[0]);
+                        }
+                    }
+                }
+                if (!dynamicValues.isEmpty()) {
+                    fieldValueService.saveValues(saved.getId(), dynamicValues);
+                }
+            }
+
+            redirectAttributes.addFlashAttribute("successMessage", "Employee record saved successfully.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Error saving employee: " + e.getMessage());
+        }
+        return "redirect:/employees";
+    }
+
+    @PostMapping("/update")
+    @PreAuthorize("@tenantEntitlementService.isModuleEnabled('EMPLOYEE') and (hasAuthority('EMPLOYEE_EDIT') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN') or hasAuthority('TENANT_VIEW'))")
+    public String updateEmployee(
+            @RequestParam Long id,
+            @RequestParam(required = false) Long tenantId,
+            @RequestParam(required = false) Long orgUnitId,
+            @RequestParam(required = false) Long managerId,
+            @ModelAttribute Employee employee,
+            jakarta.servlet.http.HttpServletRequest request,
+            RedirectAttributes redirectAttributes) {
+        try {
+            employee.setId(id);
+            Employee existing = employeeService.getEmployeeById(id);
+            Long targetTenantId = existing.getTenant() != null ? existing.getTenant().getId() : tenantSecurityService.getCurrentTenantId();
+            
+            if (!tenantSecurityService.isGlobalAdmin()) {
+                Long currentTenantId = tenantSecurityService.getCurrentTenantId();
+                if (existing.getTenant() == null || !existing.getTenant().getId().equals(currentTenantId)) {
+                    throw new RuntimeException("Access denied");
+                }
                 targetTenantId = currentTenantId;
             }
+            
+            Employee saved = employeeService.saveEmployee(targetTenantId, orgUnitId, managerId, employee);
+
+            // Update dynamic section field values
+            Map<String, String[]> parameterMap = request.getParameterMap();
+            if (parameterMap != null) {
+                Map<String, String> dynamicValues = new java.util.HashMap<>();
+                for (Map.Entry<String, String[]> entry : parameterMap.entrySet()) {
+                    if (entry.getKey().startsWith("fieldValues[") && entry.getKey().endsWith("]")) {
+                        String key = entry.getKey().substring("fieldValues[".length(), entry.getKey().length() - 1);
+                        if (entry.getValue() != null && entry.getValue().length > 0) {
+                            dynamicValues.put(key, entry.getValue()[0]);
+                        }
+                    }
+                }
+                if (!dynamicValues.isEmpty()) {
+                    fieldValueService.saveValues(saved.getId(), dynamicValues);
+                }
+            }
+
+            redirectAttributes.addFlashAttribute("successMessage", "Employee details updated successfully.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Error updating employee: " + e.getMessage());
         }
-        
-        employeeService.saveEmployee(targetTenantId, orgUnitId, managerId, employee);
+        return "redirect:/employees";
+    }
+
+    @PostMapping("/delete")
+    @PreAuthorize("@tenantEntitlementService.isModuleEnabled('EMPLOYEE') and (hasAuthority('EMPLOYEE_EDIT') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN') or hasAuthority('TENANT_VIEW'))")
+    public String deleteEmployee(
+            @RequestParam Long id,
+            RedirectAttributes redirectAttributes) {
+        try {
+            Employee employee = employeeService.getEmployeeById(id);
+            if (!tenantSecurityService.isGlobalAdmin()) {
+                Long currentTenantId = tenantSecurityService.getCurrentTenantId();
+                if (employee.getTenant() == null || !employee.getTenant().getId().equals(currentTenantId)) {
+                    throw new RuntimeException("Access denied");
+                }
+            }
+            employeeService.deleteEmployee(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Employee deleted successfully.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Error deleting employee: " + e.getMessage());
+        }
         return "redirect:/employees";
     }
 
@@ -105,17 +242,22 @@ public class EmployeeViewController {
     @PreAuthorize("@tenantEntitlementService.isModuleEnabled('EMPLOYEE') and (hasAuthority('EMPLOYEE_EDIT') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN') or hasAuthority('TENANT_VIEW'))")
     public String updateStatus(
             @RequestParam Long id,
-            @RequestParam EmployeeStatus status) {
-        
-        Employee employee = employeeService.getEmployeeById(id);
-        if (!tenantSecurityService.isGlobalAdmin()) {
-            Long currentTenantId = tenantSecurityService.getCurrentTenantId();
-            if (employee.getTenant() == null || !employee.getTenant().getId().equals(currentTenantId)) {
-                throw new RuntimeException("Access denied");
+            @RequestParam EmployeeStatus status,
+            RedirectAttributes redirectAttributes) {
+        try {
+            Employee employee = employeeService.getEmployeeById(id);
+            if (!tenantSecurityService.isGlobalAdmin()) {
+                Long currentTenantId = tenantSecurityService.getCurrentTenantId();
+                if (employee.getTenant() == null || !employee.getTenant().getId().equals(currentTenantId)) {
+                    throw new RuntimeException("Access denied");
+                }
             }
-        }
 
-        employeeService.updateEmployeeStatus(id, status);
+            employeeService.updateEmployeeStatus(id, status);
+            redirectAttributes.addFlashAttribute("successMessage", "Employee status updated to " + status + ".");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Error updating status: " + e.getMessage());
+        }
         return "redirect:/employees";
     }
 
@@ -301,5 +443,22 @@ public class EmployeeViewController {
         }
 
         return "redirect:/employees/payslips/builder";
+    }
+
+    @GetMapping("/completeness-report")
+    @PreAuthorize("@tenantEntitlementService.isModuleEnabled('EMPLOYEE') and (hasAuthority('EMPLOYEE_COMPLETENESS_VIEW') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN') or hasAuthority('EMPLOYEE_VIEW'))")
+    public String completenessReport(Model model) {
+        Long tenantId = tenantSecurityService.getCurrentTenantId();
+        Long effectiveTenantId = tenantId != null ? tenantId : (tenantService.getAllTenants().isEmpty() ? null : tenantService.getAllTenants().get(0).getId());
+
+        List<com.mbhoni_creative.admindto.EmployeeCompletenessReportDto> report = employeeService.getCompletenessReport(effectiveTenantId);
+        long completeCount = report.stream().filter(com.mbhoni_creative.admindto.EmployeeCompletenessReportDto::isComplete).count();
+        long incompleteCount = report.size() - completeCount;
+
+        model.addAttribute("report", report);
+        model.addAttribute("completeCount", completeCount);
+        model.addAttribute("incompleteCount", incompleteCount);
+        model.addAttribute("totalCount", report.size());
+        return "employees/completeness-report";
     }
 }

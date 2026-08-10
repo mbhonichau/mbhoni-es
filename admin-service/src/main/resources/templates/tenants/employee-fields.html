@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Section Field Manager')}"></head>
+
+<body>
+<div class="admin-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <main class="admin-content">
+            <div th:if="${successMessage}" class="alert alert-success admin-alert shadow-sm">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                <span th:text="${successMessage}">Success message</span>
+            </div>
+            <div th:if="${errorMessage}" class="alert alert-danger admin-alert shadow-sm">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <span th:text="${errorMessage}">Error message</span>
+            </div>
+
+            <section class="page-heading mb-4">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <div>
+                        <p class="eyebrow text-uppercase font-monospace tracking-wider text-muted mb-1">Section Field Manager</p>
+                        <h2 class="fw-bold tracking-tight mb-1">Employee Module Field Definitions</h2>
+                        <p class="text-muted mb-0">
+                            Define, update, reorder, and deactivate section fields for 
+                            <strong th:text="${tenant.name}" class="text-dark">Tenant Name</strong>
+                        </p>
+                    </div>
+
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a th:href="@{/employees}" class="btn btn-outline-secondary shadow-sm">
+                            <i class="bi bi-person-vcard me-1"></i> Employee Roster
+                        </a>
+                        <a th:href="@{/employees/completeness-report}" class="btn btn-outline-secondary shadow-sm">
+                            <i class="bi bi-clipboard-check me-1"></i> Completeness Report
+                        </a>
+                        <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#createFieldModal">
+                            <i class="bi bi-plus-lg me-1"></i> Define Section Field
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section Tabs -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-bottom py-3">
+                    <ul class="nav nav-tabs card-header-tabs" id="sectionTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active fw-bold text-primary" id="qual-tab" data-bs-toggle="tab" data-bs-target="#qual-section" type="button" role="tab">
+                                <i class="bi bi-award me-2"></i> Qualification &amp; License
+                                <span class="badge bg-primary rounded-pill ms-2" th:text="${qualificationFields.size()}">0</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fw-bold text-secondary" id="bg-tab" data-bs-toggle="tab" data-bs-target="#bg-section" type="button" role="tab">
+                                <i class="bi bi-shield-check me-2"></i> Background Check
+                                <span class="badge bg-secondary rounded-pill ms-2" th:text="${backgroundCheckFields.size()}">0</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fw-bold text-secondary" id="emp-tab" data-bs-toggle="tab" data-bs-target="#emp-section" type="button" role="tab">
+                                <i class="bi bi-person-workspace me-2"></i> Employment Status
+                                <span class="badge bg-secondary rounded-pill ms-2" th:text="${employmentStatusFields.size()}">0</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fw-bold text-secondary" id="field-tab" data-bs-toggle="tab" data-bs-target="#field-section" type="button" role="tab">
+                                <i class="bi bi-geo-alt me-2"></i> Field Assignment
+                                <span class="badge bg-secondary rounded-pill ms-2" th:text="${fieldAssignmentFields.size()}">0</span>
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="card-body p-0">
+                    <div class="tab-content" id="sectionTabsContent">
+
+                        <!-- QUALIFICATION TAB -->
+                        <div class="tab-pane fade show active p-4" id="qual-section" role="tabpanel">
+                            <div th:replace="~{tenants/employee-fields :: sectionTable('QUALIFICATION', ${qualificationFields})}"></div>
+                        </div>
+
+                        <!-- BACKGROUND CHECK TAB -->
+                        <div class="tab-pane fade p-4" id="bg-section" role="tabpanel">
+                            <div th:replace="~{tenants/employee-fields :: sectionTable('BACKGROUND_CHECK', ${backgroundCheckFields})}"></div>
+                        </div>
+
+                        <!-- EMPLOYMENT STATUS TAB -->
+                        <div class="tab-pane fade p-4" id="emp-section" role="tabpanel">
+                            <div th:replace="~{tenants/employee-fields :: sectionTable('EMPLOYMENT_STATUS', ${employmentStatusFields})}"></div>
+                        </div>
+
+                        <!-- FIELD ASSIGNMENT TAB -->
+                        <div class="tab-pane fade p-4" id="field-section" role="tabpanel">
+                            <div th:replace="~{tenants/employee-fields :: sectionTable('FIELD_ASSIGNMENT', ${fieldAssignmentFields})}"></div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </main>
+        <div th:replace="~{fragments/footer :: footer}"></div>
+    </div>
+</div>
+
+<!-- Section Table Reusable Fragment -->
+<th:block th:fragment="sectionTable(secName, fieldList)">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle admin-table mb-0">
+            <thead class="table-light">
+            <tr>
+                <th style="width: 8%;">Order</th>
+                <th style="width: 22%;">Field Key</th>
+                <th style="width: 25%;">Label</th>
+                <th style="width: 15%;">Data Type</th>
+                <th style="width: 12%;">Required</th>
+                <th style="width: 10%;">State</th>
+                <th style="width: 8%;" class="text-end">Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="f : ${fieldList}">
+                <td class="font-monospace fw-bold" th:text="${f.displayOrder}">10</td>
+                <td class="fw-bold text-dark font-monospace" th:text="${f.fieldKey}">fieldKey</td>
+                <td th:text="${f.label}">Label</td>
+                <td><span class="badge bg-light text-dark border font-monospace" th:text="${f.dataType}">TEXT</span></td>
+                <td>
+                    <span th:if="${f.required}" class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25">Required</span>
+                    <span th:if="${!f.required}" class="badge bg-light text-muted border">Optional</span>
+                </td>
+                <td>
+                    <span th:if="${f.active}" class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">Active</span>
+                    <span th:if="${!f.active}" class="badge bg-secondary bg-opacity-10 text-secondary border">Deactivated</span>
+                </td>
+                <td class="text-end">
+                    <form th:if="${f.active and f.id != null}" th:action="@{'/tenants/' + ${tenant.id} + '/employee-fields/' + ${f.id} + '/deactivate'}" method="post" class="d-inline" onsubmit="return confirm('Deactivate this field definition? Existing values will be preserved.');">
+                        <button type="submit" class="btn btn-sm btn-outline-warning" title="Deactivate Field">
+                            <i class="bi bi-slash-circle"></i>
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            <tr th:if="${fieldList == null or fieldList.isEmpty()}">
+                <td colspan="7" class="text-center text-muted py-4">No field definitions configured for this section.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</th:block>
+
+<!-- Modal: Create Section Field Definition -->
+<div class="modal fade" id="createFieldModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <form th:action="@{${saveAction}}" method="post" class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-plus-circle-fill me-2 text-primary"></i>Define Section Field</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body row g-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Section</label>
+                    <select name="section" class="form-select" required>
+                        <option th:each="sec : ${sections}" th:value="${sec}" th:text="${sec}">Section</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Field Key (Identifier)</label>
+                    <input type="text" name="fieldKey" class="form-control font-monospace" placeholder="e.g. license_expiry_date" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Label</label>
+                    <input type="text" name="label" class="form-control" placeholder="e.g. License Expiration Date" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Data Type</label>
+                    <select name="dataType" class="form-select" required>
+                        <option th:each="dt : ${dataTypes}" th:value="${dt}" th:text="${dt}">DataType</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Display Order</label>
+                    <input type="number" name="displayOrder" class="form-control" value="10" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Requirement Rule</label>
+                    <select name="required" class="form-select">
+                        <option value="false">Optional</option>
+                        <option value="true">Required</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <label class="form-label fw-semibold">Select Options (JSON Array for SELECT type)</label>
+                    <input type="text" name="selectOptions" class="form-control font-monospace" placeholder='e.g. ["OPTION_A", "OPTION_B"]'>
+                </div>
+                <div class="col-12">
+                    <label class="form-label fw-semibold">Validation Rule (Regex)</label>
+                    <input type="text" name="validationRule" class="form-control font-monospace" placeholder="e.g. ^[0-9]{10}$">
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary px-4">Create Field</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/sidebar.js}"></script>
+</body>
+</html>

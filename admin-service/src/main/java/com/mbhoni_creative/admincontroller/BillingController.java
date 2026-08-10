@@ -30,6 +30,7 @@ import com.mbhoni_creative.adminservice.TenantService;
 import com.mbhoni_creative.adminservice.TenantCustomizationService;
 import com.mbhoni_creative.adminservice.InvoiceDocumentService;
 import com.mbhoni_creative.config.TenantSecurityService;
+import com.mbhoni_creative.config.TenantAccessService;
 
 @Controller
 @RequestMapping("/billing")
@@ -38,6 +39,7 @@ public class BillingController {
     private final BillingService billingService;
     private final TenantService tenantService;
     private final TenantSecurityService tenantSecurityService;
+    private final TenantAccessService tenantAccessService;
     private final ExpenseRepository expenseRepository;
     private final BillingAccountRepository billingAccountRepository;
     private final TenantCustomizationService customizationService;
@@ -47,6 +49,7 @@ public class BillingController {
             BillingService billingService,
             TenantService tenantService,
             TenantSecurityService tenantSecurityService,
+            TenantAccessService tenantAccessService,
             ExpenseRepository expenseRepository,
             BillingAccountRepository billingAccountRepository,
             TenantCustomizationService customizationService,
@@ -55,6 +58,7 @@ public class BillingController {
         this.billingService = billingService;
         this.tenantService = tenantService;
         this.tenantSecurityService = tenantSecurityService;
+        this.tenantAccessService = tenantAccessService;
         this.expenseRepository = expenseRepository;
         this.billingAccountRepository = billingAccountRepository;
         this.customizationService = customizationService;
@@ -70,8 +74,12 @@ public class BillingController {
             @RequestParam(defaultValue = "25") int size,
             Model model) {
 
+        Long currentTenantId = tenantAccessService.getCurrentTenantId();
         List<BillingAccount> accounts = billingService.getAllBillingAccounts()
                 .stream()
+                .filter(account -> tenantSecurityService.isGlobalAdmin()
+                        || (account.getTenant() != null && currentTenantId != null
+                        && currentTenantId.equals(account.getTenant().getId())))
                 .filter(account -> matchesAccountSearch(account, q))
                 .filter(account -> matchesAccountStatus(account, status))
                 .toList();
@@ -103,6 +111,7 @@ public class BillingController {
             @ModelAttribute BillingAccount account,
             RedirectAttributes redirectAttributes) {
 
+        tenantAccessService.requireAccess(tenantId);
         billingService.saveOrUpdateBillingAccount(tenantId, account);
         redirectAttributes.addFlashAttribute("successMessage", "Billing account saved successfully.");
 
@@ -166,6 +175,7 @@ public class BillingController {
             @RequestParam(required = false) String notes,
             RedirectAttributes redirectAttributes) {
 
+        tenantAccessService.requireAccess(tenantId);
         billingService.createInvoice(
                 tenantId,
                 subtotal,
@@ -190,6 +200,8 @@ public class BillingController {
             @RequestParam(required = false) String notes,
             RedirectAttributes redirectAttributes) {
 
+        Invoice invoice = billingService.getInvoiceById(invoiceId);
+        requireInvoiceAccess(invoice);
         billingService.recordPayment(
                 invoiceId,
                 amount,
@@ -209,7 +221,9 @@ public class BillingController {
             @RequestParam Long id,
             Model model) {
 
-        model.addAttribute("invoice", billingService.getInvoiceById(id));
+        Invoice invoice = billingService.getInvoiceById(id);
+        requireInvoiceAccess(invoice);
+        model.addAttribute("invoice", invoice);
         model.addAttribute("payments", billingService.getPaymentsForInvoice(id));
         model.addAttribute("paymentMethods", PaymentMethod.values());
 
@@ -225,6 +239,7 @@ public class BillingController {
             @RequestParam(required = false) String notes,
             RedirectAttributes redirectAttributes) {
 
+        tenantAccessService.requireAccess(tenantId);
         billingService.generateInvoiceFromSubscription(
                 tenantId,
                 issueDate,
@@ -283,6 +298,7 @@ public class BillingController {
     @PreAuthorize("hasAuthority('BILLING_VIEW') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN')")
     public String printInvoiceGet(@PathVariable Long id, Model model) {
         Invoice invoice = billingService.getInvoiceById(id);
+        requireInvoiceAccess(invoice);
         model.addAttribute("invoice", invoice);
         model.addAttribute("payments", billingService.getPaymentsForInvoice(id));
 
@@ -382,7 +398,12 @@ public class BillingController {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         // Revenue from invoices
-        List<Invoice> invoices = billingService.getAllInvoices();
+        List<Invoice> invoices = billingService.getAllInvoices()
+                .stream()
+                .filter(invoice -> tenantSecurityService.isGlobalAdmin()
+                        || (invoice.getTenant() != null && tenantId != null
+                        && tenantId.equals(invoice.getTenant().getId())))
+                .toList();
         BigDecimal totalPaidRevenue = invoices.stream()
                 .filter(inv -> inv.getStatus() == InvoiceStatus.PAID)
                 .map(Invoice::getTotalAmount)
@@ -407,6 +428,9 @@ public class BillingController {
             RedirectAttributes redirectAttributes) {
 
         Long tenantId = tenantSecurityService.getCurrentTenantId();
+        if (expense.getTenant() != null) {
+            tenantAccessService.requireAccess(expense.getTenant().getId());
+        }
         if (tenantId != null && expense.getTenant() == null) {
             com.mbhoni_creative.adminentity.Tenant t = new com.mbhoni_creative.adminentity.Tenant();
             t.setId(tenantId);
@@ -432,8 +456,17 @@ public class BillingController {
             @RequestParam Long id,
             RedirectAttributes redirectAttributes) {
 
-        expenseRepository.deleteById(id);
+        Expense expense = expenseRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Expense not found"));
+        tenantAccessService.requireAccess(
+                expense.getTenant() != null ? expense.getTenant().getId() : null);
+        expenseRepository.delete(expense);
         redirectAttributes.addFlashAttribute("successMessage", "Expense entry deleted.");
         return "redirect:/billing/expenses";
+    }
+
+    private void requireInvoiceAccess(Invoice invoice) {
+        tenantAccessService.requireAccess(
+                invoice != null && invoice.getTenant() != null ? invoice.getTenant().getId() : null);
     }
 }

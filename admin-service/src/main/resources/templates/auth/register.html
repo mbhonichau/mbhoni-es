@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Create Account - MBHONI Creative Enterprise</title>
+    <link rel="icon" type="image/png" th:href="@{/images/logo.png}">
+    <link rel="stylesheet" th:href="@{/vendor/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/vendor/bootstrap-icons/bootstrap-icons.css}">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <link rel="stylesheet" th:href="@{/css/auth.css}">
+</head>
+
+<body class="auth-body">
+    <!-- Particle Canvas Background -->
+    <canvas id="canvas"></canvas>
+
+    <div class="auth-wrapper">
+        <div class="auth-container">
+            <!-- Brand Logo & Header -->
+            <div class="brand-header text-center">
+                <a th:href="@{/}" class="d-inline-flex align-items-center gap-2 text-decoration-none">
+                    <img th:src="@{/images/logo.png}" alt="Logo" class="brand-logo" style="height: 40px;">
+                    <div>
+                        <span class="brand-text">MBHONI</span>
+                        <div class="brand-copy"><small>CREATIVE ENTERPRISE</small></div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Mode Switcher Tabs -->
+            <div class="auth-nav-tabs">
+                <a th:href="@{/login}" class="auth-nav-tab">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+                </a>
+                <a th:href="@{/register}" class="auth-nav-tab active">
+                    <i class="bi bi-person-plus me-1"></i> Create Account
+                </a>
+            </div>
+
+            <!-- Flash Alert Banners -->
+            <div th:if="${errorMessage}" class="auth-alert auth-alert-error">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span th:text="${errorMessage}">Registration error</span>
+            </div>
+
+            <div th:if="${param.error}" class="auth-alert auth-alert-error">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span>Registration failed. Please verify your details and try again.</span>
+            </div>
+
+            <!-- Registration Form -->
+            <form th:action="@{/register}" method="post">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <div class="input-wrapper">
+                        <i class="bi bi-person input-icon"></i>
+                        <input type="text" id="username" name="username" placeholder="Choose username" required autofocus>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Work Email</label>
+                    <div class="input-wrapper">
+                        <i class="bi bi-envelope input-icon"></i>
+                        <input type="email" id="email" name="email" placeholder="user@enterprise.com" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="input-wrapper">
+                        <i class="bi bi-lock input-icon"></i>
+                        <input type="password" id="password" name="password" placeholder="Minimum 6 characters" required>
+                        <button type="button" class="password-toggle" onclick="togglePasswordVisibility(this)" title="Show/Hide Password">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group" th:if="${tenants != null and !tenants.isEmpty()}">
+                    <label for="tenantId">Tenant / Organization</label>
+                    <div class="input-wrapper">
+                        <i class="bi bi-building input-icon"></i>
+                        <select id="tenantId" name="tenantId">
+                            <option value="">-- Standard / Default Tenant --</option>
+                            <option th:each="t : ${tenants}" th:value="${t.id}" th:text="${t.name}">Tenant Name</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-auth-submit">
+                    <i class="bi bi-person-check-fill me-1"></i> Register Account
+                </button>
+            </form>
+
+            <div class="auth-footer-links">
+                Already have an account? <a th:href="@{/login}">Sign In here</a>
+            </div>
+
+            <div class="d-flex align-items-center justify-content-between pt-3 mt-4 border-top border-secondary border-opacity-25" style="font-size: 0.75rem; color: #a09d8e;">
+                <div class="d-flex align-items-center gap-2">
+                    <img th:src="@{/images/logo.png}" alt="Logo" style="height: 14px; width: 14px; opacity: 0.7;">
+                    <span>MBHONI Enterprise &copy; 2026</span>
+                </div>
+                <span class="badge bg-warning bg-opacity-25 text-warning border border-warning border-opacity-25">v1.0.0</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vendor Scripts -->
+    <script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+
+    <!-- Canvas Animation & Script -->
+    <script>
+        function togglePasswordVisibility(btn) {
+            var input = btn.previousElementSibling;
+            var icon = btn.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'bi bi-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'bi bi-eye';
+            }
+        }
+
+        // Particle Canvas Background Animation
+        var canvas = document.getElementById('canvas');
+        var ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        var particles = [];
+        var particleCount = 45;
+
+        for (var i = 0; i < particleCount; i++) {
+            particles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                radius: Math.random() * 2 + 1,
+                dx: (Math.random() - 0.5) * 0.6,
+                dy: (Math.random() - 0.5) * 0.6,
+                color: 'rgba(227, 168, 87, ' + (Math.random() * 0.4 + 0.1) + ')'
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (var i = 0; i < particles.length; i++) {
+                var p = particles[i];
+                p.x += p.dx;
+                p.y += p.dy;
+
+                if (p.x < 0 || p.x > canvas.width) p.dx = -p.dx;
+                if (p.y < 0 || p.y > canvas.height) p.dy = -p.dy;
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.fill();
+
+                for (var j = i + 1; j < particles.length; j++) {
+                    var p2 = particles[j];
+                    var dist = Math.hypot(p.x - p2.x, p.y - p2.y);
+                    if (dist < 120) {
+                        ctx.beginPath();
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.strokeStyle = 'rgba(227, 168, 87, ' + (0.15 * (1 - dist / 120)) + ')';
+                        ctx.lineWidth = 0.5;
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+        animate();
+    </script>
+</body>
+</html>

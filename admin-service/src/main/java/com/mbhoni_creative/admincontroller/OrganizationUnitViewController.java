@@ -32,15 +32,26 @@ public class OrganizationUnitViewController {
 
     @GetMapping
     @PreAuthorize("@tenantEntitlementService.isModuleEnabled('ORG') and (hasAuthority('ORG_VIEW') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN') or hasAuthority('TENANT_VIEW'))")
-    public String index(Model model) {
-        Long tenantId = tenantSecurityService.getCurrentTenantId();
-        Long effectiveTenantId = tenantId != null ? tenantId : (tenantService.getAllTenants().isEmpty() ? null : tenantService.getAllTenants().get(0).getId());
+    public String index(
+            @RequestParam(required = false) Long tenantId,
+            Model model) {
+        Long currentTenantId = tenantSecurityService.getCurrentTenantId();
+        List<TenantDto> accessibleTenants = getAccessibleTenants();
 
-        if (effectiveTenantId != null) {
-            model.addAttribute("orgUnits", orgUnitService.getOrganizationUnitsByTenant(effectiveTenantId));
+        Long effectiveTenantId = tenantId != null ? tenantId : currentTenantId;
+        if (effectiveTenantId == null && !accessibleTenants.isEmpty()) {
+            effectiveTenantId = accessibleTenants.get(0).getId();
         }
 
-        model.addAttribute("tenants", getAccessibleTenants());
+        List<OrganizationUnit> orgUnits = orgUnitService.getOrganizationUnitsByTenant(effectiveTenantId);
+        List<OrganizationUnit> parentUnits = (effectiveTenantId != null)
+                ? orgUnits
+                : orgUnitService.getOrganizationUnitsByTenant(null);
+
+        model.addAttribute("orgUnits", orgUnits);
+        model.addAttribute("parentUnits", parentUnits);
+        model.addAttribute("tenants", accessibleTenants);
+        model.addAttribute("selectedTenantId", effectiveTenantId);
         model.addAttribute("newUnit", new OrganizationUnit());
         return "organization/list";
     }
@@ -50,16 +61,33 @@ public class OrganizationUnitViewController {
     public String saveUnit(
             @RequestParam(required = false) Long tenantId,
             @RequestParam(required = false) Long parentUnitId,
-            @ModelAttribute OrganizationUnit unit) {
-        Long targetTenantId = tenantId != null ? tenantId : tenantSecurityService.getCurrentTenantId();
-        if (!tenantSecurityService.isGlobalAdmin()) {
-            Long currentTenantId = tenantSecurityService.getCurrentTenantId();
-            if (currentTenantId != null) {
-                targetTenantId = currentTenantId;
+            @ModelAttribute OrganizationUnit unit,
+            org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
+        try {
+            Long targetTenantId = tenantId != null ? tenantId : tenantSecurityService.getCurrentTenantId();
+            if (!tenantSecurityService.isGlobalAdmin()) {
+                Long currentTenantId = tenantSecurityService.getCurrentTenantId();
+                if (currentTenantId != null) {
+                    targetTenantId = currentTenantId;
+                }
             }
+            if (targetTenantId == null) {
+                List<TenantDto> accessibleTenants = getAccessibleTenants();
+                if (!accessibleTenants.isEmpty()) {
+                    targetTenantId = accessibleTenants.get(0).getId();
+                }
+            }
+
+            if (targetTenantId == null) {
+                throw new IllegalArgumentException("Target Tenant ID is required to create an Organization Unit.");
+            }
+
+            orgUnitService.saveOrganizationUnit(targetTenantId, parentUnitId, unit);
+            redirectAttributes.addFlashAttribute("successMessage", "Organization Unit '" + unit.getName() + "' saved successfully.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Error saving Organization Unit: " + e.getMessage());
         }
 
-        orgUnitService.saveOrganizationUnit(targetTenantId, parentUnitId, unit);
         return "redirect:/organization";
     }
 

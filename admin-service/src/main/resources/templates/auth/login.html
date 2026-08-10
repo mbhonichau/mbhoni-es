@@ -8,6 +8,7 @@
     <link rel="stylesheet" th:href="@{/vendor/bootstrap/css/bootstrap.min.css}">
     <link rel="stylesheet" th:href="@{/vendor/bootstrap-icons/bootstrap-icons.css}">
     <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <link rel="stylesheet" th:href="@{/css/auth.css}">
 
     <style>
         * {
@@ -19,7 +20,7 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             overflow: hidden;
-            background: #171a12;
+            background: #0f120c;
             color: #dfddd1;
         }
 
@@ -38,85 +39,87 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(38, 42, 29, 0.78);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            padding: 40px 42px;
-            border-radius: var(--radius-lg);
-            border: 1.5px solid rgba(227, 168, 87, 0.35);
+            background: rgba(23, 26, 18, 0.82);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            padding: 42px 45px;
+            border-radius: 20px;
+            border: 1.5px solid rgba(227, 168, 87, 0.4);
             width: 90%;
             max-width: 440px;
-            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5), inset 0 0 40px rgba(223, 221, 209, 0.06);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7), inset 0 0 50px rgba(227, 168, 87, 0.08);
             z-index: 10;
-            animation: glowPulse 3.5s ease-in-out infinite;
+            animation: glowPulse 4s ease-in-out infinite;
         }
 
         @keyframes glowPulse {
-            0%, 100% { box-shadow: 0 10px 40px rgba(113, 53, 25, 0.35), inset 0 0 40px rgba(223, 221, 209, 0.05); }
-            50% { box-shadow: 0 15px 65px rgba(113, 53, 25, 0.55), inset 0 0 60px rgba(223, 221, 209, 0.12); }
+            0%, 100% { box-shadow: 0 15px 50px rgba(113, 53, 25, 0.4), inset 0 0 45px rgba(227, 168, 87, 0.08); }
+            50% { box-shadow: 0 20px 75px rgba(113, 53, 25, 0.65), inset 0 0 65px rgba(227, 168, 87, 0.15); }
         }
 
         .brand-logo {
-            transition: transform 0.2s ease;
+            transition: transform 0.3s ease;
             filter: brightness(0) invert(1);
         }
 
         .brand:hover .brand-logo {
-            transform: scale(1.05);
+            transform: scale(1.08) rotate(3deg);
         }
 
         .brand-text {
             display: block;
             font-weight: 800;
-            letter-spacing: .05em;
-            font-size: 1.2rem;
+            letter-spacing: .06em;
+            font-size: 1.3rem;
             color: #ffffff;
+            text-shadow: 0 2px 10px rgba(227, 168, 87, 0.3);
         }
 
         .brand-copy small {
             display: block;
-            color: #dfddd1;
-            font-size: 0.75rem;
-            font-weight: 600;
-            opacity: 0.85;
+            color: #E3A857;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            opacity: 0.9;
         }
 
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 22px;
             text-align: left;
         }
 
         .form-group label {
             display: block;
             color: #E3A857;
-            font-size: 0.72rem;
-            margin-bottom: 6px;
+            font-size: 0.73rem;
+            margin-bottom: 7px;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.08em;
+            letter-spacing: 0.09em;
         }
 
         .form-group input {
             width: 100%;
             padding: 10px 40px 10px 14px;
-            height: 42px;
-            background: rgba(223, 221, 209, 0.1);
-            border: 1px solid rgba(223, 221, 209, 0.25);
-            border-radius: var(--radius-sm);
+            height: 44px;
+            background: rgba(223, 221, 209, 0.08);
+            border: 1px solid rgba(227, 168, 87, 0.3);
+            border-radius: 8px;
             color: #ffffff;
-            font-size: 0.9rem;
-            transition: all 0.2s ease;
+            font-size: 0.92rem;
+            transition: all 0.25s ease;
         }
 
         .form-group input:focus {
             outline: none;
-            background: rgba(223, 221, 209, 0.22);
-            border-color: #ffffff !important;
-            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.4) !important;
+            background: rgba(223, 221, 209, 0.18);
+            border-color: #E3A857 !important;
+            box-shadow: 0 0 0 3px rgba(227, 168, 87, 0.35) !important;
         }
 
         .form-group input::placeholder {
-            color: rgba(223, 221, 209, 0.5);
+            color: rgba(223, 221, 209, 0.45);
         }
 
         .password-toggle-btn {
@@ -134,7 +137,7 @@
         }
 
         .password-toggle-btn:hover {
-            color: #ffffff;
+            color: #E3A857;
         }
 
         .forgot-link {
@@ -154,25 +157,26 @@
         .login-btn {
             width: 100%;
             padding: 12px;
-            height: 44px;
-            background: linear-gradient(135deg, #713519 0%, #a64722 100%);
+            height: 46px;
+            background: linear-gradient(135deg, #713519 0%, #a64722 50%, #E3A857 100%);
+            background-size: 200% 200%;
             border: 1px solid #713519;
-            border-radius: var(--radius-sm);
+            border-radius: 8px;
             color: #ffffff;
-            font-size: 0.9rem;
+            font-size: 0.92rem;
             font-weight: 700;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
             margin-top: 10px;
             text-transform: uppercase;
-            letter-spacing: 0.08em;
-            box-shadow: 0 4px 12px rgba(113, 53, 25, 0.35);
+            letter-spacing: 0.09em;
+            box-shadow: 0 6px 18px rgba(113, 53, 25, 0.45);
         }
 
         .login-btn:hover {
+            background-position: 100% 0;
             transform: translateY(-2px);
-            background: linear-gradient(135deg, #853d1d 0%, #b85026 100%);
-            box-shadow: 0 6px 18px rgba(113, 53, 25, 0.55);
+            box-shadow: 0 8px 24px rgba(227, 168, 87, 0.4);
         }
 
         .login-btn:active {
@@ -182,10 +186,10 @@
         .google-btn {
             width: 100%;
             padding: 11px;
-            height: 42px;
+            height: 44px;
             background: rgba(223, 221, 209, 0.08);
             border: 1px solid rgba(223, 221, 209, 0.25);
-            border-radius: var(--radius-sm);
+            border-radius: 8px;
             color: #dfddd1;
             font-size: 0.88rem;
             font-weight: 650;
@@ -194,84 +198,116 @@
             align-items: center;
             justify-content: center;
             gap: 10px;
-            transition: all 0.2s ease;
+            transition: all 0.25s ease;
         }
 
         .google-btn:hover {
             background: rgba(223, 221, 209, 0.16);
             color: #ffffff;
-            border-color: #dfddd1;
+            border-color: #E3A857;
             transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
     </style>
 </head>
 
-<body>
+<body class="auth-body">
+<div th:replace="~{fragments/preloader :: preloader}"></div>
 <canvas id="canvas"></canvas>
 
-<div class="login-container text-center">
-    <div class="brand d-flex align-items-center justify-content-center gap-2 mb-4">
-        <img th:src="@{/images/logo.png}" alt="Mbhoni Creative" class="brand-logo" style="height: auto; width: 46px; object-fit: cover;">
-        <span class="brand-copy text-start">
-            <span class="brand-text fw-bold text-white fs-3 d-block" style="letter-spacing: 1.5px; line-height: 1.1;">MBHONI</span>
-            <small class="d-block text-grey" style="font-size: 0.68rem; margin-left: -15px; color: #dfddd1; opacity: 0.85; text-transform: uppercase;">Creative Enterprise -----------</small>
-        </span>
-    </div>
-
-    <form th:action="@{/login}" method="post" id="loginForm">
-        <div th:if="${param.error}" class="alert alert-danger py-2 mb-3" style="font-size: 0.85rem;">
-            Invalid username or password.
+<div class="auth-wrapper">
+    <div class="login-container text-center">
+        <div class="brand-header d-flex align-items-center justify-content-center gap-2 mb-2">
+            <img th:src="@{/images/logo.png}" alt="Mbhoni Creative" class="brand-logo" style="height: auto; width: 44px; object-fit: cover;">
+            <span class="brand-copy text-start">
+                <span class="brand-text fw-bold text-white fs-4 d-block" style="letter-spacing: 1px; line-height: 1.1;">MBHONI</span>
+                <small class="d-block text-uppercase" style="font-size: 0.62rem; color: #E3A857; opacity: 0.9;">Creative Enterprise Solutions</small>
+            </span>
         </div>
 
-        <div th:if="${param.logout}" class="alert alert-success py-2 mb-3" style="font-size: 0.85rem;">
-            You have been signed out.
+        <!-- Mode Switcher Tabs -->
+        <div class="auth-nav-tabs mb-3">
+            <a th:href="@{/login}" class="auth-nav-tab active">
+                <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+            </a>
+            <a th:href="@{/register}" class="auth-nav-tab">
+                <i class="bi bi-person-plus me-1"></i> Create Account
+            </a>
         </div>
 
-        <div th:if="${param.resetSent}" class="alert alert-info py-2 mb-3" style="font-size: 0.85rem;">
-            If the account exists, password reset instructions have been sent.
-        </div>
-
-        <div class="form-group">
-            <label for="username">Username</label>
-            <input type="text" id="username" name="username" placeholder="Enter username" required autofocus>
-        </div>
-
-        <div class="form-group">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <label for="password" class="mb-0">Password</label>
-                <a href="#" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal" class="forgot-link">Forgot Password?</a>
+        <form th:action="@{/login}" method="post" id="loginForm">
+            <div th:if="${param.error}" class="auth-alert auth-alert-error mb-2">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span>Invalid username or password.</span>
             </div>
-            <div class="position-relative">
-                <input type="password" id="password" name="password" placeholder="••••••••" required>
-                <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibilityInline(this)" title="Show/Hide Password">
-                    <i class="bi bi-eye"></i>
-                </button>
+
+            <div th:if="${param.logout}" class="auth-alert auth-alert-success mb-2">
+                <i class="bi bi-check-circle-fill"></i>
+                <span>You have been signed out.</span>
             </div>
+
+            <div th:if="${param.registered}" class="auth-alert auth-alert-success mb-2">
+                <i class="bi bi-check-circle-fill"></i>
+                <span>Account registered successfully! Please sign in below.</span>
+            </div>
+
+            <div th:if="${param.resetSent}" class="auth-alert auth-alert-success mb-2">
+                <i class="bi bi-info-circle-fill"></i>
+                <span>Password reset instructions sent if account exists.</span>
+            </div>
+
+            <div class="form-group mb-2">
+                <label for="username">Username</label>
+                <div class="input-wrapper">
+                    <i class="bi bi-person input-icon"></i>
+                    <input type="text" id="username" name="username" placeholder="Enter username" required autofocus>
+                </div>
+            </div>
+
+            <div class="form-group mb-2">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label for="password" class="mb-0">Password</label>
+                    <a href="#" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal" class="forgot-link">Forgot Password?</a>
+                </div>
+                <div class="input-wrapper">
+                    <i class="bi bi-lock input-icon"></i>
+                    <input type="password" id="password" name="password" placeholder="••••••••" required>
+                    <button type="button" class="password-toggle" onclick="togglePasswordVisibilityInline(this)" title="Show/Hide Password">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit" class="login-btn">Sign In</button>
+
+            <div class="social-login-divider">
+                <span>OR</span>
+            </div>
+
+            <a th:href="@{/oauth2/authorization/google}" class="google-btn">
+                <svg width="16" height="16" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/></svg>
+                Sign in with Google
+            </a>
+        </form>
+
+        <div class="auth-footer-links mt-2">
+            Don't have an account? <a th:href="@{/register}">Register Account</a>
         </div>
 
-        <button type="submit" class="login-btn">Sign In</button>
-
-        <div class="text-center my-3 text-muted fs-7" style="color: #dfddd1 !important; opacity: 0.6;">OR</div>
-
-        <a th:href="@{/oauth2/authorization/google}" class="google-btn">
-            <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/></svg>
-            Sign in with Google
-        </a>
-    </form>
-
-    <div class="login-footer d-flex align-items-center justify-content-between pt-3 mt-4 border-top border-secondary border-opacity-25" style="font-size: 0.78rem; color: #dfddd1; opacity: 0.8;">
-        <div class="d-flex align-items-center gap-2">
-            <img th:src="@{/images/logo.png}" alt="Mbhoni Creative" style="height: 16px; width: 16px; border-radius: 3px; object-fit: cover;">
-            <span>MBHONI Creative Enterprise Solutions &copy; 2026</span>
+        <div class="d-flex align-items-center justify-content-between pt-2 mt-3 border-top border-secondary border-opacity-25" style="font-size: 0.72rem; color: #a09d8e;">
+            <div class="d-flex align-items-center gap-1">
+                <img th:src="@{/images/logo.png}" alt="Mbhoni Creative" style="height: 14px; width: 14px; opacity: 0.7;">
+                <span>MBHONI Enterprise &copy; 2026</span>
+            </div>
+            <span class="badge bg-warning bg-opacity-25 text-warning border border-warning border-opacity-25">v1.0.0</span>
         </div>
-        <span>v1.0.0</span>
     </div>
 </div>
 
 <!-- Modal: Forgot Password Request -->
 <div class="modal fade text-start" id="forgotPasswordModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="background: rgba(27, 30, 21, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(223, 221, 209, 0.3); color: #ffffff; border-radius: 16px;">
+        <div class="modal-content" style="background: rgba(23, 26, 18, 0.95); backdrop-filter: blur(24px); border: 1px solid rgba(227, 168, 87, 0.4); color: #ffffff; border-radius: 16px;">
             <form th:action="@{/forgot-password}" method="post">
                 <div class="modal-header border-bottom-0 pb-0">
                     <h5 class="modal-title font-weight-bold text-white"><i class="bi bi-key text-warning me-2"></i> Reset Password</h5>
@@ -280,8 +316,8 @@
                 <div class="modal-body py-4">
                     <p class="small text-white-50 mb-3">Enter your registered email address or username below. We will send password reset instructions to your email.</p>
                     <div class="mb-3">
-                        <label class="form-label text-uppercase fs-7 font-weight-bold text-white">Username or Email</label>
-                        <input type="text" name="username" class="form-control" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #fff;" placeholder="username or user@enterprise.com" required>
+                        <label class="form-label text-uppercase fs-7 font-weight-bold text-warning">Username or Email</label>
+                        <input type="text" name="username" class="form-control" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(227, 168, 87, 0.4); color: #fff;" placeholder="username or user@enterprise.com" required>
                     </div>
                 </div>
                 <div class="modal-footer border-top-0 pt-0">
@@ -296,7 +332,7 @@
 <!-- Modal: Password Reset Sent Success Validation Popup -->
 <div class="modal fade text-start" id="resetSuccessModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content text-center p-2" style="background: rgba(27, 30, 21, 0.96); backdrop-filter: blur(20px); border: 1.5px solid rgba(223, 221, 209, 0.35); color: #ffffff; border-radius: 20px; box-shadow: 0 0 80px rgba(0,0,0,0.6);">
+        <div class="modal-content text-center p-2" style="background: rgba(23, 26, 18, 0.96); backdrop-filter: blur(24px); border: 1.5px solid rgba(227, 168, 87, 0.4); color: #ffffff; border-radius: 20px; box-shadow: 0 0 80px rgba(0,0,0,0.6);">
             <div class="modal-header border-bottom-0 pb-0 justify-content-center d-block">
                 <div class="rounded-circle bg-success bg-opacity-25 d-inline-flex align-items-center justify-content-center mb-3 mt-3" style="width: 70px; height: 70px; border: 2px solid #2ea043;">
                     <i class="bi bi-check-lg text-success fs-1"></i>
@@ -308,7 +344,7 @@
                 <p style="color: #dfddd1; font-size: 14px; line-height: 1.6;">
                     If an account matching the provided username or email exists, password reset instructions with a secure link have been sent to the email address.
                 </p>
-                <div class="p-3 rounded-3 text-start small mb-2" style="background: rgba(223, 221, 209, 0.08); border: 1px solid rgba(223, 221, 209, 0.2); color: #dfddd1;">
+                <div class="p-3 rounded-3 text-start small mb-2" style="background: rgba(223, 221, 209, 0.08); border: 1px solid rgba(227, 168, 87, 0.3); color: #dfddd1;">
                     <i class="bi bi-info-circle-fill text-warning me-2"></i>
                     <strong>Security Notice:</strong> Please check your inbox and spam folder. The activation token link expires in 24 hours.
                 </div>
@@ -346,157 +382,248 @@
     });
 </script>
 
-<!-- Three.js 3D Canvas Background Engine -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<!-- Interactive Honeycomb (Hexagon) + Tech Circuit Canvas Engine -->
 <script>
-    // 3D Scene Setup
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
-    const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas'), antialias: true, alpha: true });
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
 
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setClearColor(0x171a12);
-    renderer.shadowMap.enabled = true;
-    camera.position.z = 25;
+    let width, height;
+    let hexes = [];
+    let particles = [];
+    let shockwaves = [];
+    let mouse = { x: -1000, y: -1000, active: false };
 
-    // Concentric Tube Rings Group
-    const tubeGroup = new THREE.Group();
-    scene.add(tubeGroup);
+    const hexRadius = 32;
+    const hexWidth = Math.sqrt(3) * hexRadius;
+    const hexHeight = 2 * hexRadius;
 
-    function createTubeRing(radius, depth, rotation = 0) {
-        const points = [];
-        const segments = 64;
+    function resizeCanvas() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+        initHexGrid();
+    }
 
-        for (let i = 0; i < segments; i++) {
-            const angle = (i / segments) * Math.PI * 2;
-            const x = Math.cos(angle) * radius;
-            const y = Math.sin(angle) * radius;
-            points.push(new THREE.Vector3(x, y, 0));
+    class Hexagon {
+        constructor(x, y, row, col) {
+            this.x = x;
+            this.y = y;
+            this.row = row;
+            this.col = col;
+            this.baseBrightness = 0.05;
+            this.brightness = 0.05;
+            this.targetBrightness = 0.05;
+            this.pulse = Math.random() * Math.PI * 2;
+            this.pulseSpeed = 0.008 + Math.random() * 0.015;
+            this.isTechNode = Math.random() > 0.68;
+            this.nodeColor = Math.random() > 0.5 ? '#E3A857' : (Math.random() > 0.5 ? '#06b6d4' : '#713519');
+            this.signalIntensity = 0;
         }
-        points.push(points[0]);
 
-        const curve = new THREE.CatmullRomCurve3(points);
-        const tubeGeometry = new THREE.TubeGeometry(curve, segments, 0.8, 8, true);
+        draw() {
+            ctx.beginPath();
+            for (let i = 0; i < 6; i++) {
+                const angle = (Math.PI / 3) * i;
+                const hx = this.x + hexRadius * Math.cos(angle);
+                const hy = this.y + hexRadius * Math.sin(angle);
+                if (i === 0) ctx.moveTo(hx, hy);
+                else ctx.lineTo(hx, hy);
+            }
+            ctx.closePath();
 
-        // Custom Warm Earthy Palette Materials (#713519 Terracotta & #454F2C Sage)
-        const material = new THREE.MeshPhongMaterial({
-            color: new THREE.Color(i % 2 === 0 ? 0x713519 : 0x454f2c),
-            emissive: new THREE.Color(i % 2 === 0 ? 0x3d1c0d : 0x242a17),
-            shininess: 90,
-            wireframe: false
-        });
+            // Background glow
+            if (this.brightness > 0.12) {
+                ctx.fillStyle = `rgba(113, 53, 25, ${Math.min(this.brightness * 0.35, 0.45)})`;
+                ctx.fill();
+            }
 
-        const tube = new THREE.Mesh(tubeGeometry, material);
-        tube.castShadow = true;
-        tube.receiveShadow = true;
-        tube.position.z = depth;
-        tube.rotation.z = rotation;
+            // Tech Hexagon Outline
+            ctx.lineWidth = this.brightness > 0.35 ? 1.8 : 1;
+            if (this.brightness > 0.4) {
+                ctx.strokeStyle = `rgba(227, 168, 87, ${Math.min(this.brightness, 0.95)})`;
+            } else if (this.brightness > 0.18) {
+                ctx.strokeStyle = `rgba(69, 79, 44, ${Math.min(this.brightness * 1.5, 0.6)})`;
+            } else {
+                ctx.strokeStyle = `rgba(45, 52, 32, 0.35)`;
+            }
+            ctx.stroke();
 
-        return tube;
+            // Render Tech Node & Circuit Junctions
+            if (this.isTechNode && this.brightness > 0.15) {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 2 + this.brightness * 2.5, 0, Math.PI * 2);
+                ctx.fillStyle = this.nodeColor;
+                ctx.shadowBlur = 10 * this.brightness;
+                ctx.shadowColor = this.nodeColor;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                // Micro circuit pulse rings around active nodes
+                if (this.brightness > 0.4) {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, (8 + Math.sin(this.pulse * 2) * 3) * this.brightness, 0, Math.PI * 2);
+                    ctx.strokeStyle = `rgba(227, 168, 87, ${this.brightness * 0.5})`;
+                    ctx.lineWidth = 0.8;
+                    ctx.stroke();
+                }
+            }
+        }
+
+        update() {
+            this.pulse += this.pulseSpeed;
+
+            // Distance to mouse
+            const dist = Math.hypot(this.x - mouse.x, this.y - mouse.y);
+            const mouseRadius = 200;
+
+            if (dist < mouseRadius) {
+                const factor = 1 - dist / mouseRadius;
+                this.targetBrightness = 0.9 * factor + 0.1;
+            } else {
+                this.targetBrightness = this.baseBrightness + Math.sin(this.pulse) * 0.03;
+            }
+
+            // Shockwave interaction
+            shockwaves.forEach(sw => {
+                const swDist = Math.hypot(this.x - sw.x, this.y - sw.y);
+                if (Math.abs(swDist - sw.radius) < 40) {
+                    this.targetBrightness = Math.max(this.targetBrightness, 0.85 * (1 - sw.radius / sw.maxRadius));
+                }
+            });
+
+            this.brightness += (this.targetBrightness - this.brightness) * 0.1;
+        }
     }
 
-    // Create 15 concentric tube rings
-    for (let i = 0; i < 15; i++) {
-        const tube = createTubeRing(8 + i * 1.5, -50 + i * 7, i * 0.1);
-        tubeGroup.add(tube);
+    class TechParticle {
+        constructor() {
+            this.reset();
+        }
+
+        reset() {
+            this.x = Math.random() * width;
+            this.y = Math.random() * height;
+            this.vx = (Math.random() - 0.5) * 0.8;
+            this.vy = (Math.random() - 0.5) * 0.8;
+            this.size = 1 + Math.random() * 2;
+            this.color = Math.random() > 0.5 ? '#E3A857' : (Math.random() > 0.5 ? '#06b6d4' : '#713519');
+            this.alpha = 0.2 + Math.random() * 0.6;
+        }
+
+        update() {
+            this.x += this.vx;
+            this.y += this.vy;
+
+            if (this.x < 0 || this.x > width || this.y < 0 || this.y > height) {
+                this.reset();
+            }
+        }
+
+        draw() {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fillStyle = this.color;
+            ctx.globalAlpha = this.alpha;
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = this.color;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.globalAlpha = 1.0;
+        }
     }
 
-    // Spinning particles group
-    const particleGroup = new THREE.Group();
-    scene.add(particleGroup);
+    function initHexGrid() {
+        hexes = [];
+        const cols = Math.ceil(width / hexWidth) + 2;
+        const rows = Math.ceil(height / (hexHeight * 0.75)) + 2;
 
-    const particleGeometry = new THREE.IcosahedronGeometry(0.3, 2);
+        for (let r = -1; r < rows; r++) {
+            for (let c = -1; c < cols; c++) {
+                const xOffset = (r % 2 === 0) ? 0 : hexWidth / 2;
+                const x = c * hexWidth + xOffset;
+                const y = r * (hexHeight * 0.75);
+                hexes.push(new Hexagon(x, y, r, c));
+            }
+        }
 
-    for (let i = 0; i < 300; i++) {
-        const isRust = Math.random() > 0.5;
-        const material = new THREE.MeshPhongMaterial({
-            color: new THREE.Color(isRust ? 0x713519 : 0x454f2c),
-            emissive: new THREE.Color(isRust ? 0x4a2310 : 0x2b321c),
-            shininess: 80
-        });
-
-        const particle = new THREE.Mesh(particleGeometry, material);
-        const angle = Math.random() * Math.PI * 2;
-        const radius = 5 + Math.random() * 8;
-
-        particle.position.set(
-            Math.cos(angle) * radius,
-            Math.sin(angle) * radius,
-            -40 + Math.random() * 80
-        );
-
-        particle.scale.set(Math.random() * 0.6 + 0.3, Math.random() * 0.6 + 0.3, Math.random() * 0.6 + 0.3);
-        particle.castShadow = true;
-        particle.velocity = { z: Math.random() * 0.3 + 0.1 };
-
-        particleGroup.add(particle);
+        particles = [];
+        for (let i = 0; i < 60; i++) {
+            particles.push(new TechParticle());
+        }
     }
 
-    // Brand Palette Lights
-    const light1 = new THREE.PointLight(0x713519, 2.5, 200); // Terracotta Rust
-    light1.position.set(20, 20, 20);
-    scene.add(light1);
-
-    const light2 = new THREE.PointLight(0x454f2c, 2.5, 200); // Sage Green
-    light2.position.set(-20, -20, 20);
-    scene.add(light2);
-
-    const light3 = new THREE.PointLight(0xdfddd1, 1.8, 150); // Warm Sand
-    light3.position.set(0, 30, -30);
-    scene.add(light3);
-
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
-    scene.add(ambientLight);
-
-    // Interactive Mouse Tracking
-    let mouseX = 0;
-    let mouseY = 0;
-    document.addEventListener('mousemove', (e) => {
-        mouseX = (e.clientX / window.innerWidth) * 2 - 1;
-        mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
+    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('mousemove', (e) => {
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+        mouse.active = true;
     });
 
-    let time = 0;
+    window.addEventListener('click', (e) => {
+        shockwaves.push({
+            x: e.clientX,
+            y: e.clientY,
+            radius: 0,
+            maxRadius: 350,
+            speed: 6
+        });
+    });
 
-    // Animation Loop
     function animate() {
         requestAnimationFrame(animate);
-        time += 0.001;
 
-        tubeGroup.rotation.z += 0.0005;
-        tubeGroup.position.z += 0.05;
-        if (tubeGroup.position.z > 100) tubeGroup.position.z = -100;
+        // Dark tech gradient background
+        const grad = ctx.createRadialGradient(width / 2, height / 2, 100, width / 2, height / 2, Math.max(width, height));
+        grad.addColorStop(0, '#171a12');
+        grad.addColorStop(1, '#090b07');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, width, height);
 
-        particleGroup.children.forEach((particle) => {
-            particle.position.z += particle.velocity.z;
-            particle.rotation.x += 0.005;
-            particle.rotation.y += 0.008;
-
-            if (particle.position.z > 50) {
-                particle.position.z = -100;
-            }
+        // Update & Draw Hexagons
+        hexes.forEach(h => {
+            h.update();
+            h.draw();
         });
 
-        light1.position.x = 20 + Math.sin(time * 2) * 10;
-        light1.position.y = 20 + Math.cos(time * 1.5) * 10;
+        // Draw Interactive Cursor Connections
+        if (mouse.active) {
+            hexes.forEach(h => {
+                if (h.brightness > 0.5) {
+                    ctx.beginPath();
+                    ctx.moveTo(mouse.x, mouse.y);
+                    ctx.lineTo(h.x, h.y);
+                    ctx.strokeStyle = `rgba(227, 168, 87, ${(h.brightness - 0.5) * 0.6})`;
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                }
+            });
+        }
 
-        light2.position.x = -20 + Math.cos(time * 1.8) * 10;
-        light2.position.y = -20 + Math.sin(time * 2.2) * 10;
+        // Update & Draw Tech Particles
+        particles.forEach(p => {
+            p.update();
+            p.draw();
+        });
 
-        camera.position.x += (mouseX * 3 - camera.position.x) * 0.08;
-        camera.position.y += (mouseY * 3 - camera.position.y) * 0.08;
-        camera.lookAt(0, 0, 0);
+        // Update & Draw Shockwaves
+        for (let i = shockwaves.length - 1; i >= 0; i--) {
+            const sw = shockwaves[i];
+            sw.radius += sw.speed;
 
-        renderer.render(scene, camera);
+            ctx.beginPath();
+            ctx.arc(sw.x, sw.y, sw.radius, 0, Math.PI * 2);
+            const alpha = 1 - sw.radius / sw.maxRadius;
+            ctx.strokeStyle = `rgba(227, 168, 87, ${alpha * 0.7})`;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            if (sw.radius >= sw.maxRadius) {
+                shockwaves.splice(i, 1);
+            }
+        }
     }
 
+    resizeCanvas();
     animate();
-
-    window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    });
 </script>
 </body>
 </html>

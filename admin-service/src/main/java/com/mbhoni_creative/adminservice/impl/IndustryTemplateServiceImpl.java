@@ -23,6 +23,8 @@ import com.mbhoni_creative.adminservice.IndustryTemplateService;
 
 import jakarta.transaction.Transactional;
 
+import com.mbhoni_creative.adminservice.TenantOnboardingFieldService;
+
 @Service
 @Transactional
 public class IndustryTemplateServiceImpl implements IndustryTemplateService {
@@ -33,6 +35,7 @@ public class IndustryTemplateServiceImpl implements IndustryTemplateService {
     private final TenantModuleRepository tenantModuleRepository;
     private final RoleRepository roleRepository;
     private final PermissionRepository permissionRepository;
+    private final TenantOnboardingFieldService onboardingFieldService;
 
     public IndustryTemplateServiceImpl(
             TenantRepository tenantRepository,
@@ -40,19 +43,24 @@ public class IndustryTemplateServiceImpl implements IndustryTemplateService {
             IndustryProfileRoleRepository industryProfileRoleRepository,
             TenantModuleRepository tenantModuleRepository,
             RoleRepository roleRepository,
-            PermissionRepository permissionRepository) {
+            PermissionRepository permissionRepository,
+            TenantOnboardingFieldService onboardingFieldService) {
         this.tenantRepository = tenantRepository;
         this.industryProfileModuleRepository = industryProfileModuleRepository;
         this.industryProfileRoleRepository = industryProfileRoleRepository;
         this.tenantModuleRepository = tenantModuleRepository;
         this.roleRepository = roleRepository;
         this.permissionRepository = permissionRepository;
+        this.onboardingFieldService = onboardingFieldService;
     }
 
     @Override
     public void applyTemplateToTenant(Long tenantId) {
         applyModuleTemplateToTenant(tenantId);
         applyRoleTemplateToTenant(tenantId);
+
+        Tenant tenant = getTenantWithIndustryProfile(tenantId);
+        onboardingFieldService.applyIndustryProfileFields(tenantId, tenant.getIndustryProfile().getId());
     }
 
     @Override

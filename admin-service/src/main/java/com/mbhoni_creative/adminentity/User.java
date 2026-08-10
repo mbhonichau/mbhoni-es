@@ -72,6 +72,15 @@ public class User extends BaseEntity {
     @Column(name = "password_reset_token_expiry")
     private LocalDateTime passwordResetTokenExpiry;
 
+    @Column(name = "national_id", length = 100)
+    private String nationalId;
+
+    @Column(name = "tax_number", length = 100)
+    private String taxNumber;
+
+    @Column(name = "extended_attributes_json", columnDefinition = "TEXT")
+    private String extendedAttributesJson;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "tenant_id")
     private Tenant tenant;
@@ -280,4 +289,13 @@ public class User extends BaseEntity {
     public void setProviderId(String providerId) {
         this.providerId = providerId;
     }
+
+    public String getNationalId() { return nationalId; }
+    public void setNationalId(String nationalId) { this.nationalId = nationalId; }
+
+    public String getTaxNumber() { return taxNumber; }
+    public void setTaxNumber(String taxNumber) { this.taxNumber = taxNumber; }
+
+    public String getExtendedAttributesJson() { return extendedAttributesJson; }
+    public void setExtendedAttributesJson(String extendedAttributesJson) { this.extendedAttributesJson = extendedAttributesJson; }
 }

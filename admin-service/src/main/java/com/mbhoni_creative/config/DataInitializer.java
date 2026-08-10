@@ -135,6 +135,10 @@ public class DataInitializer implements CommandLineRunner {
         Permission serviceView = getOrCreatePermission("SERVICE_VIEW");
         Permission serviceEdit = getOrCreatePermission("SERVICE_EDIT");
 
+        Permission fieldSchemaView = getOrCreatePermission("EMPLOYEE_FIELD_SCHEMA_VIEW");
+        Permission fieldSchemaManage = getOrCreatePermission("EMPLOYEE_FIELD_SCHEMA_MANAGE");
+        Permission completenessView = getOrCreatePermission("EMPLOYEE_COMPLETENESS_VIEW");
+
         adminRole.setPermissions(new HashSet<>(Set.of(
                 tenantCreate, tenantEdit, tenantDelete, tenantView,
                 userCreate, userEdit, userDelete, userView,
@@ -149,7 +153,8 @@ public class DataInitializer implements CommandLineRunner {
                 orgView, orgEdit,
                 contractView, contractEdit,
                 masterDataView, masterDataEdit,
-                serviceView, serviceEdit
+                serviceView, serviceEdit,
+                fieldSchemaView, fieldSchemaManage, completenessView
         )));
 
         tenantAdminRole.setPermissions(new HashSet<>(Set.of(
@@ -163,7 +168,8 @@ public class DataInitializer implements CommandLineRunner {
                 orgView, orgEdit,
                 contractView, contractEdit,
                 masterDataView, masterDataEdit,
-                serviceView, serviceEdit
+                serviceView, serviceEdit,
+                fieldSchemaView, fieldSchemaManage, completenessView
         )));
 
         userRole.setPermissions(new HashSet<>(Set.of(
@@ -172,7 +178,9 @@ public class DataInitializer implements CommandLineRunner {
                 orgView,
                 contractView,
                 masterDataView,
-                serviceView
+                serviceView,
+                fieldSchemaView,
+                completenessView
         )));
 
         roleRepository.save(adminRole);

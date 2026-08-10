@@ -17,6 +17,7 @@ import com.mbhoni_creative.adminentity.*;
 import com.mbhoni_creative.adminrepository.BillingAccountRepository;
 import com.mbhoni_creative.adminservice.*;
 import com.mbhoni_creative.config.TenantSecurityService;
+import com.mbhoni_creative.config.TenantAccessService;
 
 @Controller
 @RequestMapping("/tenant")
@@ -26,6 +27,7 @@ public class TenantInvoiceViewController {
     private final TenantCustomizationService customizationService;
     private final InvoiceDocumentService invoiceDocumentService;
     private final TenantSecurityService tenantSecurityService;
+    private final TenantAccessService tenantAccessService;
     private final TenantService tenantService;
     private final BillingAccountRepository billingAccountRepository;
 
@@ -34,12 +36,14 @@ public class TenantInvoiceViewController {
             TenantCustomizationService customizationService,
             InvoiceDocumentService invoiceDocumentService,
             TenantSecurityService tenantSecurityService,
+            TenantAccessService tenantAccessService,
             TenantService tenantService,
             BillingAccountRepository billingAccountRepository) {
         this.invoicingService = invoicingService;
         this.customizationService = customizationService;
         this.invoiceDocumentService = invoiceDocumentService;
         this.tenantSecurityService = tenantSecurityService;
+        this.tenantAccessService = tenantAccessService;
         this.tenantService = tenantService;
         this.billingAccountRepository = billingAccountRepository;
     }
@@ -93,6 +97,7 @@ public class TenantInvoiceViewController {
             RedirectAttributes redirectAttributes) {
 
         try {
+            requireInvoiceAccess(invoicingService.getInvoiceById(id));
             invoicingService.recordPayment(id, paymentAmount);
             redirectAttributes.addFlashAttribute("successMessage", "Payment of R " + paymentAmount + " recorded successfully!");
         } catch (Exception e) {
@@ -105,6 +110,7 @@ public class TenantInvoiceViewController {
     @PreAuthorize("@tenantEntitlementService.isModuleEnabled('SERVICE') or @tenantEntitlementService.isModuleEnabled('CONTRACT') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN')")
     public String deleteInvoice(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         try {
+            requireInvoiceAccess(invoicingService.getInvoiceById(id));
             invoicingService.deleteInvoice(id);
             redirectAttributes.addFlashAttribute("successMessage", "Invoice deleted successfully.");
         } catch (Exception e) {
@@ -117,6 +123,7 @@ public class TenantInvoiceViewController {
     @PreAuthorize("@tenantEntitlementService.isModuleEnabled('SERVICE') or @tenantEntitlementService.isModuleEnabled('CONTRACT') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN') or hasAuthority('BILLING_VIEW')")
     public String printInvoice(@PathVariable Long id, Model model) {
         TenantInvoice invoice = invoicingService.getInvoiceById(id);
+        requireInvoiceAccess(invoice);
         model.addAttribute("invoice", invoice);
 
         if (invoice != null && invoice.getTenant() != null) {
@@ -185,6 +192,7 @@ public class TenantInvoiceViewController {
     @PreAuthorize("@tenantEntitlementService.isModuleEnabled('SERVICE') or @tenantEntitlementService.isModuleEnabled('CONTRACT') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN') or hasAuthority('BILLING_EDIT')")
     public String convertQuotationToInvoice(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         try {
+            requireQuotationAccess(invoicingService.getQuotationById(id));
             TenantInvoice invoice = invoicingService.convertQuotationToInvoice(id);
             redirectAttributes.addFlashAttribute("successMessage", "Quotation successfully converted to Invoice #" + invoice.getInvoiceNumber() + "!");
         } catch (Exception e) {
@@ -197,6 +205,7 @@ public class TenantInvoiceViewController {
     @PreAuthorize("@tenantEntitlementService.isModuleEnabled('SERVICE') or @tenantEntitlementService.isModuleEnabled('CONTRACT') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN')")
     public String deleteQuotation(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         try {
+            requireQuotationAccess(invoicingService.getQuotationById(id));
             invoicingService.deleteQuotation(id);
             redirectAttributes.addFlashAttribute("successMessage", "Quotation deleted successfully.");
         } catch (Exception e) {
@@ -209,6 +218,7 @@ public class TenantInvoiceViewController {
     @PreAuthorize("@tenantEntitlementService.isModuleEnabled('SERVICE') or @tenantEntitlementService.isModuleEnabled('CONTRACT') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN') or hasAuthority('BILLING_VIEW')")
     public String printQuotation(@PathVariable Long id, Model model) {
         TenantQuotation quotation = invoicingService.getQuotationById(id);
+        requireQuotationAccess(quotation);
         model.addAttribute("quotation", quotation);
 
         if (quotation != null && quotation.getTenant() != null) {
@@ -315,10 +325,21 @@ public class TenantInvoiceViewController {
     }
 
     private Long getEffectiveTenantId() {
-        Long tenantId = tenantSecurityService.getCurrentTenantId();
+        Long tenantId = tenantAccessService.getCurrentTenantId();
         if (tenantId == null && !tenantService.getAllTenants().isEmpty()) {
             return tenantService.getAllTenants().get(0).getId();
         }
+        tenantAccessService.requireAccess(tenantId);
         return tenantId;
+    }
+
+    private void requireInvoiceAccess(TenantInvoice invoice) {
+        tenantAccessService.requireAccess(
+                invoice != null && invoice.getTenant() != null ? invoice.getTenant().getId() : null);
+    }
+
+    private void requireQuotationAccess(TenantQuotation quotation) {
+        tenantAccessService.requireAccess(
+                quotation != null && quotation.getTenant() != null ? quotation.getTenant().getId() : null);
     }
 }

@@ -17,20 +17,30 @@ import com.mbhoni_creative.adminservice.NavigationService;
 import com.mbhoni_creative.config.TenantEntitlementService;
 import com.mbhoni_creative.config.TenantSecurityService;
 
+import java.util.HashSet;
+import java.util.Set;
+
+import com.mbhoni_creative.adminentity.Permission;
+import com.mbhoni_creative.adminentity.Role;
+import com.mbhoni_creative.adminrepository.UserRepository;
+
 @Service
 public class NavigationServiceImpl implements NavigationService {
 
     private final ModuleService moduleService;
     private final TenantSecurityService tenantSecurityService;
     private final TenantEntitlementService tenantEntitlementService;
+    private final UserRepository userRepository;
 
     public NavigationServiceImpl(
             ModuleService moduleService,
             TenantSecurityService tenantSecurityService,
-            TenantEntitlementService tenantEntitlementService) {
+            TenantEntitlementService tenantEntitlementService,
+            UserRepository userRepository) {
         this.moduleService = moduleService;
         this.tenantSecurityService = tenantSecurityService;
         this.tenantEntitlementService = tenantEntitlementService;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -48,7 +58,7 @@ public class NavigationServiceImpl implements NavigationService {
         ));
 
         addSection(sections, "Platform", "bi-buildings", candidates(
-                globalAdminItem("Tenants", "/tenants", "bi-buildings", null, requestPath, "TENANT_VIEW", "ROLE_ADMIN"),
+                guardedItem("Tenants", "/tenants", "bi-buildings", null, requestPath, "TENANT_VIEW", "TENANT_EDIT", "ROLE_ADMIN"),
                 guardedItem("Subscriptions", "/subscriptions/tenants", "bi-receipt", null, requestPath, "SUBSCRIPTION_VIEW", "ROLE_ADMIN", "ROLE_TENANT_ADMIN"),
                 globalAdminItem("Plans", "/subscriptions/plans", "bi-credit-card", null, requestPath, "SUBSCRIPTION_VIEW", "ROLE_ADMIN"),
                 guardedItem("Billing Invoices", "/billing", "bi-cash-coin", null, requestPath, "BILLING_VIEW", "ROLE_ADMIN", "ROLE_TENANT_ADMIN"),
@@ -70,7 +80,9 @@ public class NavigationServiceImpl implements NavigationService {
 
         addSection(sections, "Business Modules", "bi-briefcase", candidates(
                 moduleItem("Organization", "/organization", "bi-diagram-2", "ORG", requestPath, "ORG_VIEW", "ROLE_ADMIN", "ROLE_TENANT_ADMIN"),
-                moduleItem("Employees", "/employees", "bi-person-vcard", "EMPLOYEE", requestPath, "EMPLOYEE_VIEW", "ROLE_ADMIN", "ROLE_TENANT_ADMIN"),
+                moduleItem("Employee Roster", "/employees", "bi-person-vcard", "EMPLOYEE", requestPath, "EMPLOYEE_VIEW", "ROLE_ADMIN", "ROLE_TENANT_ADMIN"),
+                moduleItem("Field Configurator", "/employee-fields", "bi-sliders", "EMPLOYEE", requestPath, "EMPLOYEE_FIELD_SCHEMA_MANAGE", "EMPLOYEE_FIELD_SCHEMA_VIEW", "ROLE_ADMIN", "ROLE_TENANT_ADMIN"),
+                moduleItem("Completeness Report", "/employees/completeness-report", "bi-clipboard-check", "EMPLOYEE", requestPath, "EMPLOYEE_COMPLETENESS_VIEW", "EMPLOYEE_VIEW", "ROLE_ADMIN", "ROLE_TENANT_ADMIN"),
                 moduleItem("Payroll & Payslips", "/employees/payslips", "bi-calculator", "EMPLOYEE", requestPath, "EMPLOYEE_VIEW", "ROLE_ADMIN", "ROLE_TENANT_ADMIN"),
                 guardedItem("Invoices & Billing", "/tenant/invoices", "bi-receipt-cutoff", null, requestPath, "BILLING_VIEW", "SERVICE_VIEW", "CONTRACT_VIEW", "ROLE_ADMIN", "ROLE_TENANT_ADMIN", "ROLE_USER"),
                 guardedItem("Quotations & Estimates", "/tenant/quotations", "bi-file-earmark-spreadsheet", null, requestPath, "BILLING_VIEW", "SERVICE_VIEW", "CONTRACT_VIEW", "ROLE_ADMIN", "ROLE_TENANT_ADMIN", "ROLE_USER"),
@@ -191,19 +203,44 @@ public class NavigationServiceImpl implements NavigationService {
             return false;
         }
 
-        Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
+        Set<String> liveAuthorities = getLiveAuthorities(authentication);
 
         for (String authorityName : authorityNames) {
-            boolean match = authorities.stream()
-                    .map(GrantedAuthority::getAuthority)
-                    .anyMatch(authorityName::equals);
-
-            if (match) {
+            if (liveAuthorities.contains(authorityName)) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    private Set<String> getLiveAuthorities(Authentication authentication) {
+        Set<String> authorities = new HashSet<>();
+
+        for (GrantedAuthority ga : authentication.getAuthorities()) {
+            authorities.add(ga.getAuthority());
+        }
+
+        String username = authentication.getName();
+        if (username != null && !"anonymousUser".equals(username)) {
+            userRepository.findByUsername(username).ifPresent(user -> {
+                if (user.isGlobalAdmin()) {
+                    authorities.add("ROLE_ADMIN");
+                }
+                if (user.getRoles() != null) {
+                    for (Role role : user.getRoles()) {
+                        authorities.add(role.getName());
+                        if (role.getPermissions() != null) {
+                            for (Permission permission : role.getPermissions()) {
+                                authorities.add(permission.getName());
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        return authorities;
     }
 
     private boolean isActive(String url, String requestPath) {

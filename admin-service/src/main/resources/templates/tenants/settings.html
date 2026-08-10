@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Tenant Admin Settings')}"></head>
+
+<body>
+<div class="admin-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+    <div class="admin-main">
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <main class="admin-content">
+            <div th:if="${successMessage}" class="alert alert-success admin-alert shadow-sm">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                <span th:text="${successMessage}">Success message</span>
+            </div>
+
+            <section class="page-heading mb-4">
+                <div>
+                    <p class="eyebrow text-uppercase font-monospace tracking-wider text-muted mb-1">Tenant Administration</p>
+                    <h2 class="fw-bold tracking-tight">Governance & Feature Toggles</h2>
+                    <p class="text-muted mb-0">
+                        Managing administrative policies and platform capabilities for 
+                        <strong th:text="${tenant.name}" class="text-dark">Tenant Name</strong>
+                    </p>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <a th:href="@{'/tenants/' + ${tenant.id} + '/onboarding-fields'}" class="btn btn-outline-primary">
+                        <i class="bi bi-person-gear me-1"></i> Onboarding Fields
+                    </a>
+                    <a th:href="@{/tenants}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i>
+                        Back to Tenants
+                    </a>
+                </div>
+            </section>
+
+            <form th:action="@{${saveAction}}" th:object="${settings}" method="post">
+                <input type="hidden" th:field="*{tenantId}" />
+
+                <div class="row g-4">
+                    <!-- 1. SECURITY & AUTHENTICATION GOVERNANCE -->
+                    <div class="col-12 col-xl-6">
+                        <div class="card shadow-sm border-0 h-100">
+                            <div class="card-header bg-white border-bottom py-3 d-flex align-items-center gap-2">
+                                <span class="badge bg-primary-subtle text-primary p-2 rounded-3">
+                                    <i class="bi bi-shield-lock fs-5"></i>
+                                </span>
+                                <div>
+                                    <h5 class="card-title mb-0 fw-bold">Security & Authentication</h5>
+                                    <small class="text-muted">Enforce multi-factor auth, SSO, password policies, & session limits</small>
+                                </div>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="form-check form-switch mb-3 p-3 bg-light rounded-3 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <label class="form-check-label fw-semibold text-dark" for="mfaEnforced">Enforce MFA / 2FA</label>
+                                        <div class="text-muted fs-7">Mandatory two-factor passcode requirement for all users</div>
+                                    </div>
+                                    <input class="form-check-input ms-0 fs-4" type="checkbox" role="switch" th:field="*{mfaEnforced}" id="mfaEnforced">
+                                </div>
+
+                                <div class="form-check form-switch mb-3 p-3 bg-light rounded-3 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <label class="form-check-label fw-semibold text-dark" for="ssoEnforced">Enforce Single Sign-On (SSO)</label>
+                                        <div class="text-muted fs-7">Disable direct local passwords and require SAML2/OIDC</div>
+                                    </div>
+                                    <input class="form-check-input ms-0 fs-4" type="checkbox" role="switch" th:field="*{ssoEnforced}" id="ssoEnforced">
+                                </div>
+
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold text-dark">Password Expiry (Days)</label>
+                                        <input type="number" class="form-control" th:field="*{passwordRotationDays}" min="0" max="365" placeholder="90 (0 = never)">
+                                        <small class="text-muted fs-7">Set to 0 to disable rotation</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold text-dark">Lockout Attempt Limit</label>
+                                        <input type="number" class="form-control" th:field="*{maxFailedLoginAttempts}" min="1" max="20">
+                                        <small class="text-muted fs-7">Failed logins before lockout</small>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold text-dark">Session Inactivity Timeout (Minutes)</label>
+                                    <input type="number" class="form-control" th:field="*{sessionTimeoutMinutes}" min="5" max="1440">
+                                    <small class="text-muted fs-7">Automatic session expiration duration</small>
+                                </div>
+
+                                <div class="border-top pt-3 mt-3">
+                                    <div class="form-check form-switch mb-2 p-3 bg-light rounded-3 d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <label class="form-check-label fw-semibold text-dark" for="ipWhitelistEnabled">Enable IP Whitelisting</label>
+                                            <div class="text-muted fs-7">Restrict access strictly to specified IP/CIDR blocks</div>
+                                        </div>
+                                        <input class="form-check-input ms-0 fs-4" type="checkbox" role="switch" th:field="*{ipWhitelistEnabled}" id="ipWhitelistEnabled">
+                                    </div>
+
+                                    <div class="mt-2">
+                                        <label class="form-label fw-semibold text-dark">Allowed IP Ranges (CIDR)</label>
+                                        <textarea class="form-control font-monospace fs-7" th:field="*{allowedIpRanges}" rows="2" placeholder="e.g. 192.168.1.0/24, 10.0.0.1"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. AUDIT, LOGGING & COMPLIANCE GOVERNANCE -->
+                    <div class="col-12 col-xl-6">
+                        <div class="card shadow-sm border-0 h-100">
+                            <div class="card-header bg-white border-bottom py-3 d-flex align-items-center gap-2">
+                                <span class="badge bg-success-subtle text-success p-2 rounded-3">
+                                    <i class="bi bi-journal-check fs-5"></i>
+                                </span>
+                                <div>
+                                    <h5 class="card-title mb-0 fw-bold">Audit, Logging & Compliance</h5>
+                                    <small class="text-muted">Configure regulatory compliance, data retention, and extended audit logs</small>
+                                </div>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="form-check form-switch mb-3 p-3 bg-light rounded-3 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <label class="form-check-label fw-semibold text-dark" for="auditExtendedLogging">Extended Audit Logging</label>
+                                        <div class="text-muted fs-7">Record HTTP payload bodies and detailed database state diffs</div>
+                                    </div>
+                                    <input class="form-check-input ms-0 fs-4" type="checkbox" role="switch" th:field="*{auditExtendedLogging}" id="auditExtendedLogging">
+                                </div>
+
+                                <div class="form-check form-switch mb-3 p-3 bg-light rounded-3 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <label class="form-check-label fw-semibold text-dark" for="gdprComplianceMode">GDPR / POPIA Privacy Mode</label>
+                                        <div class="text-muted fs-7">Enable right-to-be-forgotten requests & data subject exports</div>
+                                    </div>
+                                    <input class="form-check-input ms-0 fs-4" type="checkbox" role="switch" th:field="*{gdprComplianceMode}" id="gdprComplianceMode">
+                                </div>
+
+                                <div class="form-check form-switch mb-3 p-3 bg-light rounded-3 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <label class="form-check-label fw-semibold text-dark" for="complianceExportEnabled">Compliance Audit Export</label>
+                                        <div class="text-muted fs-7">Allow admins to download compliance snapshots for auditors</div>
+                                    </div>
+                                    <input class="form-check-input ms-0 fs-4" type="checkbox" role="switch" th:field="*{complianceExportEnabled}" id="complianceExportEnabled">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold text-dark">Data Retention Window (Days)</label>
+                                    <input type="number" class="form-control" th:field="*{dataRetentionDays}" min="30" max="3650">
+                                    <small class="text-muted fs-7">Retention period before automatic log & record archiving</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. API & INTEGRATION ADMINISTRATION -->
+                    <div class="col-12 col-xl-6">
+                        <div class="card shadow-sm border-0 h-100">
+                            <div class="card-header bg-white border-bottom py-3 d-flex align-items-center gap-2">
+                                <span class="badge bg-info-subtle text-info p-2 rounded-3">
+                                    <i class="bi bi-code-slash fs-5"></i>
+                                </span>
+                                <div>
+                                    <h5 class="card-title mb-0 fw-bold">API & Integration Gateway</h5>
+                                    <small class="text-muted">Manage REST/GraphQL microservice integrations and webhook delivery</small>
+                                </div>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="form-check form-switch mb-3 p-3 bg-light rounded-3 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <label class="form-check-label fw-semibold text-dark" for="apiAccessEnabled">Enable REST/GraphQL API Access</label>
+                                        <div class="text-muted fs-7">Allow microservices to authenticate via API keys</div>
+                                    </div>
+                                    <input class="form-check-input ms-0 fs-4" type="checkbox" role="switch" th:field="*{apiAccessEnabled}" id="apiAccessEnabled">
+                                </div>
+
+                                <div class="form-check form-switch mb-3 p-3 bg-light rounded-3 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <label class="form-check-label fw-semibold text-dark" for="webhookEventsEnabled">Outbound Webhooks</label>
+                                        <div class="text-muted fs-7">Deliver event payloads to third-party endpoints</div>
+                                    </div>
+                                    <input class="form-check-input ms-0 fs-4" type="checkbox" role="switch" th:field="*{webhookEventsEnabled}" id="webhookEventsEnabled">
+                                </div>
+
+                                <div class="form-check form-switch mb-3 p-3 bg-light rounded-3 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <label class="form-check-label fw-semibold text-dark" for="customDomainEnabled">Custom Domain Routing</label>
+                                        <div class="text-muted fs-7">Allow custom vanity domain binding & SSL certificates</div>
+                                    </div>
+                                    <input class="form-check-input ms-0 fs-4" type="checkbox" role="switch" th:field="*{customDomainEnabled}" id="customDomainEnabled">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold text-dark">API Rate Limit (Requests / Min)</label>
+                                    <input type="number" class="form-control" th:field="*{rateLimitPerMinute}" min="100" max="100000">
+                                    <small class="text-muted fs-7">Throttling ceiling per API key</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. WORKSPACE OPERATIONS & SELF-SERVICE -->
+                    <div class="col-12 col-xl-6">
+                        <div class="card shadow-sm border-0 h-100">
+                            <div class="card-header bg-white border-bottom py-3 d-flex align-items-center gap-2">
+                                <span class="badge bg-warning-subtle text-warning p-2 rounded-3">
+                                    <i class="bi bi-gear fs-5"></i>
+                                </span>
+                                <div>
+                                    <h5 class="card-title mb-0 fw-bold">Workspace Operations</h5>
+                                    <small class="text-muted">Control maintenance mode, self-onboarding, RBAC, and file limits</small>
+                                </div>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="form-check form-switch mb-3 p-3 bg-danger-subtle text-danger-emphasis rounded-3 d-flex justify-content-between align-items-center border border-danger-subtle">
+                                    <div>
+                                        <label class="form-check-label fw-bold" for="maintenanceMode">
+                                            <i class="bi bi-exclamation-octagon me-1"></i> Maintenance Mode
+                                        </label>
+                                        <div class="fs-7">Locks out standard users. Only Global/Tenant Admins can log in.</div>
+                                    </div>
+                                    <input class="form-check-input ms-0 fs-4" type="checkbox" role="switch" th:field="*{maintenanceMode}" id="maintenanceMode">
+                                </div>
+
+                                <div class="form-check form-switch mb-3 p-3 bg-light rounded-3 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <label class="form-check-label fw-semibold text-dark" for="selfRegistrationAllowed">Allow Self-Registration</label>
+                                        <div class="text-muted fs-7">Enable user signup vs strictly invite-only onboarding</div>
+                                    </div>
+                                    <input class="form-check-input ms-0 fs-4" type="checkbox" role="switch" th:field="*{selfRegistrationAllowed}" id="selfRegistrationAllowed">
+                                </div>
+
+                                <div class="form-check form-switch mb-3 p-3 bg-light rounded-3 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <label class="form-check-label fw-semibold text-dark" for="allowCustomRoles">Allow Tenant Custom Roles</label>
+                                        <div class="text-muted fs-7">Permit tenant admins to construct custom RBAC permission cards</div>
+                                    </div>
+                                    <input class="form-check-input ms-0 fs-4" type="checkbox" role="switch" th:field="*{allowCustomRoles}" id="allowCustomRoles">
+                                </div>
+
+                                <div class="form-check form-switch mb-3 p-3 bg-light rounded-3 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <label class="form-check-label fw-semibold text-dark" for="multiCurrencyEnabled">Multi-Currency Support</label>
+                                        <div class="text-muted fs-7">Enable multi-currency transactions across billing & invoicing</div>
+                                    </div>
+                                    <input class="form-check-input ms-0 fs-4" type="checkbox" role="switch" th:field="*{multiCurrencyEnabled}" id="multiCurrencyEnabled">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold text-dark">Max File Upload Size (MB)</label>
+                                    <input type="number" class="form-control" th:field="*{maxFileUploadMb}" min="1" max="1024">
+                                    <small class="text-muted fs-7">Max attachment size for uploads</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 5. SUBSCRIPTION & BILLING ENTITLEMENT -->
+                    <div class="col-12">
+                        <div class="card shadow-sm border-0">
+                            <div class="card-header bg-white border-bottom py-3 d-flex align-items-center gap-2">
+                                <span class="badge bg-secondary-subtle text-secondary p-2 rounded-3">
+                                    <i class="bi bi-credit-card fs-5"></i>
+                                </span>
+                                <div>
+                                    <h5 class="card-title mb-0 fw-bold">Billing & Entitlement Governance</h5>
+                                    <small class="text-muted">Control quota overages and recurring subscription renewals</small>
+                                </div>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="form-check form-switch p-3 bg-light rounded-3 d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <label class="form-check-label fw-semibold text-dark" for="overageAllowed">Allow Quota Overages</label>
+                                                <div class="text-muted fs-7">Allow user count & storage expansion beyond plan caps</div>
+                                            </div>
+                                            <input class="form-check-input ms-0 fs-4" type="checkbox" role="switch" th:field="*{overageAllowed}" id="overageAllowed">
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="form-check form-switch p-3 bg-light rounded-3 d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <label class="form-check-label fw-semibold text-dark" for="autoRenewalEnabled">Automated Billing Renewal</label>
+                                                <div class="text-muted fs-7">Enable automatic subscription renewal & invoice generation</div>
+                                            </div>
+                                            <input class="form-check-input ms-0 fs-4" type="checkbox" role="switch" th:field="*{autoRenewalEnabled}" id="autoRenewalEnabled">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BOTTOM SAVE BAR -->
+                <div class="card shadow-sm border-0 mt-4 bg-white sticky-bottom">
+                    <div class="card-body p-3 d-flex justify-content-between align-items-center">
+                        <span class="text-muted fs-7">
+                            <i class="bi bi-info-circle me-1"></i> Changes apply immediately across tenant API gateways and user portals.
+                        </span>
+                        <div class="d-flex gap-2">
+                            <a th:href="@{/tenants}" class="btn btn-outline-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary px-4 fw-semibold">
+                                <i class="bi bi-save me-1"></i> Save Administration Settings
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </main>
+        <div th:replace="~{fragments/footer :: footer}"></div>
+    </div>
+</div>
+
+<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/sidebar.js}"></script>
+</body>
+</html>

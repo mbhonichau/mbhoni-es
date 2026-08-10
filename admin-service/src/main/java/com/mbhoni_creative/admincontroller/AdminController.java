@@ -35,6 +35,29 @@ public class AdminController {
         return "auth/login";
     }
 
+    @GetMapping({"/register", "/signup"})
+    public String showRegisterPage(Model model) {
+        model.addAttribute("tenants", tenantService.getAllTenants());
+        return "auth/register";
+    }
+
+    @PostMapping({"/register", "/signup"})
+    public String handleRegisterSubmit(
+            @RequestParam("username") String username,
+            @RequestParam("email") String email,
+            @RequestParam("password") String password,
+            @RequestParam(value = "tenantId", required = false) Long tenantId,
+            org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
+        try {
+            userService.registerUser(username, email, password, tenantId);
+            redirectAttributes.addFlashAttribute("registeredSuccess", true);
+            return "redirect:/login?registered=true";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            return "redirect:/register?error=true";
+        }
+    }
+
     @PostMapping({"/forgot-password", "/users/forgot-password"})
     public String handleForgotPassword(
             @RequestParam("username") String username,

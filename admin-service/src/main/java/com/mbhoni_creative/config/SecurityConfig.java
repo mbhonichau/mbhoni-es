@@ -84,6 +84,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                         "/login",
+                        "/register",
+                        "/signup",
                         "/oauth2/**",
                         "/assets/**",
                         "/css/**",
@@ -94,12 +96,13 @@ public class SecurityConfig {
                         "/swagger-ui.html",
                         "/swagger-ui/**",
                         "/v3/api-docs/**",
-                        "/swagger-resources/**"
+                        "/swagger-resources/**",
+                        "/actuator/**"
                 ).permitAll()
 
                 .requestMatchers(HttpMethod.GET, "/users/reset-password").permitAll()
                 .requestMatchers(HttpMethod.POST, "/users/reset-password/token").permitAll()
-                .requestMatchers(HttpMethod.POST, "/forgot-password", "/users/forgot-password").permitAll()
+                .requestMatchers(HttpMethod.POST, "/forgot-password", "/users/forgot-password", "/register", "/signup").permitAll()
 
                 .requestMatchers("/super-admin/**")
                         .hasRole("SUPER_ADMIN")

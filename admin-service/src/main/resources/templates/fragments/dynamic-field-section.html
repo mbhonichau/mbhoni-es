@@ -1,0 +1,89 @@
+<th:block xmlns:th="http://www.thymeleaf.org" th:fragment="fieldSection(sectionTitle, sectionFields, valueMap)">
+    <div class="card border-0 shadow-sm rounded-3 mb-4" th:if="${sectionFields != null and !sectionFields.isEmpty()}">
+        <div class="card-header bg-light border-bottom py-3 d-flex align-items-center justify-content-between">
+            <h6 class="fw-bold mb-0 text-dark">
+                <i class="bi bi-sliders text-primary me-2"></i>
+                <span th:text="${sectionTitle}">Section Title</span>
+            </h6>
+            <span class="badge bg-secondary rounded-pill" th:text="|${#lists.size(sectionFields)} Active Fields|">0 Fields</span>
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-3">
+                <div class="col-md-6" th:each="f : ${sectionFields}" th:if="${f.active}">
+                    <label class="form-label fw-semibold">
+                        <span th:text="${f.label}">Field Label</span>
+                        <span class="text-danger" th:if="${f.required}">*</span>
+                    </label>
+
+                    <!-- TEXT -->
+                    <input th:if="${f.dataType.name() == 'TEXT'}" 
+                           type="text" 
+                           th:name="|fieldValues[${f.fieldKey}]|" 
+                           class="form-control" 
+                           th:value="${valueMap != null ? valueMap.get(f.fieldKey) : ''}"
+                           th:placeholder="${f.label}" 
+                           th:required="${f.required}">
+
+                    <!-- NUMBER -->
+                    <input th:if="${f.dataType.name() == 'NUMBER'}" 
+                           type="number" step="any" 
+                           th:name="|fieldValues[${f.fieldKey}]|" 
+                           class="form-control" 
+                           th:value="${valueMap != null ? valueMap.get(f.fieldKey) : ''}"
+                           th:placeholder="${f.label}" 
+                           th:required="${f.required}">
+
+                    <!-- DATE -->
+                    <input th:if="${f.dataType.name() == 'DATE'}" 
+                           type="date" 
+                           th:name="|fieldValues[${f.fieldKey}]|" 
+                           class="form-control" 
+                           th:value="${valueMap != null ? valueMap.get(f.fieldKey) : ''}"
+                           th:required="${f.required}">
+
+                    <!-- BOOLEAN -->
+                    <select th:if="${f.dataType.name() == 'BOOLEAN'}" 
+                            th:name="|fieldValues[${f.fieldKey}]|" 
+                            class="form-select" 
+                            th:required="${f.required}">
+                        <option value="">-- Select --</option>
+                        <option value="true" th:selected="${valueMap != null and valueMap.get(f.fieldKey) == 'true'}">Yes / True</option>
+                        <option value="false" th:selected="${valueMap != null and valueMap.get(f.fieldKey) == 'false'}">No / False</option>
+                    </select>
+
+                    <!-- SELECT -->
+                    <select th:if="${f.dataType.name() == 'SELECT'}" 
+                            th:name="|fieldValues[${f.fieldKey}]|" 
+                            class="form-select" 
+                            th:required="${f.required}">
+                        <option value="">-- Select Option --</option>
+                        <option th:each="opt : ${f.selectOptions != null ? #strings.arraySplit(#strings.replace(#strings.replace(#strings.replace(f.selectOptions, '[', ''), ']', ''), '&quot;', ''), ',') : {}}" 
+                                th:value="${#strings.trim(opt)}" 
+                                th:text="${#strings.trim(opt)}"
+                                th:selected="${valueMap != null and valueMap.get(f.fieldKey) == #strings.trim(opt)}"></option>
+                    </select>
+
+                    <!-- FILE -->
+                    <input th:if="${f.dataType.name() == 'FILE'}" 
+                           type="text" 
+                           th:name="|fieldValues[${f.fieldKey}]|" 
+                           class="form-control font-monospace" 
+                           placeholder="Document URL / Storage Reference"
+                           th:value="${valueMap != null ? valueMap.get(f.fieldKey) : ''}"
+                           th:required="${f.required}">
+
+                    <!-- GPS_COORD -->
+                    <input th:if="${f.dataType.name() == 'GPS_COORD'}" 
+                           type="text" 
+                           th:name="|fieldValues[${f.fieldKey}]|" 
+                           class="form-control font-monospace" 
+                           placeholder="e.g. -26.2041, 28.0473"
+                           th:value="${valueMap != null ? valueMap.get(f.fieldKey) : ''}"
+                           th:required="${f.required}">
+
+                    <small class="text-muted d-block mt-1 fs-7" th:if="${f.validationRule != null}" th:text="'Format rule: ' + ${f.validationRule}">Validation rule</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</th:block>

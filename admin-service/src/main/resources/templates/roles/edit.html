@@ -22,7 +22,7 @@
                 </a>
             </section>
 
-            <form th:action="@{/roles/edit}" th:object="${role}" method="post">
+            <form th:action="@{/roles/update}" th:object="${role}" method="post">
                 <input type="hidden" th:field="*{id}">
 
                 <section class="form-panel mb-4">

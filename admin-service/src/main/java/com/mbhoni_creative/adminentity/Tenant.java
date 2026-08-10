@@ -34,6 +34,9 @@ public class Tenant extends BaseEntity {
     @Column(name = "data_retention_days")
     private Integer dataRetentionDays = 365;
 
+    @OneToOne(mappedBy = "tenant", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private TenantSettings tenantSettings;
+
     // ================= GETTERS/SETTERS =================
 
     public Long getId() {
@@ -106,5 +109,13 @@ public class Tenant extends BaseEntity {
 
     public void setDataRetentionDays(Integer dataRetentionDays) {
         this.dataRetentionDays = dataRetentionDays;
+    }
+
+    public TenantSettings getTenantSettings() {
+        return tenantSettings;
+    }
+
+    public void setTenantSettings(TenantSettings tenantSettings) {
+        this.tenantSettings = tenantSettings;
     }
 }

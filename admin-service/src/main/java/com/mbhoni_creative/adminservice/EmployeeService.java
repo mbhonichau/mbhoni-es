@@ -3,6 +3,7 @@ package com.mbhoni_creative.adminservice;
 import java.util.List;
 import com.mbhoni_creative.adminentity.Employee;
 import com.mbhoni_creative.adminentity.EmployeeStatus;
+import com.mbhoni_creative.admindto.EmployeeCompletenessReportDto;
 
 public interface EmployeeService {
     List<Employee> getEmployeesByTenant(Long tenantId);
@@ -10,4 +11,8 @@ public interface EmployeeService {
     Employee getEmployeeByNumber(String employeeNumber);
     Employee saveEmployee(Long tenantId, Long orgUnitId, Long managerId, Employee employee);
     Employee updateEmployeeStatus(Long id, EmployeeStatus status);
+    void deleteEmployee(Long id);
+
+    List<EmployeeCompletenessReportDto> getCompletenessReport(Long tenantId);
+    void validateFieldAssignmentEligibility(Long employeeId);
 }

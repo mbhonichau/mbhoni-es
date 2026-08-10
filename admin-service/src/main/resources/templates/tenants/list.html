@@ -148,6 +148,20 @@
 
                             <td class="text-end">
                                 <div class="action-group">
+                                    <a th:href="@{'/tenants/' + ${tenant.tenantId} + '/settings'}"
+                                       class="btn btn-sm btn-outline-primary"
+                                       title="Admin Governance Settings"
+                                       sec:authorize="hasAuthority('TENANT_EDIT')">
+                                        <i class="bi bi-sliders"></i>
+                                    </a>
+
+                                    <a th:href="@{'/tenants/' + ${tenant.tenantId} + '/onboarding-fields'}"
+                                       class="btn btn-sm btn-outline-info"
+                                       title="Onboarding & Registration Fields"
+                                       sec:authorize="hasAuthority('TENANT_EDIT')">
+                                        <i class="bi bi-person-gear"></i>
+                                    </a>
+
                                     <form th:action="@{/tenants/edit}"
                                           method="post"
                                           class="d-inline"

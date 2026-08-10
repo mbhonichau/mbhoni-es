@@ -99,6 +99,30 @@ class TenantServiceTest {
     }
 
     @Test
+    void tenantUserCanReadTheirAssignedTenant() {
+        when(tenantSecurityService.isGlobalAdmin()).thenReturn(false);
+        when(tenantSecurityService.getCurrentTenantId()).thenReturn(1L);
+        when(tenantRepository.findById(1L)).thenReturn(Optional.of(tenant));
+
+        TenantDto dto = tenantService.getTenantById(1L);
+
+        assertEquals(1L, dto.getId());
+    }
+
+    @Test
+    void tenantUserCannotReadAnotherTenant() {
+        Tenant otherTenant = new Tenant();
+        otherTenant.setId(2L);
+        when(tenantSecurityService.isGlobalAdmin()).thenReturn(false);
+        when(tenantSecurityService.getCurrentTenantId()).thenReturn(1L);
+        when(tenantRepository.findById(2L)).thenReturn(Optional.of(otherTenant));
+
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> tenantService.getTenantById(2L));
+
+        assertEquals("Access denied", ex.getMessage());
+    }
+
+    @Test
     void testGetTenantById_NotFound_ThrowsException() {
         when(tenantRepository.findById(99L)).thenReturn(Optional.empty());
 
