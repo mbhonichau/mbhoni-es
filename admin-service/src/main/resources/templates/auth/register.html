@@ -9,6 +9,7 @@
     <link rel="stylesheet" th:href="@{/vendor/bootstrap-icons/bootstrap-icons.css}">
     <link rel="stylesheet" th:href="@{/css/admin.css}">
     <link rel="stylesheet" th:href="@{/css/auth.css}">
+    <link rel="stylesheet" th:href="@{/css/theme.css}">
 </head>
 
 <body class="auth-body">
@@ -98,7 +99,7 @@
                 Already have an account? <a th:href="@{/login}">Sign In here</a>
             </div>
 
-            <div class="d-flex align-items-center justify-content-between pt-3 mt-4 border-top border-secondary border-opacity-25" style="font-size: 0.75rem; color: #a09d8e;">
+            <div class="d-flex align-items-center justify-content-between pt-3 mt-4 border-top border-secondary border-opacity-25" style="font-size: 0.75rem; color: #a9c5e3;">
                 <div class="d-flex align-items-center gap-2">
                     <img th:src="@{/images/logo.png}" alt="Logo" style="height: 14px; width: 14px; opacity: 0.7;">
                     <span>MBHONI Enterprise &copy; 2026</span>
@@ -146,7 +147,7 @@
                 radius: Math.random() * 2 + 1,
                 dx: (Math.random() - 0.5) * 0.6,
                 dy: (Math.random() - 0.5) * 0.6,
-                color: 'rgba(227, 168, 87, ' + (Math.random() * 0.4 + 0.1) + ')'
+                color: 'rgba(104, 188, 229, ' + (Math.random() * 0.4 + 0.1) + ')'
             });
         }
 
@@ -174,7 +175,7 @@
                         ctx.beginPath();
                         ctx.moveTo(p.x, p.y);
                         ctx.lineTo(p2.x, p2.y);
-                        ctx.strokeStyle = 'rgba(227, 168, 87, ' + (0.15 * (1 - dist / 120)) + ')';
+                        ctx.strokeStyle = 'rgba(104, 188, 229, ' + (0.15 * (1 - dist / 120)) + ')';
                         ctx.lineWidth = 0.5;
                         ctx.stroke();
                     }

@@ -112,7 +112,7 @@
                             </td>
                             <td th:text="${apiKey.lastUsedAt != null ? apiKey.lastUsedAt : 'Never'}">Never</td>
                             <td>
-                                <button class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1"
+                                <button type="button" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1"
                                         data-bs-toggle="modal"
                                         th:attr="data-bs-target='#apiKeyPermsModal-' + ${apiKey.id}">
                                     <i class="bi bi-key text-primary"></i>

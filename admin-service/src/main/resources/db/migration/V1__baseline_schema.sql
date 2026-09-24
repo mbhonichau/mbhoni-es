@@ -403,7 +403,7 @@ CREATE TABLE IF NOT EXISTS `tenant_content` (
     `content_type` VARCHAR(100),
     `ip_address` VARCHAR(100),
     `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE SET NULL
+    FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Tenant Invoices & Items

@@ -1,19 +1,81 @@
-# Eclipse
+# Java and Maven build output
+**/target/
+**/build/
+**/out/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+
+# Maven release and backup files
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+release.properties
+dependency-reduced-pom.xml
+*.versionsBackup
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+!.env.sample
+*.local.yml
+*.local.yaml
+*.local.properties
+application-local.yml
+application-local.yaml
+application-local.properties
+docker-compose.override.yml
+docker-compose.override.yaml
+
+# Logs, runtime state, and temporary files
+*.log
+logs/
+*.pid
+*.pid.lock
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~
+
+# Test and coverage output
+coverage/
+.coverage
+.nyc_output/
+jacoco.exec
+**/surefire-reports/
+**/failsafe-reports/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+
+# Eclipse and Spring Tool Suite
 .metadata/
 .classpath
 .project
 .settings/
+.springBeans
+.sts4-cache/
 bin/
-target/
-**/target/
-*.jar
-*.war
 
-# OS
-Thumbs.db
+# Visual Studio Code and local tooling
+.vscode/
+.factorypath
+
+# Operating system files
 .DS_Store
+Thumbs.db
+Desktop.ini
 
-# IDE
-.idea/
-*.iml
-*.iws
+# Crash reports and heap dumps
+hs_err_pid*
+replay_pid*
+*.hprof

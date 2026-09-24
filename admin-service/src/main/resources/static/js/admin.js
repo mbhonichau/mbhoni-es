@@ -469,6 +469,14 @@ function initPasswordToggleButtons() {
         let parent = input.parentElement;
         if (!parent) return;
 
+        // Preserve purpose-built input-group actions (for example, the user
+        // creation screen's "Auto Generate" button). An absolutely-positioned
+        // visibility control in the same group would sit over that action and
+        // make it impossible to click.
+        if (parent.classList.contains('input-group') && parent.querySelector('button')) {
+            return;
+        }
+
         if (!parent.classList.contains('input-group') && !parent.classList.contains('position-relative')) {
             const wrapper = document.createElement('div');
             wrapper.className = 'position-relative d-flex align-items-center w-100';

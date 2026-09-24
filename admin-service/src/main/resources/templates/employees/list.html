@@ -39,7 +39,7 @@
                         <a th:href="@{/employees/payslips}" class="btn btn-outline-secondary shadow-sm" sec:authorize="hasAuthority('EMPLOYEE_VIEW') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN')">
                             <i class="bi bi-calculator me-1"></i> Payslips
                         </a>
-                        <button class="btn btn-primary shadow-sm px-3" data-bs-toggle="modal" data-bs-target="#newEmployeeModal" sec:authorize="hasAuthority('EMPLOYEE_EDIT') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN')">
+                        <button type="button" class="btn btn-primary shadow-sm px-3" data-bs-toggle="modal" data-bs-target="#newEmployeeModal" sec:authorize="hasAuthority('EMPLOYEE_EDIT') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN')">
                             <i class="bi bi-person-plus-fill me-1"></i> New Employee
                         </button>
                     </div>

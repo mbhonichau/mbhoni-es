@@ -217,7 +217,7 @@ public class DataInitializer implements CommandLineRunner {
         SubscriptionPlan proPlan = subscriptionPlanRepository.findByCode("PROFESSIONAL")
                 .orElseGet(() -> {
                     SubscriptionPlan plan = new SubscriptionPlan();
-                    plan.setCode("PROFESSIONAL");
+                    plan.setCode("PRO");
                     plan.setName("Professional Business Tier");
                     plan.setDescription("Expanded capacity for growing businesses with REST API gateway access, white-label UI branding, and custom roles.");
                     plan.setMonthlyPrice(new BigDecimal("149.00"));

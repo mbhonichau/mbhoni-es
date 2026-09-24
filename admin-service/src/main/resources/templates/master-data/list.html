@@ -17,7 +17,7 @@
                     <h2>Master Data Management (MDM)</h2>
                     <p class="text-muted mb-0">Manage enterprise reference data, dictionary codes, and localization lookups.</p>
                 </div>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newCategoryModal">
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newCategoryModal">
                     <i class="bi bi-plus-lg me-1"></i> New Category
                 </button>
             </section>
@@ -47,7 +47,7 @@
                     <div class="card shadow-sm">
                         <div class="card-header bg-light d-flex justify-content-between align-items-center">
                             <h5 class="card-title mb-0">Lookup Codes & Values</h5>
-                            <button th:if="${selectedCategoryId != null}" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#newCodeModal">
+                            <button type="button" th:if="${selectedCategoryId != null}" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#newCodeModal">
                                 <i class="bi bi-plus-circle me-1"></i> Add Code
                             </button>
                         </div>
