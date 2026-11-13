@@ -24,6 +24,11 @@ import java.util.Optional;
 @Component
 public class TenantContextFilter extends OncePerRequestFilter {
 
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        return com.mbhoni_creative.api.security.ApiPaths.matches(request);
+    }
+
     private final UserRepository userRepository;
     private final SecurityContextRepository securityContextRepository = new HttpSessionSecurityContextRepository();
 
