@@ -34,6 +34,7 @@ import com.mbhoni_creative.adminrepository.TenantSubscriptionRepository;
 import com.mbhoni_creative.adminrepository.UserRepository;
 
 @Component
+@org.springframework.core.annotation.Order(0)
 public class DataInitializer implements CommandLineRunner {
 
     private final UserRepository userRepository;
@@ -47,6 +48,7 @@ public class DataInitializer implements CommandLineRunner {
     private final TenantModuleRepository tenantModuleRepository;
     private final IndustryProfileRepository industryProfileRepository;
     private final PasswordEncoder passwordEncoder;
+    private final BootstrapAccounts bootstrap;
 
     public DataInitializer(
             UserRepository userRepository,
@@ -59,7 +61,7 @@ public class DataInitializer implements CommandLineRunner {
             TenantSubscriptionRepository tenantSubscriptionRepository,
             TenantModuleRepository tenantModuleRepository,
             IndustryProfileRepository industryProfileRepository,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder, BootstrapAccounts bootstrap) {
 
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
@@ -72,6 +74,7 @@ public class DataInitializer implements CommandLineRunner {
         this.tenantModuleRepository = tenantModuleRepository;
         this.industryProfileRepository = industryProfileRepository;
         this.passwordEncoder = passwordEncoder;
+        this.bootstrap = bootstrap;
     }
 
     @Override
@@ -214,7 +217,7 @@ public class DataInitializer implements CommandLineRunner {
                     return subscriptionPlanRepository.save(plan);
                 });
 
-        SubscriptionPlan proPlan = subscriptionPlanRepository.findByCode("PROFESSIONAL")
+        SubscriptionPlan proPlan = subscriptionPlanRepository.findByCode("PRO")
                 .orElseGet(() -> {
                     SubscriptionPlan plan = new SubscriptionPlan();
                     plan.setCode("PRO");
@@ -313,40 +316,7 @@ public class DataInitializer implements CommandLineRunner {
                     });
         }
 
-        // Seed Users
-        User superAdmin = userRepository.findByUsername("mbuso")
-                .orElseGet(User::new);
-
-        superAdmin.setUsername("mbuso");
-        superAdmin.setEmail("mbuso@system.local");
-
-        if (superAdmin.getPassword() == null || superAdmin.getPassword().isBlank()) {
-            superAdmin.setPassword(passwordEncoder.encode("password123"));
-        }
-
-        superAdmin.setTenant(null);
-        superAdmin.setRoles(new HashSet<>(Set.of(adminRole, userRole)));
-        superAdmin.setGlobalAdmin(true);
-        superAdmin.setActive(true);
-
-        userRepository.save(superAdmin);
-
-        User tenantAdmin = userRepository.findByUsername("jusaqua_admin")
-                .orElseGet(User::new);
-
-        tenantAdmin.setUsername("jusaqua_admin");
-        tenantAdmin.setEmail("admin@jusaqua.local");
-
-        if (tenantAdmin.getPassword() == null || tenantAdmin.getPassword().isBlank()) {
-            tenantAdmin.setPassword(passwordEncoder.encode("aqua123"));
-        }
-
-        tenantAdmin.setTenant(jusaquaTenant);
-        tenantAdmin.setRoles(new HashSet<>(Set.of(tenantAdminRole)));
-        tenantAdmin.setGlobalAdmin(false);
-        tenantAdmin.setActive(true);
-
-        userRepository.save(tenantAdmin);
+        bootstrap.initialize(adminRole, tenantAdminRole, jusaquaTenant);
 
         System.out.println(">> Default security data and platform modules initialized");
     }

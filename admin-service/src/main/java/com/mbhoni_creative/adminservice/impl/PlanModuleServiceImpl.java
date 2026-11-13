@@ -23,15 +23,17 @@ public class PlanModuleServiceImpl implements PlanModuleService {
     private final SubscriptionPlanRepository planRepository;
     private final PlatformModuleRepository moduleRepository;
     private final SubscriptionPlanModuleRepository planModuleRepository;
+    private final com.mbhoni_creative.config.TenantSecurityService security;
 
     public PlanModuleServiceImpl(
             SubscriptionPlanRepository planRepository,
             PlatformModuleRepository moduleRepository,
-            SubscriptionPlanModuleRepository planModuleRepository) {
+            SubscriptionPlanModuleRepository planModuleRepository, com.mbhoni_creative.config.TenantSecurityService security) {
 
         this.planRepository = planRepository;
         this.moduleRepository = moduleRepository;
         this.planModuleRepository = planModuleRepository;
+        this.security = security;
     }
 
     @Override
@@ -65,6 +67,7 @@ public class PlanModuleServiceImpl implements PlanModuleService {
     @Override
     @Transactional
     public void updatePlanModules(Long planId, Set<Long> allowedModuleIds) {
+        if (!security.isGlobalAdmin()) throw new org.springframework.security.access.AccessDeniedException("Plan module changes require platform admin");
 
         SubscriptionPlan plan = planRepository.findById(planId)
                 .orElseThrow(() -> new RuntimeException("Subscription plan not found"));

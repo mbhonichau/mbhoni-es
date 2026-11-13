@@ -20,7 +20,9 @@ public class Employee extends BaseEntity {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private User user;
+    public Long getUserId() { return user == null ? null : user.getId(); }
 
     @Column(name = "first_name", nullable = false, length = 100)
     private String firstName;
@@ -43,7 +45,9 @@ public class Employee extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "manager_employee_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private Employee manager;
+    public Long getManagerId() { return manager == null ? null : manager.getId(); }
 
     @Column(name = "cost_center", length = 50)
     private String costCenter;

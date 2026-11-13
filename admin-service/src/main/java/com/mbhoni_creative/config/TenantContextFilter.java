@@ -47,8 +47,20 @@ public class TenantContextFilter extends OncePerRequestFilter {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
             if (auth != null && auth.getPrincipal() instanceof CustomUserPrincipal principal) {
-                if (principal.getUsername() != null && !principal.getUsername().isBlank()) {
-                    Optional<User> freshUserOpt = userRepository.findByUsername(principal.getUsername());
+                if (principal.getUser().getId() == null) {
+                    SecurityContextHolder.clearContext();
+                    securityContextRepository.saveContext(SecurityContextHolder.createEmptyContext(), request, response);
+                    response.sendError(401, "Account identity is missing" );
+                    return;
+                }
+                {
+                    Optional<User> freshUserOpt = userRepository.findById(principal.getUser().getId());
+                    if (freshUserOpt.isEmpty() || !freshUserOpt.get().isActive()) {
+                        SecurityContextHolder.clearContext();
+                        securityContextRepository.saveContext(SecurityContextHolder.createEmptyContext(), request, response);
+                        response.sendError(401, "Account is no longer active");
+                        return;
+                    }
                     if (freshUserOpt.isPresent()) {
                         principal = new CustomUserPrincipal(freshUserOpt.get());
                         UsernamePasswordAuthenticationToken newAuth = new UsernamePasswordAuthenticationToken(

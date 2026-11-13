@@ -34,6 +34,6 @@ public interface SubscriptionService {
             LocalDate startDate,
             LocalDate endDate,
             LocalDate trialEndsAt,
-            boolean autoRenew
+            boolean autoRenew, String reason
     );
 }

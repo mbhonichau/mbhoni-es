@@ -73,6 +73,10 @@ public class AuditLogServiceImpl implements AuditLogService {
                 ? null
                 : tenantSecurityService.getCurrentTenantId();
 
+        if (tenantId == null && !tenantSecurityService.isGlobalAdmin()) {
+            throw new org.springframework.security.access.AccessDeniedException("Tenant context is required to read audit logs");
+        }
+
         return auditLogRepository.searchAuditLogs(
                 tenantId,
                 clean(q),

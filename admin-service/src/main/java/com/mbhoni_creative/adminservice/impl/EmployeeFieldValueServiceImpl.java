@@ -17,6 +17,7 @@ import com.mbhoni_creative.adminrepository.EmployeeRepository;
 import com.mbhoni_creative.adminservice.EmployeeFieldValueService;
 import com.mbhoni_creative.adminservice.FieldDefinitionService;
 import com.mbhoni_creative.adminservice.util.FieldValueValidator;
+import com.mbhoni_creative.config.TenantAccessService;
 
 @Service
 @Transactional
@@ -25,26 +26,32 @@ public class EmployeeFieldValueServiceImpl implements EmployeeFieldValueService 
     private final EmployeeFieldValueRepository fieldValueRepository;
     private final EmployeeRepository employeeRepository;
     private final FieldDefinitionService fieldDefinitionService;
+    private final TenantAccessService tenantAccessService;
+    private final com.mbhoni_creative.config.OrganizationAccessService organizationAccess;
 
     public EmployeeFieldValueServiceImpl(
             EmployeeFieldValueRepository fieldValueRepository,
             EmployeeRepository employeeRepository,
-            FieldDefinitionService fieldDefinitionService) {
+            FieldDefinitionService fieldDefinitionService, TenantAccessService tenantAccessService,
+            com.mbhoni_creative.config.OrganizationAccessService organizationAccess) {
         this.fieldValueRepository = fieldValueRepository;
         this.employeeRepository = employeeRepository;
         this.fieldDefinitionService = fieldDefinitionService;
+        this.tenantAccessService = tenantAccessService;
+        this.organizationAccess = organizationAccess;
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<EmployeeFieldValue> getValuesForEmployee(Long employeeId) {
+        requireEmployeeAccess(employeeId);
         return fieldValueRepository.findByEmployeeId(employeeId);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Map<String, String> getValueMapForEmployee(Long employeeId) {
-        List<EmployeeFieldValue> list = fieldValueRepository.findByEmployeeId(employeeId);
+        List<EmployeeFieldValue> list = getValuesForEmployee(employeeId);
         Map<String, String> map = new HashMap<>();
         for (EmployeeFieldValue val : list) {
             if (val.getFieldDefinition() != null && val.getFieldDefinition().getFieldKey() != null) {
@@ -56,13 +63,13 @@ public class EmployeeFieldValueServiceImpl implements EmployeeFieldValueService 
 
     @Override
     public void saveValues(Long employeeId, Map<String, String> fieldValues) {
-        Employee employee = employeeRepository.findById(employeeId)
-                .orElseThrow(() -> new RuntimeException("Employee not found ID: " + employeeId));
+        Employee employee = requireEmployeeAccess(employeeId);
 
         Long tenantId = employee.getTenant() != null ? employee.getTenant().getId() : null;
 
         // Fetch server-side effective schema across all sections
         List<FieldDefinition> effectiveSchema = fieldDefinitionService.getAllEffectiveSchemaForTenant(tenantId);
+        List<EmployeeFieldValue> priorValues = fieldValueRepository.findByEmployeeId(employeeId);
 
         // Mandatory Server-Side Required Field & Type Validation (Never trust client-submitted "required" state)
         for (FieldDefinition def : effectiveSchema) {
@@ -73,16 +80,27 @@ public class EmployeeFieldValueServiceImpl implements EmployeeFieldValueService 
 
             if (rawVal != null && !rawVal.trim().isEmpty()) {
                 Optional<EmployeeFieldValue> existingValOpt = fieldValueRepository.findByEmployeeIdAndFieldDefinitionId(employeeId, def.getId());
-                EmployeeFieldValue fieldValue = existingValOpt.orElseGet(() -> {
+                EmployeeFieldValue fieldValue = existingValOpt.orElseGet(() -> priorValues.stream()
+                        .filter(v -> v.getFieldDefinition() != null && v.getFieldDefinition().getTenant() == null
+                                && v.getFieldDefinition().getSection() == def.getSection()
+                                && def.getFieldKey().equals(v.getFieldDefinition().getFieldKey()))
+                        .findFirst().orElseGet(() -> {
                     EmployeeFieldValue val = new EmployeeFieldValue();
                     val.setEmployee(employee);
-                    val.setFieldDefinition(def);
                     return val;
-                });
+                }));
+                fieldValue.setFieldDefinition(def);
                 fieldValue.setValue(rawVal.trim());
                 fieldValue.setRecordedAt(LocalDateTime.now());
                 fieldValueRepository.save(fieldValue);
             }
         }
+    }
+    private Employee requireEmployeeAccess(Long employeeId) {
+        Employee employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new RuntimeException("Employee not found ID: " + employeeId));
+        tenantAccessService.requireAccess(employee.getTenant() != null ? employee.getTenant().getId() : null);
+        organizationAccess.requireAccess(employee.getOrganizationUnit());
+        return employee;
     }
 }

@@ -22,16 +22,23 @@ import com.mbhoni_creative.adminentity.User;
 import com.mbhoni_creative.adminrepository.UserRepository;
 import com.mbhoni_creative.adminservice.UserProfileService;
 import com.mbhoni_creative.config.CustomUserPrincipal;
+import com.mbhoni_creative.config.TenantAccessService;
+import com.mbhoni_creative.config.TenantSecurityService;
 
 @Service
 public class UserProfileServiceImpl implements UserProfileService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final TenantAccessService tenantAccessService;
+    private final TenantSecurityService tenantSecurityService;
 
-    public UserProfileServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserProfileServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder,
+            TenantAccessService tenantAccessService, TenantSecurityService tenantSecurityService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.tenantAccessService = tenantAccessService;
+        this.tenantSecurityService = tenantSecurityService;
     }
 
     @Override
@@ -46,6 +53,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     public UserProfileResponse getUserProfileById(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+        requireUserAccess(user);
         return mapToProfileResponse(user);
     }
 
@@ -85,6 +93,8 @@ public class UserProfileServiceImpl implements UserProfileService {
     public UserProfileResponse updateUserProcessToggles(Long userId, ProcessTogglesUpdateRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+        requireUserAccess(user);
+        com.mbhoni_creative.config.OwnerProtection.requireSelfForOwner(user);
 
         if (request.getMfaEnforced() != null) {
             user.setMfaEnforced(request.getMfaEnforced());
@@ -127,6 +137,12 @@ public class UserProfileServiceImpl implements UserProfileService {
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         user.setPasswordChangeRequired(false);
         userRepository.save(user);
+    }
+
+    private void requireUserAccess(User user) {
+        if (!tenantSecurityService.isGlobalAdmin()) {
+            tenantAccessService.requireAccess(user.getTenant() != null ? user.getTenant().getId() : null);
+        }
     }
 
     private User resolveAuthenticatedUser() {

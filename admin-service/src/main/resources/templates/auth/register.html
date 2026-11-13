@@ -72,21 +72,18 @@
                     <label for="password">Password</label>
                     <div class="input-wrapper">
                         <i class="bi bi-lock input-icon"></i>
-                        <input type="password" id="password" name="password" placeholder="Minimum 6 characters" required>
+                        <input type="password" id="password" name="password" minlength="12" placeholder="Minimum 12 characters" required>
                         <button type="button" class="password-toggle" onclick="togglePasswordVisibility(this)" title="Show/Hide Password">
                             <i class="bi bi-eye"></i>
                         </button>
                     </div>
                 </div>
 
-                <div class="form-group" th:if="${tenants != null and !tenants.isEmpty()}">
-                    <label for="tenantId">Tenant / Organization</label>
+                <div class="form-group">
+                    <label for="organization">Organization name</label>
                     <div class="input-wrapper">
                         <i class="bi bi-building input-icon"></i>
-                        <select id="tenantId" name="tenantId">
-                            <option value="">-- Standard / Default Tenant --</option>
-                            <option th:each="t : ${tenants}" th:value="${t.id}" th:text="${t.name}">Tenant Name</option>
-                        </select>
+                        <input id="organization" name="organization" maxlength="160" required placeholder="Your organization">
                     </div>
                 </div>
 

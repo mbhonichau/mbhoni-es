@@ -29,19 +29,26 @@ public class ModuleServiceImpl implements ModuleService {
     private final TenantRepository tenantRepository;
     private final TenantSubscriptionRepository tenantSubscriptionRepository;
     private final SubscriptionPlanModuleRepository subscriptionPlanModuleRepository;
+    private final com.mbhoni_creative.config.TenantSecurityService security;
+    private final com.mbhoni_creative.config.TenantGovernance governance;
+    private final com.mbhoni_creative.config.TenantAccessService access;
 
     public ModuleServiceImpl(
             PlatformModuleRepository platformModuleRepository,
             TenantModuleRepository tenantModuleRepository,
             TenantRepository tenantRepository,
             TenantSubscriptionRepository tenantSubscriptionRepository,
-            SubscriptionPlanModuleRepository subscriptionPlanModuleRepository) {
+            SubscriptionPlanModuleRepository subscriptionPlanModuleRepository,
+            com.mbhoni_creative.config.TenantSecurityService security, com.mbhoni_creative.config.TenantGovernance governance,
+            com.mbhoni_creative.config.TenantAccessService access) {
 
         this.platformModuleRepository = platformModuleRepository;
         this.tenantModuleRepository = tenantModuleRepository;
         this.tenantRepository = tenantRepository;
         this.tenantSubscriptionRepository = tenantSubscriptionRepository;
         this.subscriptionPlanModuleRepository = subscriptionPlanModuleRepository;
+        this.security = security; this.governance = governance;
+        this.access = access;
     }
 
     @Override
@@ -51,6 +58,7 @@ public class ModuleServiceImpl implements ModuleService {
 
     @Override
     public List<TenantModuleView> getTenantModuleViews(Long tenantId) {
+        access.requireAccess(tenantId);
 
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new RuntimeException("Tenant not found"));
@@ -101,6 +109,7 @@ public class ModuleServiceImpl implements ModuleService {
 
     @Override
     public TenantModulesResponse getTenantModulesResponse(Long tenantId) {
+        access.requireAccess(tenantId);
 
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new RuntimeException("Tenant not found"));
@@ -117,6 +126,7 @@ public class ModuleServiceImpl implements ModuleService {
     @Override
     @Transactional
     public void updateTenantModules(Long tenantId, Set<Long> enabledModuleIds) {
+        governance.requireDefaultsWrite(tenantId);
 
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new RuntimeException("Tenant not found"));
@@ -148,6 +158,7 @@ public class ModuleServiceImpl implements ModuleService {
 
     @Override
     public boolean isModuleEnabled(Long tenantId, String moduleCode) {
+        access.requireAccess(tenantId);
 
         if (moduleCode == null || moduleCode.isBlank()) {
             return false;
@@ -191,6 +202,7 @@ public class ModuleServiceImpl implements ModuleService {
     @Override
     @Transactional
     public PlatformModule createModule(PlatformModule module) {
+        if (!security.isGlobalAdmin()) throw new org.springframework.security.access.AccessDeniedException("Shared modules require platform admin");
 
         if (module == null || module.getCode() == null || module.getCode().isBlank()) {
             throw new IllegalArgumentException("Module code is required");
