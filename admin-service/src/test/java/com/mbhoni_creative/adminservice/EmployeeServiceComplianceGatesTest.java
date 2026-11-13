@@ -31,6 +31,8 @@ import com.mbhoni_creative.adminservice.impl.EmployeeServiceImpl;
 
 @ExtendWith(MockitoExtension.class)
 class EmployeeServiceComplianceGatesTest {
+    @Mock private com.mbhoni_creative.config.OrganizationAccessService organizationAccess;
+    @Mock private com.mbhoni_creative.adminrepository.UserRepository users;
 
     @Mock
     private EmployeeRepository employeeRepository;
@@ -50,6 +52,10 @@ class EmployeeServiceComplianceGatesTest {
     @Mock
     private com.mbhoni_creative.adminrepository.PayslipRepository payslipRepository;
 
+    @org.mockito.Spy
+    private com.mbhoni_creative.config.TenantAccessService tenantAccessService =
+            new com.mbhoni_creative.config.TenantAccessService(new com.mbhoni_creative.config.TenantSecurityService());
+
     @InjectMocks
     private EmployeeServiceImpl employeeService;
 
@@ -60,6 +66,12 @@ class EmployeeServiceComplianceGatesTest {
     void setUp() {
         tenant = new Tenant();
         tenant.setId(1L);
+        lenient().when(tenantRepository.lockById(1L)).thenReturn(Optional.of(tenant));
+        com.mbhoni_creative.adminentity.User caller = new com.mbhoni_creative.adminentity.User();
+        caller.setTenant(tenant);
+        var principal = new com.mbhoni_creative.config.CustomUserPrincipal(caller);
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
 
         employee = new Employee();
         employee.setId(10L);
@@ -71,6 +83,9 @@ class EmployeeServiceComplianceGatesTest {
         employee.setComplianceEmploymentStatus(ComplianceEmploymentStatus.ACTIVE);
         employee.setBackgroundCheckStatus(BackgroundCheckStatus.NOT_STARTED);
     }
+
+    @org.junit.jupiter.api.AfterEach
+    void clearAuthentication() { org.springframework.security.core.context.SecurityContextHolder.clearContext(); }
 
     @Test
     void testSaveEmployee_HardcodedGate_BlocksActiveStatusWhenBackgroundCheckNotPassed() {
@@ -87,7 +102,6 @@ class EmployeeServiceComplianceGatesTest {
     void testSaveEmployee_HardcodedGate_AllowsActiveStatusWhenBackgroundCheckPassed() {
         employee.setId(null); // New employee creation
         employee.setBackgroundCheckStatus(BackgroundCheckStatus.PASSED);
-        when(tenantRepository.findById(1L)).thenReturn(Optional.of(tenant));
         when(employeeRepository.save(any(Employee.class))).thenReturn(employee);
 
         Employee saved = employeeService.saveEmployee(1L, null, null, employee);

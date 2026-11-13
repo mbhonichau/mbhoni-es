@@ -36,6 +36,43 @@ public class TenantSubscription extends BaseEntity {
 
     private boolean autoRenew = true;
 
+    @Column(unique = true)
+    private String stripeSubscriptionId;
+    @Column(unique = true)
+    private String stripeCustomerId;
+    private java.time.Instant stateChangedAt;
+    private java.time.Instant graceEndsAt;
+    private java.time.Instant retentionEndsAt;
+
+    @Column(columnDefinition = "TEXT")
+    private String stripeItemsJson;
+    private Boolean cancelAtPeriodEnd;
+    private java.time.Instant currentPeriodEnd;
+    private java.time.Instant providerSyncedAt;
+    private String providerStatus;
+
+    public String getStripeItemsJson() { return stripeItemsJson; }
+    public void setStripeItemsJson(String value) { stripeItemsJson = value; }
+    public Boolean getCancelAtPeriodEnd() { return cancelAtPeriodEnd; }
+    public void setCancelAtPeriodEnd(Boolean value) { cancelAtPeriodEnd = value; }
+    public java.time.Instant getCurrentPeriodEnd() { return currentPeriodEnd; }
+    public void setCurrentPeriodEnd(java.time.Instant value) { currentPeriodEnd = value; }
+    public java.time.Instant getProviderSyncedAt() { return providerSyncedAt; }
+    public void setProviderSyncedAt(java.time.Instant value) { providerSyncedAt = value; }
+    public String getProviderStatus() { return providerStatus; }
+    public void setProviderStatus(String value) { providerStatus = value; }
+
+    public String getStripeSubscriptionId() { return stripeSubscriptionId; }
+    public void setStripeSubscriptionId(String value) { stripeSubscriptionId = value; }
+    public String getStripeCustomerId() { return stripeCustomerId; }
+    public void setStripeCustomerId(String value) { stripeCustomerId = value; }
+    public java.time.Instant getStateChangedAt() { return stateChangedAt; }
+    public void setStateChangedAt(java.time.Instant value) { stateChangedAt = value; }
+    public java.time.Instant getGraceEndsAt() { return graceEndsAt; }
+    public void setGraceEndsAt(java.time.Instant value) { graceEndsAt = value; }
+    public java.time.Instant getRetentionEndsAt() { return retentionEndsAt; }
+    public void setRetentionEndsAt(java.time.Instant value) { retentionEndsAt = value; }
+
     public Long getId() {
         return id;
     }

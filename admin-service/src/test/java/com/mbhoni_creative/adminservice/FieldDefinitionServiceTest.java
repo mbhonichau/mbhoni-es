@@ -43,6 +43,8 @@ class FieldDefinitionServiceTest {
 
     @BeforeEach
     void setUp() {
+        fieldDefinitionService = new FieldDefinitionServiceImpl(fieldDefinitionRepository, tenantRepository, tenantSecurityService,
+                new com.mbhoni_creative.config.TenantGovernance(tenantRepository, tenantSecurityService));
         tenant = new Tenant();
         tenant.setId(10L);
         tenant.setName("Acme Logistics");
@@ -70,6 +72,7 @@ class FieldDefinitionServiceTest {
 
     @Test
     void testGetEffectiveSchema_FallbackToGlobal_WhenNoTenantCustomization() {
+        when(tenantSecurityService.getCurrentTenantId()).thenReturn(10L);
         when(fieldDefinitionRepository.findActiveFieldsWithFallback(10L, FieldSection.QUALIFICATION))
                 .thenReturn(List.of(globalField));
 
@@ -83,6 +86,7 @@ class FieldDefinitionServiceTest {
 
     @Test
     void testGetEffectiveSchema_ReturnsTenantSpecific_WhenCustomized() {
+        when(tenantSecurityService.getCurrentTenantId()).thenReturn(10L);
         when(fieldDefinitionRepository.findActiveFieldsWithFallback(10L, FieldSection.QUALIFICATION))
                 .thenReturn(List.of(tenantField));
 
@@ -96,6 +100,7 @@ class FieldDefinitionServiceTest {
 
     @Test
     void testCreateField_UniquenessValidation_ThrowsExceptionWhenDuplicateKey() {
+        when(tenantRepository.lockById(10L)).thenReturn(Optional.of(tenant));
         when(tenantSecurityService.isGlobalAdmin()).thenReturn(true);
         when(fieldDefinitionRepository.findByTenantIdAndSectionAndFieldKey(10L, FieldSection.QUALIFICATION, "license_number"))
                 .thenReturn(Optional.of(tenantField));
@@ -114,6 +119,7 @@ class FieldDefinitionServiceTest {
 
     @Test
     void testDeactivateField_DeactivatesNotDeletes() {
+        when(tenantRepository.lockById(10L)).thenReturn(Optional.of(tenant));
         when(tenantSecurityService.isGlobalAdmin()).thenReturn(true);
         when(fieldDefinitionRepository.findById(2L)).thenReturn(Optional.of(tenantField));
 

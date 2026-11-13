@@ -23,17 +23,21 @@ public class TenantCustomizationServiceImpl implements TenantCustomizationServic
     private final TenantRepository tenantRepository;
     private final TenantSubscriptionRepository subscriptionRepository;
     private final TenantSecurityService tenantSecurityService;
+    private final com.mbhoni_creative.config.TenantAccessService access;
+    private final com.mbhoni_creative.config.TenantGovernance governance;
 
     public TenantCustomizationServiceImpl(
             TenantCustomizationRepository customizationRepository,
             TenantRepository tenantRepository,
             TenantSubscriptionRepository subscriptionRepository,
-            TenantSecurityService tenantSecurityService) {
+            TenantSecurityService tenantSecurityService, com.mbhoni_creative.config.TenantAccessService access,
+            com.mbhoni_creative.config.TenantGovernance governance) {
 
         this.customizationRepository = customizationRepository;
         this.tenantRepository = tenantRepository;
         this.subscriptionRepository = subscriptionRepository;
         this.tenantSecurityService = tenantSecurityService;
+        this.access = access; this.governance = governance;
     }
 
     @Override
@@ -48,6 +52,7 @@ public class TenantCustomizationServiceImpl implements TenantCustomizationServic
 
     @Override
     public TenantCustomization getOrCreateForTenant(Long tenantId) {
+        access.requireAccess(tenantId);
 
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new RuntimeException("Tenant not found"));
@@ -92,6 +97,7 @@ public class TenantCustomizationServiceImpl implements TenantCustomizationServic
     public TenantCustomization saveForCurrentTenant(TenantCustomization source) {
 
         Long tenantId = tenantSecurityService.getCurrentTenantId();
+        governance.requireDefaultsWrite(tenantId);
 
         if (tenantId == null) {
             throw new RuntimeException("Tenant context not set");
@@ -110,6 +116,7 @@ public class TenantCustomizationServiceImpl implements TenantCustomizationServic
 
     @Override
     public boolean brandingAllowed(Long tenantId) {
+        access.requireAccess(tenantId);
 
         TenantSubscription subscription = subscriptionRepository.findByTenantId(tenantId)
                 .orElse(null);

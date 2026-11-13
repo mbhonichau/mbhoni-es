@@ -27,12 +27,14 @@ public interface FieldDefinitionRepository extends JpaRepository<FieldDefinition
      * otherwise falls back to global (tenantId IS NULL) active field definitions for the section.
      */
     default List<FieldDefinition> findActiveFieldsWithFallback(Long tenantId, FieldSection section) {
+        java.util.Map<String, FieldDefinition> effective = new java.util.LinkedHashMap<>();
+        for (FieldDefinition field : findByTenantIdIsNullAndSectionAndIsActiveTrueOrderByDisplayOrderAsc(section))
+            effective.put(field.getFieldKey(), field);
         if (tenantId != null) {
-            List<FieldDefinition> tenantFields = findByTenantIdAndSectionAndIsActiveTrueOrderByDisplayOrderAsc(tenantId, section);
-            if (!tenantFields.isEmpty()) {
-                return tenantFields;
-            }
+            for (FieldDefinition field : findByTenantIdOrderBySectionAscDisplayOrderAsc(tenantId))
+                if (field.getSection() == section) effective.put(field.getFieldKey(), field);
         }
-        return findByTenantIdIsNullAndSectionAndIsActiveTrueOrderByDisplayOrderAsc(section);
+        return effective.values().stream().filter(FieldDefinition::isActive)
+                .sorted(java.util.Comparator.comparingInt(FieldDefinition::getDisplayOrder).thenComparing(FieldDefinition::getFieldKey)).toList();
     }
 }

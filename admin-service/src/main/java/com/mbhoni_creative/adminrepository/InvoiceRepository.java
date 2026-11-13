@@ -10,6 +10,7 @@ import java.time.LocalDate;
 import com.mbhoni_creative.adminentity.InvoiceStatus;
 
 public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
+    java.util.Optional<Invoice> findByStripeInvoiceId(String stripeInvoiceId);
     List<Invoice> findByTenantOrderByIssueDateDesc(Tenant tenant);
     List<Invoice> findByTenantId(Long tenantId);
     boolean existsByInvoiceNumber(String invoiceNumber);

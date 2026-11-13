@@ -35,6 +35,24 @@ public class Invoice extends BaseEntity {
     private BigDecimal taxAmount = BigDecimal.ZERO;
     private BigDecimal totalAmount = BigDecimal.ZERO;
     private BigDecimal amountPaid = BigDecimal.ZERO;
+    @Column(unique = true)
+    private String stripeInvoiceId;
+    private String currency;
+    private BigDecimal providerAmountRemaining;
+    @Column(length = 2048)
+    private String hostedInvoiceUrl;
+    @Column(columnDefinition = "LONGTEXT")
+    private String stripeInvoiceJson;
+    public String getStripeInvoiceId() { return stripeInvoiceId; }
+    public void setStripeInvoiceId(String value) { stripeInvoiceId = value; }
+    public String getCurrency() { return currency; }
+    public void setCurrency(String value) { currency = value; }
+    public BigDecimal getProviderAmountRemaining() { return providerAmountRemaining; }
+    public void setProviderAmountRemaining(BigDecimal value) { providerAmountRemaining = value; }
+    public String getHostedInvoiceUrl() { return hostedInvoiceUrl; }
+    public void setHostedInvoiceUrl(String value) { hostedInvoiceUrl = value; }
+    public String getStripeInvoiceJson() { return stripeInvoiceJson; }
+    public void setStripeInvoiceJson(String value) { stripeInvoiceJson = value; }
 
     @Column(length = 500)
     private String notes;
@@ -75,6 +93,7 @@ public class Invoice extends BaseEntity {
     public void setNotes(String notes) { this.notes = notes; }
 
     public BigDecimal getBalanceDue() {
+        if (stripeInvoiceId != null) return providerAmountRemaining;
         return totalAmount.subtract(amountPaid);
     }
 }

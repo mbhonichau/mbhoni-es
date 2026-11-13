@@ -8,7 +8,6 @@ import com.mbhoni_creative.adminentity.LookupCode;
 
 @Repository
 public interface LookupCodeRepository extends JpaRepository<LookupCode, Long> {
-    List<LookupCode> findByCategoryCodeAndActiveTrueOrderByDisplayOrderAsc(String categoryCode);
     List<LookupCode> findByCategoryIdOrderByDisplayOrderAsc(Long categoryId);
-    Optional<LookupCode> findByCategoryCodeAndCode(String categoryCode, String code);
+    Optional<LookupCode> findByCategoryIdAndCode(Long categoryId, String code);
 }

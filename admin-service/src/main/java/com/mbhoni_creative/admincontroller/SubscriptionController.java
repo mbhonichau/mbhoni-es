@@ -203,6 +203,7 @@ public class SubscriptionController {
             @RequestParam(required = false) LocalDate endDate,
             @RequestParam(required = false) LocalDate trialEndsAt,
             @RequestParam(defaultValue = "false") boolean autoRenew,
+            @RequestParam String reason,
             RedirectAttributes redirectAttributes) {
 
         enforceGlobalAdmin();
@@ -216,7 +217,7 @@ public class SubscriptionController {
                 startDate,
                 endDate,
                 trialEndsAt,
-                autoRenew
+                autoRenew, reason
         );
 
         redirectAttributes.addFlashAttribute("successMessage", "Tenant subscription updated successfully.");

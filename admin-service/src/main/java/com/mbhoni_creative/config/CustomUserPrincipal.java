@@ -37,6 +37,11 @@ public class CustomUserPrincipal implements UserDetails {
 
         Set<GrantedAuthority> authorities = new HashSet<>();
 
+        if (OwnerProtection.isOwner(user)) {
+            for (String permission : Set.of("BILLING_VIEW", "BILLING_CREATE", "BILLING_EDIT", "BILLING_DELETE", "TENANT_EDIT", "TENANT_VIEW", "TENANT_DELETE"))
+                authorities.add(new SimpleGrantedAuthority(permission));
+        }
+
         if (user.isGlobalAdmin()) {
             authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
             authorities.add(new SimpleGrantedAuthority("ROLE_SUPER_ADMIN"));

@@ -17,14 +17,16 @@ public class TenantQuotaViewController {
     private final TenantQuotaRepository tenantQuotaRepository;
     private final TenantRepository tenantRepository;
     private final TenantService tenantService;
+    private final com.mbhoni_creative.billing.TenantQuotaService quotaService;
 
     public TenantQuotaViewController(
             TenantQuotaRepository tenantQuotaRepository,
             TenantRepository tenantRepository,
-            TenantService tenantService) {
+            TenantService tenantService, com.mbhoni_creative.billing.TenantQuotaService quotaService) {
         this.tenantQuotaRepository = tenantQuotaRepository;
         this.tenantRepository = tenantRepository;
         this.tenantService = tenantService;
+        this.quotaService = quotaService;
     }
 
     @GetMapping
@@ -42,23 +44,8 @@ public class TenantQuotaViewController {
 
     @PostMapping("/save")
     @PreAuthorize("hasAuthority('TENANT_EDIT') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN')")
-    public String saveQuota(@RequestParam Long tenantId, @ModelAttribute TenantQuota quota) {
-        Tenant tenant = tenantRepository.findById(tenantId)
-                .orElseThrow(() -> new RuntimeException("Tenant not found"));
-
-        TenantQuota existing = tenantQuotaRepository.findByTenantId(tenantId)
-                .orElseGet(() -> {
-                    TenantQuota q = new TenantQuota();
-                    q.setTenant(tenant);
-                    return q;
-                });
-
-        existing.setMaxUsers(quota.getMaxUsers());
-        existing.setMaxApiRequestsPerMinute(quota.getMaxApiRequestsPerMinute());
-        existing.setMaxStorageGb(quota.getMaxStorageGb());
-        existing.setCustomQuotasJson(quota.getCustomQuotasJson());
-
-        tenantQuotaRepository.save(existing);
+    public String saveQuota(@RequestParam Long tenantId, @ModelAttribute TenantQuota quota, @RequestParam String reason) {
+        quotaService.override(tenantId, quota, reason);
         return "redirect:/tenants/quotas";
     }
 }

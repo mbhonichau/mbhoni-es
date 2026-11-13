@@ -101,6 +101,7 @@ public class RoleManagementServiceImpl implements RoleManagementService {
     @Transactional
     public void updateRole(RoleDto dto) {
         Role role = getRoleWithAccessCheck(dto.getId());
+        if ("ROLE_OWNER".equals(role.getName())) throw new org.springframework.security.access.AccessDeniedException("Owner role is managed by the ownership flow");
 
         Tenant tenant = role.getTenant();
         String roleName = normalizeRoleName(dto.getName());
@@ -186,7 +187,10 @@ public class RoleManagementServiceImpl implements RoleManagementService {
             throw new RuntimeException("Role name is required");
         }
 
-        return name.trim().toUpperCase().replace(" ", "_");
+        String normalized = name.trim().toUpperCase(java.util.Locale.ROOT).replace(" ", "_");
+        if (Set.of("ROLE_OWNER", "ROLE_ADMIN", "ROLE_SUPER_ADMIN", "ROLE_TENANT_ADMIN", "ROLE_BILLING_ADMIN").contains(normalized))
+            throw new org.springframework.security.access.AccessDeniedException("Reserved role name");
+        return normalized;
     }
 
     private RoleDto mapToDto(Role role) {

@@ -23,6 +23,11 @@ import jakarta.servlet.http.HttpServletResponse;
 @Component
 public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
 
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        return com.mbhoni_creative.api.security.ApiPaths.matches(request);
+    }
+
     private static final String API_KEY_HEADER = "X-API-Key";
 
     private final ApiKeyService apiKeyService;

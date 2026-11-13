@@ -28,6 +28,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private final TenantRepository tenantRepository;
     private final NotificationService notificationService;
     private final com.mbhoni_creative.config.TenantSecurityService tenantSecurityService;
+    private final com.mbhoni_creative.billing.SubscriptionLifecycle lifecycle;
+    private final com.mbhoni_creative.adminservice.AuditLogService audit;
+    private final java.time.Clock clock;
     @PersistenceContext
     private EntityManager entityManager;
 
@@ -36,13 +39,16 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             TenantSubscriptionRepository subscriptionRepository,
             TenantRepository tenantRepository,
             NotificationService notificationService,
-            com.mbhoni_creative.config.TenantSecurityService tenantSecurityService) {
+            com.mbhoni_creative.config.TenantSecurityService tenantSecurityService,
+            com.mbhoni_creative.billing.SubscriptionLifecycle lifecycle,
+            com.mbhoni_creative.adminservice.AuditLogService audit, java.time.Clock clock) {
 
         this.planRepository = planRepository;
         this.subscriptionRepository = subscriptionRepository;
         this.tenantRepository = tenantRepository;
         this.notificationService = notificationService;
         this.tenantSecurityService = tenantSecurityService;
+        this.lifecycle = lifecycle; this.audit = audit; this.clock = clock;
     }
 
     @Override
@@ -64,6 +70,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     @Override
     @Transactional
     public SubscriptionPlan savePlan(SubscriptionPlan plan) {
+        requirePlatformAdmin();
+        if (plan.getId() != null) throw new IllegalArgumentException("New plans cannot supply an ID");
 
         if (planRepository.existsByCode(plan.getCode())) {
             throw new RuntimeException("Subscription plan code already exists");
@@ -77,6 +85,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     @Override
     @Transactional
     public SubscriptionPlan updatePlan(Long id, SubscriptionPlan source) {
+        requirePlatformAdmin();
 
         SubscriptionPlan plan = getPlanById(id);
 
@@ -98,6 +107,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     @Override
     @Transactional
     public void deactivatePlan(Long id) {
+        requirePlatformAdmin();
 
         SubscriptionPlan plan = getPlanById(id);
 
@@ -110,14 +120,15 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     @Transactional
     public void deletePlan(Long id) {
 
+        requirePlatformAdmin();
+        if (subscriptionRepository.existsByPlanId(id)) {
+            throw new IllegalStateException("Reassign subscriptions before deleting a plan");
+        }
+
         SubscriptionPlan plan = getPlanById(id);
 
         // Delete plan-module mappings
         entityManager.createNativeQuery("DELETE FROM subscription_plan_modules WHERE plan_id = :id")
-                .setParameter("id", id).executeUpdate();
-
-        // Delete tenant subscription references to this plan
-        entityManager.createNativeQuery("DELETE FROM tenant_subscriptions WHERE plan_id = :id")
                 .setParameter("id", id).executeUpdate();
 
         // Delete plan
@@ -148,7 +159,14 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             LocalDate startDate,
             LocalDate endDate,
             LocalDate trialEndsAt,
-            boolean autoRenew) {
+            boolean autoRenew, String reason) {
+
+        requirePlatformAdmin();
+        if (reason == null || reason.isBlank()) throw new IllegalArgumentException("Override reason required");
+        if (status == null || billingCycle == null || (startDate != null && endDate != null && endDate.isBefore(startDate))
+                || (status == SubscriptionStatus.TRIAL && trialEndsAt == null)) {
+            throw new IllegalArgumentException("Invalid subscription state or dates");
+        }
 
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new RuntimeException("Tenant not found"));
@@ -156,14 +174,23 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         SubscriptionPlan plan = planRepository.findById(planId)
                 .orElseThrow(() -> new RuntimeException("Subscription plan not found"));
 
-        TenantSubscription subscription = subscriptionRepository.findByTenant(tenant)
+        TenantSubscription subscription = subscriptionRepository.lockByTenantId(tenantId)
                 .orElseGet(TenantSubscription::new);
 
         String oldPlanName = subscription.getPlan() != null ? subscription.getPlan().getName() : "None";
 
         subscription.setTenant(tenant);
+        if (subscription.getId() != null) {
+            lifecycle.transition(subscription, status, clock.instant(), false, "platform override: " + reason.trim());
+        } else {
+            if (status != SubscriptionStatus.TRIAL && status != SubscriptionStatus.ACTIVE) {
+                throw new IllegalArgumentException("Initial subscription must be TRIAL or ACTIVE");
+            }
+            subscription.setStatus(status);
+            subscription.setStateChangedAt(clock.instant());
+            tenant.setStatus(status.name()); tenant.setActive(true);
+        }
         subscription.setPlan(plan);
-        subscription.setStatus(status);
         subscription.setBillingCycle(billingCycle);
         subscription.setStartDate(startDate);
         subscription.setEndDate(endDate);
@@ -171,11 +198,16 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         subscription.setAutoRenew(autoRenew);
 
         TenantSubscription savedSubscription = subscriptionRepository.save(subscription);
+        audit.logForTenant(tenantId, "SUBSCRIPTION_OVERRIDE", "TENANT", String.valueOf(tenantId), reason.trim());
 
         if (!oldPlanName.equals(plan.getName())) {
             notificationService.sendSubscriptionChangeAlert(tenant.getName(), oldPlanName, plan.getName());
         }
 
         return savedSubscription;
+    }
+
+    private void requirePlatformAdmin() {
+        if (!tenantSecurityService.isGlobalAdmin()) throw new org.springframework.security.access.AccessDeniedException("Platform administrator required");
     }
 }

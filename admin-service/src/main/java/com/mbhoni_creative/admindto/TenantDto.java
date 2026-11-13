@@ -9,6 +9,10 @@ public class TenantDto {
     private String name;
 
     private boolean active;
+    private String changeReason;
+
+    public String getChangeReason() { return changeReason; }
+    public void setChangeReason(String changeReason) { this.changeReason = changeReason; }
 
     // Derived UI fields
     private String latestUsage;

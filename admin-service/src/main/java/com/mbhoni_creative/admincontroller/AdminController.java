@@ -18,11 +18,14 @@ public class AdminController {
 
     private final TenantService tenantService;
     private final com.mbhoni_creative.adminservice.UserService userService;
+    private final com.mbhoni_creative.onboarding.TenantSignupService signup;
 
     @Autowired
-    public AdminController(TenantService tenantService, com.mbhoni_creative.adminservice.UserService userService) {
+    public AdminController(TenantService tenantService, com.mbhoni_creative.adminservice.UserService userService,
+            com.mbhoni_creative.onboarding.TenantSignupService signup) {
         this.tenantService = tenantService;
         this.userService = userService;
+        this.signup = signup;
     }
 
     @GetMapping("/")
@@ -37,7 +40,6 @@ public class AdminController {
 
     @GetMapping({"/register", "/signup"})
     public String showRegisterPage(Model model) {
-        model.addAttribute("tenants", tenantService.getAllTenants());
         return "auth/register";
     }
 
@@ -46,10 +48,12 @@ public class AdminController {
             @RequestParam("username") String username,
             @RequestParam("email") String email,
             @RequestParam("password") String password,
+            @RequestParam("organization") String organization,
             @RequestParam(value = "tenantId", required = false) Long tenantId,
             org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
         try {
-            userService.registerUser(username, email, password, tenantId);
+            if (tenantId != null) throw new IllegalArgumentException("Joining an existing organization requires an invitation");
+            signup.signup(organization, username, email, password);
             redirectAttributes.addFlashAttribute("registeredSuccess", true);
             return "redirect:/login?registered=true";
         } catch (Exception e) {

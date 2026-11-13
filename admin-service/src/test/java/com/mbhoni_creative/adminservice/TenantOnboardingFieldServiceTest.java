@@ -38,10 +38,8 @@ class TenantOnboardingFieldServiceTest {
     @Mock
     private TenantRepository tenantRepository;
 
-    @Mock
-    private TenantSecurityService tenantSecurityService;
+    private final TenantSecurityService tenantSecurityService = new TenantSecurityService();
 
-    @InjectMocks
     private TenantOnboardingFieldServiceImpl onboardingFieldService;
 
     private Tenant tenant;
@@ -49,6 +47,13 @@ class TenantOnboardingFieldServiceTest {
 
     @BeforeEach
     void setUp() {
+        com.mbhoni_creative.adminentity.User actor = new com.mbhoni_creative.adminentity.User(); actor.setGlobalAdmin(true);
+        var principal = new com.mbhoni_creative.config.CustomUserPrincipal(actor);
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
+        onboardingFieldService = new TenantOnboardingFieldServiceImpl(onboardingFieldRepository, industryFieldRepository, tenantRepository,
+                tenantSecurityService, new com.mbhoni_creative.config.TenantAccessService(tenantSecurityService),
+                new com.mbhoni_creative.config.TenantGovernance(tenantRepository, tenantSecurityService));
         tenant = new Tenant();
         tenant.setId(50L);
         tenant.setName("Metro Healthcare System");
@@ -95,7 +100,6 @@ class TenantOnboardingFieldServiceTest {
 
     @Test
     void testSaveOrUpdateFields_Success() {
-        when(tenantSecurityService.isGlobalAdmin()).thenReturn(true);
         when(tenantRepository.findById(50L)).thenReturn(Optional.of(tenant));
         when(onboardingFieldRepository.findByTenantIdAndTargetEntityAndFieldKey(50L, TargetEntity.EMPLOYEE, "nationalId"))
                 .thenReturn(Optional.of(field));
@@ -111,4 +115,5 @@ class TenantOnboardingFieldServiceTest {
         verify(onboardingFieldRepository).save(any(TenantOnboardingField.class));
         assertEquals("SSN Number", field.getFieldLabel());
     }
+    @org.junit.jupiter.api.AfterEach void clear() { org.springframework.security.core.context.SecurityContextHolder.clearContext(); }
 }

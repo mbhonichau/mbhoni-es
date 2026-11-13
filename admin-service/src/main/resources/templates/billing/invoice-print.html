@@ -97,8 +97,8 @@
                     <span class="small text-muted" th:text="${invoice.notes != null && !invoice.notes.isBlank() ? invoice.notes : 'Monthly recurrent suite billing & support package'}">Service details</span>
                 </td>
                 <td class="text-center">1</td>
-                <td class="text-end" th:text="'R ' + ${invoice.subtotal}">R 0.00</td>
-                <td class="text-end fw-bold" th:text="'R ' + ${invoice.subtotal}">R 0.00</td>
+                <td class="text-end" th:text="${invoice.currency != null ? invoice.currency : 'Unspecified currency'} + ' ' + ${invoice.subtotal}">R 0.00</td>
+                <td class="text-end fw-bold" th:text="${invoice.currency != null ? invoice.currency : 'Unspecified currency'} + ' ' + ${invoice.subtotal}">R 0.00</td>
             </tr>
             </tbody>
         </table>
@@ -119,24 +119,24 @@
             <div class="summary-box ms-auto">
                 <div class="d-flex justify-content-between mb-2 small">
                     <span class="text-muted">Subtotal:</span>
-                    <strong th:text="'R ' + ${invoice.subtotal}">R 0.00</strong>
+                    <strong th:text="${invoice.currency != null ? invoice.currency : 'Unspecified currency'} + ' ' + ${invoice.subtotal}">R 0.00</strong>
                 </div>
                 <div class="d-flex justify-content-between mb-2 small">
                     <span class="text-muted">VAT (15%):</span>
-                    <strong th:text="'R ' + ${invoice.taxAmount}">R 0.00</strong>
+                    <strong th:text="${invoice.currency != null ? invoice.currency : 'Unspecified currency'} + ' ' + ${invoice.taxAmount}">R 0.00</strong>
                 </div>
                 <hr class="my-2">
                 <div class="d-flex justify-content-between mb-2">
                     <span class="fw-bold">Total Amount:</span>
-                    <strong class="fs-5 text-dark" th:text="'R ' + ${invoice.totalAmount}">R 0.00</strong>
+                    <strong class="fs-5 text-dark" th:text="${invoice.currency != null ? invoice.currency : 'Unspecified currency'} + ' ' + ${invoice.totalAmount}">R 0.00</strong>
                 </div>
                 <div class="d-flex justify-content-between mb-2 small text-success">
                     <span>Amount Paid:</span>
-                    <strong th:text="'R ' + ${invoice.amountPaid}">R 0.00</strong>
+                    <strong th:text="${invoice.currency != null ? invoice.currency : 'Unspecified currency'} + ' ' + ${invoice.amountPaid}">R 0.00</strong>
                 </div>
                 <div class="d-flex justify-content-between pt-2 border-top">
                     <span class="fw-bold text-danger">Balance Due:</span>
-                    <strong class="fs-5 text-danger" th:text="'R ' + ${invoice.balanceDue}">R 0.00</strong>
+                    <strong class="fs-5 text-danger" th:text="${invoice.currency != null ? invoice.currency : 'Unspecified currency'} + ' ' + ${invoice.balanceDue}">R 0.00</strong>
                 </div>
             </div>
         </div>
@@ -150,3 +150,4 @@
 
 </body>
 </html>
+

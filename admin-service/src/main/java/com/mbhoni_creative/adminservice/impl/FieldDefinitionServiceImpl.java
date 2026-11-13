@@ -21,19 +21,22 @@ public class FieldDefinitionServiceImpl implements FieldDefinitionService {
     private final FieldDefinitionRepository fieldDefinitionRepository;
     private final TenantRepository tenantRepository;
     private final TenantSecurityService tenantSecurityService;
+    private final com.mbhoni_creative.config.TenantGovernance governance;
 
     public FieldDefinitionServiceImpl(
             FieldDefinitionRepository fieldDefinitionRepository,
             TenantRepository tenantRepository,
-            TenantSecurityService tenantSecurityService) {
+            TenantSecurityService tenantSecurityService, com.mbhoni_creative.config.TenantGovernance governance) {
         this.fieldDefinitionRepository = fieldDefinitionRepository;
         this.tenantRepository = tenantRepository;
         this.tenantSecurityService = tenantSecurityService;
+        this.governance = governance;
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<FieldDefinition> getEffectiveSchema(Long tenantId, FieldSection section) {
+        assertAccess(tenantId);
         return fieldDefinitionRepository.findActiveFieldsWithFallback(tenantId, section);
     }
 
@@ -49,7 +52,9 @@ public class FieldDefinitionServiceImpl implements FieldDefinitionService {
 
     @Override
     public FieldDefinition createField(Long tenantId, FieldDefinition definition) {
-        assertAccess(tenantId);
+        governance.requireDefaultsWrite(tenantId);
+        if (definition.getId() != null) throw new IllegalArgumentException("Create cannot supply an existing field ID");
+        if (tenantId != null) tenantRepository.lockById(tenantId).orElseThrow();
         if (definition.getSection() == null) {
             throw new IllegalArgumentException("FieldSection is required.");
         }
@@ -83,9 +88,7 @@ public class FieldDefinitionServiceImpl implements FieldDefinitionService {
 
     @Override
     public FieldDefinition updateField(Long tenantId, Long fieldId, FieldDefinition dto) {
-        assertAccess(tenantId);
-        FieldDefinition existing = fieldDefinitionRepository.findById(fieldId)
-                .orElseThrow(() -> new RuntimeException("FieldDefinition not found ID: " + fieldId));
+        FieldDefinition existing = writableField(tenantId, fieldId);
 
         if (dto.getLabel() != null && !dto.getLabel().isBlank()) {
             existing.setLabel(dto.getLabel());
@@ -105,9 +108,7 @@ public class FieldDefinitionServiceImpl implements FieldDefinitionService {
 
     @Override
     public void deactivateField(Long tenantId, Long fieldId) {
-        assertAccess(tenantId);
-        FieldDefinition existing = fieldDefinitionRepository.findById(fieldId)
-                .orElseThrow(() -> new RuntimeException("FieldDefinition not found ID: " + fieldId));
+        FieldDefinition existing = writableField(tenantId, fieldId);
 
         // Soft deactivation only — no hard delete once EmployeeFieldValue rows reference it!
         existing.setActive(false);
@@ -119,8 +120,25 @@ public class FieldDefinitionServiceImpl implements FieldDefinitionService {
             return;
         }
         Long currentTenantId = tenantSecurityService.getCurrentTenantId();
-        if (currentTenantId == null || (tenantId != null && !currentTenantId.equals(tenantId))) {
-            throw new RuntimeException("Access denied: Tenant ID " + tenantId);
+        if (currentTenantId == null || !currentTenantId.equals(tenantId)) {
+            throw new org.springframework.security.access.AccessDeniedException("Access denied: Tenant ID " + tenantId);
         }
+    }
+
+    private FieldDefinition writableField(Long tenantId, Long fieldId) {
+        governance.requireDefaultsWrite(tenantId);
+        if (tenantId != null) tenantRepository.lockById(tenantId).orElseThrow();
+        FieldDefinition stored = fieldDefinitionRepository.findById(fieldId).orElseThrow();
+        Long owner = stored.getTenant() == null ? null : stored.getTenant().getId();
+        if (owner != null && !owner.equals(tenantId)) throw new org.springframework.security.access.AccessDeniedException("Field belongs to another tenant");
+        if (owner != null || tenantId == null) return stored;
+        return fieldDefinitionRepository.findByTenantIdAndSectionAndFieldKey(tenantId, stored.getSection(), stored.getFieldKey())
+                .orElseGet(() -> {
+                    FieldDefinition copy = new FieldDefinition(); copy.setTenant(tenantRepository.findById(tenantId).orElseThrow());
+                    copy.setSection(stored.getSection()); copy.setFieldKey(stored.getFieldKey()); copy.setLabel(stored.getLabel());
+                    copy.setDataType(stored.getDataType()); copy.setSelectOptions(stored.getSelectOptions());
+                    copy.setRequired(stored.isRequired()); copy.setActive(stored.isActive()); copy.setDisplayOrder(stored.getDisplayOrder());
+                    copy.setValidationRule(stored.getValidationRule()); return copy;
+                });
     }
 }

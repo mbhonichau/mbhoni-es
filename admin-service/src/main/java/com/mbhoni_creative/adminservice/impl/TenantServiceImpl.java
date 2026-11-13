@@ -11,6 +11,10 @@ import com.mbhoni_creative.adminentity.Tenant;
 import com.mbhoni_creative.adminrepository.TenantRepository;
 import com.mbhoni_creative.adminservice.TenantService;
 import com.mbhoni_creative.adminservice.NotificationService;
+import com.mbhoni_creative.adminservice.AuditLogService;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import com.mbhoni_creative.config.TenantSecurityService;
 import com.mbhoni_creative.adminentity.IndustryProfile;
 import com.mbhoni_creative.adminrepository.IndustryProfileRepository;
@@ -25,6 +29,8 @@ public class TenantServiceImpl implements TenantService {
     private final TenantSecurityService tenantSecurityService;
     private final IndustryProfileRepository industryProfileRepository;
     private final NotificationService notificationService;
+    private final AuditLogService auditLogService;
+    private final com.mbhoni_creative.billing.TenantPurgeService purge;
     @PersistenceContext
     private EntityManager entityManager;
 
@@ -33,13 +39,15 @@ public class TenantServiceImpl implements TenantService {
             TenantSecurityService tenantSecurityService,
             IndustryProfileRepository industryProfileRepository,
             NotificationService notificationService,
-            EntityManager entityManager) {
+            EntityManager entityManager, AuditLogService auditLogService, com.mbhoni_creative.billing.TenantPurgeService purge) {
 
         this.tenantRepository = tenantRepository;
         this.tenantSecurityService = tenantSecurityService;
         this.industryProfileRepository = industryProfileRepository;
         this.notificationService = notificationService;
         this.entityManager = entityManager;
+        this.auditLogService = auditLogService;
+        this.purge = purge;
     }
 
     // =====================================================
@@ -103,18 +111,37 @@ public class TenantServiceImpl implements TenantService {
     @Transactional
     public TenantDto updateTenant(Long id, TenantDto dto) {
 
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (!tenantSecurityService.isGlobalAdmin() && (authentication == null ||
+                authentication.getAuthorities().stream().noneMatch(a -> "TENANT_EDIT".equals(a.getAuthority())))) {
+            throw new AccessDeniedException("Tenant editing permission is required");
+        }
+
         Tenant tenant = tenantRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Tenant not found"));
 
         assertTenantAccess(tenant);
 
         boolean wasActive = tenant.isActive();
+        if (wasActive != dto.isActive()) {
+            if (!tenantSecurityService.isGlobalAdmin()) {
+                throw new AccessDeniedException("Only platform administrators may override tenant activation");
+            }
+            if (dto.getChangeReason() == null || dto.getChangeReason().isBlank()) {
+                throw new IllegalArgumentException("A reason is required for activation overrides");
+            }
+        }
         
         tenant.setName(dto.getName());
         tenant.setActive(dto.isActive());
         tenant.setIndustryProfile(resolveIndustryProfile(dto.getIndustryProfileId()));
 
         Tenant updatedTenant = tenantRepository.save(tenant);
+
+        if (wasActive != dto.isActive()) {
+            auditLogService.logForTenant(id, "TENANT_ACTIVATION_OVERRIDE", "TENANT", String.valueOf(id),
+                    "Activation changed from " + wasActive + " to " + dto.isActive() + ": " + dto.getChangeReason().trim());
+        }
 
         if (wasActive && !dto.isActive()) {
             notificationService.sendTenantSuspensionAlert(tenant.getName(), "Deactivated by admin");
@@ -130,84 +157,10 @@ public class TenantServiceImpl implements TenantService {
     @Override
     @Transactional
     public void deleteTenant(Long id) {
-
         assertGlobalAdmin();
-
-        Tenant tenant = tenantRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Tenant not found"));
-
-        // Step 1: Disassociate employee manager references & delete employees
-        entityManager.createQuery("UPDATE Employee e SET e.manager = NULL WHERE e.tenant.id = :id")
-                .setParameter("id", id).executeUpdate();
-        entityManager.createQuery("DELETE FROM Employee e WHERE e.tenant.id = :id")
-                .setParameter("id", id).executeUpdate();
-
-        // Step 2: Delete user_roles join records & user records
-        entityManager.createNativeQuery("DELETE FROM user_roles WHERE user_id IN (SELECT id FROM users WHERE tenant_id = :id)")
-                .setParameter("id", id).executeUpdate();
-        entityManager.createQuery("DELETE FROM User u WHERE u.tenant.id = :id")
-                .setParameter("id", id).executeUpdate();
-
-        // Step 3: Delete contract milestones & contracts
-        entityManager.createNativeQuery("DELETE FROM contract_milestones WHERE contract_id IN (SELECT id FROM contracts WHERE tenant_id = :id)")
-                .setParameter("id", id).executeUpdate();
-        entityManager.createQuery("DELETE FROM Contract c WHERE c.tenant.id = :id")
-                .setParameter("id", id).executeUpdate();
-
-        // Step 4: Delete payments, invoices & billing accounts
-        entityManager.createNativeQuery("DELETE FROM payments WHERE invoice_id IN (SELECT id FROM invoices WHERE tenant_id = :id)")
-                .setParameter("id", id).executeUpdate();
-        entityManager.createQuery("DELETE FROM Invoice i WHERE i.tenant.id = :id")
-                .setParameter("id", id).executeUpdate();
-        entityManager.createQuery("DELETE FROM BillingAccount b WHERE b.tenant.id = :id")
-                .setParameter("id", id).executeUpdate();
-
-        // Step 5: Disassociate org unit parents & delete organization units
-        entityManager.createQuery("UPDATE OrganizationUnit ou SET ou.parentUnit = NULL WHERE ou.tenant.id = :id")
-                .setParameter("id", id).executeUpdate();
-        entityManager.createQuery("DELETE FROM OrganizationUnit ou WHERE ou.tenant.id = :id")
-                .setParameter("id", id).executeUpdate();
-
-        // Step 6: Delete lookup codes & lookup categories
-        entityManager.createNativeQuery("DELETE FROM lookup_codes WHERE category_id IN (SELECT id FROM lookup_categories WHERE tenant_id = :id)")
-                .setParameter("id", id).executeUpdate();
-        entityManager.createQuery("DELETE FROM LookupCategory lc WHERE lc.tenant.id = :id")
-                .setParameter("id", id).executeUpdate();
-
-        // Step 7: Delete API keys & API key permissions
-        entityManager.createNativeQuery("DELETE FROM tenant_api_key_permissions WHERE api_key_id IN (SELECT id FROM tenant_api_keys WHERE tenant_id = :id)")
-                .setParameter("id", id).executeUpdate();
-        entityManager.createQuery("DELETE FROM TenantApiKey ak WHERE ak.tenant.id = :id")
-                .setParameter("id", id).executeUpdate();
-
-        // Step 8: Delete tenant-specific settings & configurations
-        entityManager.createQuery("DELETE FROM TenantSubscription ts WHERE ts.tenant.id = :id")
-                .setParameter("id", id).executeUpdate();
-        entityManager.createQuery("DELETE FROM TenantQuota tq WHERE tq.tenant.id = :id")
-                .setParameter("id", id).executeUpdate();
-        entityManager.createQuery("DELETE FROM TenantCustomization tc WHERE tc.tenant.id = :id")
-                .setParameter("id", id).executeUpdate();
-        entityManager.createQuery("DELETE FROM TenantSettings ts WHERE ts.tenant.id = :id")
-                .setParameter("id", id).executeUpdate();
-        entityManager.createQuery("DELETE FROM TenantOnboardingField tof WHERE tof.tenant.id = :id")
-                .setParameter("id", id).executeUpdate();
-        entityManager.createQuery("DELETE FROM TenantModule tm WHERE tm.tenant.id = :id")
-                .setParameter("id", id).executeUpdate();
-        entityManager.createQuery("DELETE FROM TenantContent tc WHERE tc.tenant.id = :id")
-                .setParameter("id", id).executeUpdate();
-        entityManager.createQuery("DELETE FROM TenantMetric tm WHERE tm.tenant.id = :id")
-                .setParameter("id", id).executeUpdate();
-
-        // Step 9: Delete role_permissions join records & tenant roles
-        entityManager.createNativeQuery("DELETE FROM role_permissions WHERE role_id IN (SELECT id FROM roles WHERE tenant_id = :id)")
-                .setParameter("id", id).executeUpdate();
-        entityManager.createQuery("DELETE FROM Role r WHERE r.tenant.id = :id")
-                .setParameter("id", id).executeUpdate();
-
-        // Step 10: Finally delete tenant
-        tenantRepository.delete(tenant);
+        if (!purge.purgeExpired(id))
+            throw new IllegalStateException("Tenant must be CANCELLED and its export retention expired before deletion");
     }
-
     // =====================================================
     // DTO MAPPING
     // =====================================================
@@ -249,7 +202,7 @@ public class TenantServiceImpl implements TenantService {
     private void assertGlobalAdmin() {
 
         if (!tenantSecurityService.isGlobalAdmin()) {
-            throw new RuntimeException("Access denied: global admin only");
+            throw new AccessDeniedException("Access denied: global admin only");
         }
     }
 
@@ -261,7 +214,7 @@ public class TenantServiceImpl implements TenantService {
 
         Long currentTenantId = tenantSecurityService.getCurrentTenantId();
         if (currentTenantId == null || !currentTenantId.equals(tenant.getId())) {
-            throw new RuntimeException("Access denied");
+            throw new AccessDeniedException("Access denied");
         }
     }
 }
