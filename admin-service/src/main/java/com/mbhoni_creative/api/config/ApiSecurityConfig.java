@@ -16,7 +16,7 @@ import org.springframework.security.web.savedrequest.NullRequestCache;
 public class ApiSecurityConfig {
     @Bean @Order(0)
     public SecurityFilterChain versionedApiChain(HttpSecurity http, ApiCredentialService credentials, ObjectMapper mapper) throws Exception {
-        return http.securityMatcher("/api/v1/**", "/api/docs/**", "/api/openapi.json")
+        return http.securityMatcher(ApiPaths.MATCHER)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .securityContext(s -> s.securityContextRepository(new NullSecurityContextRepository()))
                 .requestCache(s -> s.requestCache(new NullRequestCache()))
