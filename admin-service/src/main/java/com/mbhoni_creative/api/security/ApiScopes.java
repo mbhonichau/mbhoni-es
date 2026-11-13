@@ -11,7 +11,10 @@ public final class ApiScopes {
             "TENANT_VIEW", Set.of("tenant:read", "quotas:read"),
             "CUSTOMIZATION_VIEW", Set.of("branding:read"),
             "MODULE_VIEW", Set.of("modules:read"),
-            "SUBSCRIPTION_VIEW", Set.of("entitlements:read"));
+            "SUBSCRIPTION_VIEW", Set.of("entitlements:read"),
+            "API_EMPLOYEE_READ", Set.of("employees:read"),
+            "API_ORG_READ", Set.of("orgunits:read"),
+            "API_REFERENCE_READ", Set.of("reference:read"));
     public static Set<String> from(Collection<Permission> permissions) {
         return permissions.stream().flatMap(p -> PERMISSION_SCOPES.getOrDefault(p.getName(), Set.of()).stream())
                 .collect(Collectors.toUnmodifiableSet());

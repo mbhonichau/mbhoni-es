@@ -56,6 +56,11 @@ public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
+        if (com.mbhoni_creative.api.security.WorkforcePermissions.v1Only(apiKey)) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "This API key is restricted to /api/v1");
+            return;
+        }
+
         ApiKeyPrincipal principal = new ApiKeyPrincipal(apiKey);
         UsernamePasswordAuthenticationToken authentication =
                 new UsernamePasswordAuthenticationToken(principal, null, toAuthorities(apiKey));
@@ -66,7 +71,9 @@ public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
 
     private Set<GrantedAuthority> toAuthorities(TenantApiKey apiKey) {
         Set<GrantedAuthority> authorities = new HashSet<>();
-        authorities.add(new SimpleGrantedAuthority("API_KEY"));
+        if (!com.mbhoni_creative.api.security.WorkforcePermissions.v1Only(apiKey)) {
+            authorities.add(new SimpleGrantedAuthority("API_KEY"));
+        }
 
         for (Permission permission : apiKey.getPermissions()) {
             authorities.add(new SimpleGrantedAuthority(permission.getName()));

@@ -1,0 +1,115 @@
+diff --git a/admin-service/docs/api/README.md b/admin-service/docs/api/README.md
+index 8e10902..1483f74 100644
+--- a/admin-service/docs/api/README.md
++++ b/admin-service/docs/api/README.md
+@@ -104,0 +105,83 @@ This checkout already contained uncommitted billing/security work before Phase 1
++
++## Phase 2 workforce API
++
++All endpoints are read-only, require `X-API-Key`, return numeric Long IDs, and use the existing `{data,page}` envelope. List endpoints accept `page` (zero-based, default 0) and `size` (1–100, default 25). Invalid bounds are rejected, not clamped. Lists have stable ascending ID order. Out-of-range pages are empty with the correct filtered total.
++
++| Permission | Scope | Endpoints |
++| --- | --- | --- |
++| API_EMPLOYEE_READ | employees:read | /employees, /employees/{id}, /employee-fields |
++| API_ORG_READ | orgunits:read | /org-units |
++| API_REFERENCE_READ | reference:read | /reference/{type} |
++
++No existing permission gains a workforce scope. `EMPLOYEE_VIEW`, `ORG_VIEW` and `MASTER_DATA_VIEW` remain unmapped for v1. Phase 1 has no API-only permission names. `WorkforcePermissions.API_ONLY` is the single API-only set; a non-empty key containing only these permissions is v1-only. On the legacy chain that key receives 403 before controllers run, including routes that merely require authentication. The v1 chain checks scopes, never the `API_KEY` authority.
++
++**A key that also holds legacy permissions retains legacy access; create v1 integration keys with API-only permissions.** The current checkbox UI and key-creation service allow combining both kinds. Empty-permission keys retain their original legacy behavior and have no mapped v1 scopes. Startup adds only the three permission names, idempotently; it assigns no permissions to existing keys or roles. No schema migration is required.
++
++### Filters and visibility
++
++| Endpoint | Filters and behavior |
++| --- | --- |
++| GET /api/v1/employees | orgUnitId, status, updatedSince, page, size. Status is case-sensitive: ACTIVE, ON_LEAVE, PROBATION, SUSPENDED, TERMINATED. |
++| GET /api/v1/employees/{id} | Positive numeric ID. Missing, foreign-tenant and excluded employees all return 404 EMPLOYEE_NOT_FOUND. |
++| GET /api/v1/employee-fields | page, size. Safe effective global defaults plus tenant overrides. Inactive tenant definitions suppress the corresponding global default. |
++| GET /api/v1/org-units | updatedSince, page, size. Flat hierarchy; tree is unsupported and rejected. There is no status attribute in the existing org-unit model, so none is fabricated. |
++| GET /api/v1/reference/{type} | page, size. Only countries (COUNTRY), currencies (CURRENCY), employment-types (EMPLOYMENT_TYPE), employee-statuses (EMPLOYEE_STATUS). |
++
++Organization visibility is computed once per request from one tenant-scoped projection query. Isolated units and all descendants are excluded. Cycles, missing parents and foreign-tenant parent references are excluded fail-closed. Employees with no org unit remain visible. Exclusions apply before employee counts, pagination and updatedSince. An excluded or foreign orgUnitId behaves like a nonexistent ID: an empty list and totalElements 0. managerId is null when the manager is hidden or belongs to another tenant. Org parent IDs come only from visible tenant units.
++
++Reference category names are mapped from a fixed allowlist to bound SQL parameters, never interpolated into table or class names. Categories are data-driven and may be global or tenant-owned. Tenant code overrides take precedence; inactive tenant codes suppress global defaults. Only ID, code, value and locale are returned, never free-form metadata. No reference values are seeded by this phase; a supported type without configured records returns an empty list. These names refer to lookup categories, not Java enum expansion. Other category codes return 404 REFERENCE_TYPE_NOT_FOUND.
++
++### Incremental synchronization
++
++Phase 2 uses the server-local timestamp convention described above. Do not append Z to an unzoned stored datetime. ISO-8601 values with offsets are converted to the server JVM zone. The filter boundary is **inclusive (`>=`)** for employees and org units; the Phase 1 module filter remains strictly newer (`>`).
++
++An employee matches if its updatedAt OR any tenant-valid custom value's recordedAt is >= updatedSince. SQL uses EXISTS, not per-employee queries. The returned updatedAt is the latest of those timestamps, including hidden custom fields so a permitted synchronization can detect a changed employee without receiving the sensitive value. Values linked to foreign-tenant definitions are ignored. Custom values have no audited updatedAt; the existing save service refreshes recordedAt on writes.
++
++Deletions of custom values and changes to field definitions are not detected. Organization isolation changes can also change visibility without changing an employee timestamp. Run a periodic full resync (for example nightly) and reconcile removed records. Poll with updatedSince set to the **last successful sync's start time**, using a small overlap and deduplicating by ID. Keep the watermark until every page succeeds. Concurrent writes can shift offset pages; the overlap and periodic full resync remain necessary. Null timestamps do not match a non-null filter; full resync includes those rows. No updatedSince parameter is offered for definitions or reference data.
++
++### Data deliberately excluded
++
++The employee DTO explicitly exposes only id, employeeNumber, firstName, lastName, jobTitle, status, employmentType, orgUnitId, managerId, startDate, updatedAt and safe customFields. Summary and detail currently share the same disclosure boundary.
++
++Excluded core data: email (not confirmed work-only), workPhone, nationalId, taxNumber, licenseNumber, licenseCategory, licenseExpiryDate, emergencyContactName, emergencyContactPhone, emergencyContactRelation, residentialAddress, complianceEmploymentStatus, backgroundCheckStatus, serviceProvider, terminationDate, costCenter, raw extendedAttributesJson, user/userId, tenant entities, organization entities, createdAt, createdBy and updatedBy. Salary, banking, passport, date of birth, personal contact, medical/disciplinary and attachment content are not added through dynamic data. The API never serializes a JPA entity.
++
++`WorkforceFieldPolicy` is the single disclosure policy for both definitions and custom values. Known seed keys (including tenant overrides of those keys) must have an explicit safe decision and the expected section and type. Unknown global definitions are excluded. Tenant-created fields must pass section/type restrictions and normalized key AND label checks. BACKGROUND_CHECK, FILE and GPS_COORD are always excluded. Case and punctuation are normalized; sensitive patterns include identity, id number, national ID, clearance, vetting, license/licence, permit, passport, bank, account, salary, compensation, payroll, wage, tax, medical/health, disciplinary, birth/DOB, emergency, contact, phone/mobile, email, address/residence/residential, personal, document/attachment, GPS/latitude/longitude. Ambiguous duplicate field keys across sections are omitted from employee customFields. Custom values remain strings. Only SELECT definitions expose allowedOptions; validation expressions are not exposed.
++
++Keyword checks cannot prove arbitrary tenant-authored fields are non-sensitive. Review tenant field configuration and the proposed sensitivity-flag migration before broader exposure. Full seeded-definition decisions are in phase2-report.md.
++
++### Examples
++
++Set BASE to the service URL and API_KEY to a v1-only key. The following responses illustrate the contract; IDs and values are examples.
++
++```bash
++curl -H "X-API-Key: $API_KEY" "$BASE/api/v1/employees?size=25&status=ACTIVE&updatedSince=2026-11-10T08:15:00"
++```
++```json
++{"data":[{"id":101,"employeeNumber":"E101","firstName":"Avery","lastName":"Mokoena","jobTitle":"Engineer","status":"ACTIVE","employmentType":"FULL_TIME","orgUnitId":10,"managerId":null,"startDate":"2024-03-01","updatedAt":"2026-11-10T08:15:00","customFields":{"shirt_size":"M"}}],"page":{"number":0,"size":25,"totalElements":1}}
++```
++```bash
++curl -H "X-API-Key: $API_KEY" "$BASE/api/v1/employees/101"
++```
++```json
++{"data":{"id":101,"employeeNumber":"E101","firstName":"Avery","lastName":"Mokoena","jobTitle":"Engineer","status":"ACTIVE","employmentType":"FULL_TIME","orgUnitId":10,"managerId":null,"startDate":"2024-03-01","updatedAt":"2026-11-10T08:15:00","customFields":{"shirt_size":"M"}}}
++```
++```bash
++curl -H "X-API-Key: $API_KEY" "$BASE/api/v1/employee-fields?size=25"
++```
++```json
++{"data":[{"id":20,"key":"shirt_size","label":"Shirt size","section":"FIELD_ASSIGNMENT","type":"TEXT","required":false,"allowedOptions":[],"displayOrder":1}],"page":{"number":0,"size":25,"totalElements":1}}
++```
++```bash
++curl -H "X-API-Key: $API_KEY" "$BASE/api/v1/org-units?updatedSince=2026-11-10T08:15:00"
++```
++```json
++{"data":[{"id":10,"name":"Engineering","code":"ENG","parentId":null,"type":"DEPARTMENT","updatedAt":"2026-11-10T08:15:00"}],"page":{"number":0,"size":25,"totalElements":1}}
++```
++```bash
++curl -H "X-API-Key: $API_KEY" "$BASE/api/v1/reference/countries"
++```
++```json
++{"data":[{"id":1,"code":"ZA","value":"South Africa","locale":"en_ZA"}],"page":{"number":0,"size":25,"totalElements":1}}
++```
++
++Missing credentials: 401 UNAUTHENTICATED. Missing scope: 403 FORBIDDEN. Malformed timestamps, status or IDs: 400 INVALID_FILTER. Invalid pagination: 400 INVALID_PAGE_PARAMS. Employee lookup: 404 EMPLOYEE_NOT_FOUND. Unknown reference type: 404 REFERENCE_TYPE_NOT_FOUND. There is no org-unit detail endpoint; invalid orgUnitId filters return empty results instead of ORG_UNIT_NOT_FOUND. Errors use the Phase 1 problem-details infrastructure; successful reads never create rows.
+diff --git a/admin-service/src/main/java/com/mbhoni_creative/adminservice/impl/ApiKeyServiceImpl.java b/admin-service/src/main/java/com/mbhoni_creative/adminservice/impl/ApiKeyServiceImpl.java
+index 5625b75..840c720 100644
+--- a/admin-service/src/main/java/com/mbhoni_creative/adminservice/impl/ApiKeyServiceImpl.java
++++ b/admin-service/src/main/java/com/mbhoni_creative/adminservice/impl/ApiKeyServiceImpl.java
+@@ -96 +96 @@ public class ApiKeyServiceImpl implements ApiKeyService {
+-        return permissionRepository.findByNameIn(ALLOWED_API_PERMISSIONS);
++        return permissionRepository.findByNameIn(allowedApiPermissions());
+@@ -204 +204 @@ public class ApiKeyServiceImpl implements ApiKeyService {
+-            if (!ALLOWED_API_PERMISSIONS.contains(permission.getName())) {
++            if (!allowedApiPermissions().contains(permission.getName())) {
+@@ -211,0 +212,6 @@ public class ApiKeyServiceImpl implements ApiKeyService {
++    private static Set<String> allowedApiPermissions() {
++        Set<String> allowed = new HashSet<>(ALLOWED_API_PERMISSIONS);
++        allowed.addAll(com.mbhoni_creative.api.security.WorkforcePermissions.API_ONLY);
++        return allowed;
++    }
++
+diff --git a/admin-service/src/main/java/com/mbhoni_creative/api/security/ApiScopes.java b/admin-service/src/main/java/com/mbhoni_creative/api/security/ApiScopes.java
+index ca82725..dfd7539 100644
+--- a/admin-service/src/main/java/com/mbhoni_creative/api/security/ApiScopes.java
++++ b/admin-service/src/main/java/com/mbhoni_creative/api/security/ApiScopes.java
+@@ -14 +14,4 @@ public final class ApiScopes {
+-            "SUBSCRIPTION_VIEW", Set.of("entitlements:read"));
++            "SUBSCRIPTION_VIEW", Set.of("entitlements:read"),
++            "API_EMPLOYEE_READ", Set.of("employees:read"),
++            "API_ORG_READ", Set.of("orgunits:read"),
++            "API_REFERENCE_READ", Set.of("reference:read"));
