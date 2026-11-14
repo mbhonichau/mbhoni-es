@@ -30,7 +30,7 @@ public class ApiKeyFilter extends OncePerRequestFilter {
                     scopes.forEach(scope -> authorities.add(new SimpleGrantedAuthority("SCOPE_" + scope)));
                     if (!scopes.isEmpty()) authorities.add(new SimpleGrantedAuthority("API_V1"));
                     var context = SecurityContextHolder.createEmptyContext();
-                    context.setAuthentication(new UsernamePasswordAuthenticationToken(principal, null, authorities));
+                    context.setAuthentication(new ApiKeyAuthentication(principal, authorities));
                     SecurityContextHolder.setContext(context); TenantContext.setTenantId(principal.getTenantId());
                 } catch (org.springframework.security.core.AuthenticationException ex) {
                     ApiProblems.write(mapper, response, 401, "UNAUTHENTICATED", "A valid API key is required"); return;

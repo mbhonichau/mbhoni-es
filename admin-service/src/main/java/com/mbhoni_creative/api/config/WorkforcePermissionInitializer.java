@@ -15,6 +15,8 @@ public class WorkforcePermissionInitializer implements ApplicationRunner {
     @Override @Transactional
     public void run(ApplicationArguments args) {
         for (String name : WorkforcePermissions.API_ONLY) {
+            // Billing catalogue entries are initialized separately; writes are reserved for Phase 3b.
+            if (name.startsWith("API_BILLING_")) continue;
             // MySQL atomic upsert also supports concurrent application starts.
             jdbc.update("INSERT INTO permissions(name, description) VALUES (?, ?) ON DUPLICATE KEY UPDATE name = name",
                     name, "Read-only v1 workforce API permission");

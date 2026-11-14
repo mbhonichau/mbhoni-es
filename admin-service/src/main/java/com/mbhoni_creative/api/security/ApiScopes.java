@@ -14,7 +14,8 @@ public final class ApiScopes {
             "SUBSCRIPTION_VIEW", Set.of("entitlements:read"),
             "API_EMPLOYEE_READ", Set.of("employees:read"),
             "API_ORG_READ", Set.of("orgunits:read"),
-            "API_REFERENCE_READ", Set.of("reference:read"));
+            "API_REFERENCE_READ", Set.of("reference:read"),
+            "API_BILLING_READ", Set.of("billing:read"));
     public static Set<String> from(Collection<Permission> permissions) {
         return permissions.stream().flatMap(p -> PERMISSION_SCOPES.getOrDefault(p.getName(), Set.of()).stream())
                 .collect(Collectors.toUnmodifiableSet());
