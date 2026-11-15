@@ -20,7 +20,7 @@ class BillingReadContractTest {
         var read=new Permission();read.setName("API_BILLING_READ");
         var write=new Permission();write.setName("API_BILLING_WRITE");
         assertEquals(Set.of("billing:read"),ApiScopes.from(Set.of(read)));
-        assertTrue(ApiScopes.from(Set.of(write)).isEmpty(),"Writes are not enabled in Phase 3a");
+        assertEquals(Set.of("billing:write"),ApiScopes.from(Set.of(write)));
         var key=new TenantApiKey();key.setPermissions(Set.of(read,write));assertTrue(WorkforcePermissions.v1Only(key));
         var old=new Permission();old.setName("BILLING_VIEW");key.setPermissions(Set.of(read,old));assertFalse(WorkforcePermissions.v1Only(key));
         assertTrue(ApiScopes.from(Set.of(old)).isEmpty());

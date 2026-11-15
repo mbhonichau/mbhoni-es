@@ -41,7 +41,14 @@ class WorkforcePermissionTest {
         prior.forEach((name,scopes)->assertEquals(scopes,ApiScopes.from(key(name).getPermissions())));
         for(String name:List.of("EMPLOYEE_VIEW","ORG_VIEW","MASTER_DATA_VIEW","USER_EDIT","UNKNOWN"))
             assertTrue(ApiScopes.from(key(name).getPermissions()).isEmpty());
-        for(String name:WorkforcePermissions.API_ONLY) assertTrue(ApiScopes.from(key(name).getPermissions()).stream().allMatch(s->s.endsWith(":read")));
+        for(String name:WorkforcePermissions.API_ONLY) {
+            var scopes=ApiScopes.from(key(name).getPermissions());
+            if(name.equals("API_BILLING_WRITE")) assertEquals(Set.of("billing:write"),scopes);
+            else assertTrue(scopes.stream().allMatch(s->s.endsWith(":read")));
+            assertTrue(WorkforcePermissions.v1Only(key(name)));
+        }
+        assertEquals(Set.of("billing:write"),ApiScopes.PERMISSION_SCOPES.values().stream()
+                .flatMap(Set::stream).filter(scope->scope.endsWith(":write")).collect(Collectors.toSet()));
     }
     @Test void creationServiceAllowsApiOnlyOrMixedGrantsWithoutChangingExistingKeys() throws Exception {
         var permissions=mock(PermissionRepository.class); var keys=mock(TenantApiKeyRepository.class);
