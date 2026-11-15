@@ -188,12 +188,12 @@ Missing credentials: 401 UNAUTHENTICATED. Missing scope: 403 FORBIDDEN. Malforme
 
 ## Phase 3a tenant billing reads
 
-Phase 3a is GET-only. `/api/v1/invoices` represents **TenantInvoice, the tenant's customer invoices**, not Stripe subscription `Invoice` records. Billing accounts, payment details and Stripe identifiers are outside this API. No POST, PUT, PATCH, DELETE, sending, approval, payment, voiding or quotation conversion is exposed.
+Phase 3a introduced billing GETs; Phase 3b adds only the two draft POSTs documented below. `/api/v1/invoices` represents **TenantInvoice, the tenant's customer invoices**, not Stripe subscription `Invoice` records. Billing accounts, payment details and Stripe identifiers are outside this API. No PUT, PATCH, DELETE, sending, approval, payment, voiding or quotation conversion is exposed.
 
-| Permission | Scope in Phase 3a | Behavior |
+| Permission | Scope | Behavior |
 | --- | --- | --- |
 | API_BILLING_READ | billing:read | All six billing GET endpoints |
-| API_BILLING_WRITE | None yet | Reserved for Phase 3b; does not enable reads or writes |
+| API_BILLING_WRITE | billing:write | Only invoice and quotation draft POSTs, when the deployment switch is enabled; grants no reads |
 
 Both permission names are included in the single `WorkforcePermissions.API_ONLY` constant along with the three workforce permissions. The unchanged legacy filter rejects keys containing only names from this set, including billing-only keys. Mixed keys retain legacy access. The catalogue initializers add names only; no existing key or role receives grants. Workforce initialization continues to seed its three workforce names; BillingPermissionInitializer handles the billing names separately. No dependency, entity, existing controller, UI owner check or global AuditorAware has changed.
 
@@ -257,8 +257,70 @@ List responses wrap the same DTOs in an array and add `"page":{"number":0,"size"
 
 ### V13 storage and Phase 3b boundary
 
-V13 creates only api_idempotency and its expiry index. It stores tenant_id, api_key_id, a case-sensitive binary idempotency_key, SHA-256 request_hash, response_status/body/location, resource_id, created_at and expires_at. UNIQUE(tenant_id,idempotency_key) gives tenant-wide key identity across integrations. The tenant FK cascades tenant deletion; api_key_id is retained as historical attribution without a key-deletion cascade. A key is intended to be 1–128 printable ASCII characters; storage uses VARBINARY(128) to avoid MySQL collation folding. These header limits, canonicalization, replay, in-flight conflicts and the proposed 24-hour lifetime are **not active endpoint contracts yet**: no POST or idempotency writer exists in Phase 3a. No cleanup job is started for the unused table. V14, expiry/retry handling and atomic document creation are Phase 3b work.
+### Before enabling writes in production
 
-The v1 Authentication now reports API_KEY:<id> through getName(), so the unchanged JPA auditor can attribute future v1 writes. A real-JPA regression verifies API attribution and unchanged UI username attribution. No audit write is made on GET. Future create operations must also record key ID, tenant, endpoint, idempotency key and resource ID with the existing audit service.
+The Phase 3b deployment switch is `api.billing.writes.enabled`, with environment variable `API_BILLING_WRITES_ENABLED=false` and a default of false. When disabled, both POST endpoints return 403 `API_WRITES_DISABLED` for write-scoped keys. Reads are unaffected. Startup logs a WARN when enabled; startup is not blocked.
 
-**Expense writes are not drafts.** In the existing model a new expense immediately contributes to the expense page's totalExpenses and netProfit calculation. That page currently uses paid Stripe subscription invoices for revenue. This report-impact concern must be reviewed before enabling expense POSTs in Phase 3b. No expense write is available now.
+**Do not enable in production until the aggregate exclusion task is complete.** API drafts count in UI aggregates, appear in the owner export (including their status), and advance count-based UI document numbering. New unpaid drafts contribute zero to Total Collected. Existing export, aggregate and UI numbering behavior is retained. See [the draft follow-up](draft-aggregate-followup.md).
+
+- [ ] Aggregate exclusion fix applied
+- [ ] Export handling of drafts resolved
+- [ ] UI numbering fix applied, or the accountant confirms gaps are acceptable
+- [ ] Accountant sign-off on the numbering series
+- [ ] Enable for one test tenant first
+
+The switch is deployment-wide, not tenant-specific: restrict initial rollout to a controlled deployment and grant `API_BILLING_WRITE` only to the test tenant's integration key.
+
+### Existing V13 implementation
+
+V13 creates api_idempotency and its expiry index. It stores tenant_id, api_key_id, a case-sensitive binary idempotency_key, SHA-256 request_hash, response_status/body/location, resource_id, created_at and expires_at. UNIQUE(tenant_id,idempotency_key) gives tenant-wide key identity across integrations. The tenant FK cascades tenant deletion; api_key_id is retained as historical attribution without a key-deletion cascade. Phase 3b activates this storage with the contract below.
+
+The v1 Authentication reports API_KEY:<id> through getName(), so the unchanged JPA auditor attributes API drafts to the key ID. Regression tests verify API attribution and unchanged UI username attribution. No audit write is made on GET. Creates record key ID, tenant, endpoint, idempotency key and resource ID with the existing audit service; raw credentials are never logged.
+
+**Expense creation is not available through the API and remains deferred beyond Phase 3b.** In the existing model a new expense immediately contributes to the expense page's totalExpenses and netProfit calculation. That page currently uses paid Stripe subscription invoices for revenue. Expense GETs remain available.
+
+## Phase 3b draft creation
+
+`POST /api/v1/invoices` and `POST /api/v1/quotations` require `billing:write`, an active tenant derived from the authenticated key, and the enabled deployment switch. A write-only key receives 403 on every other v1 path/method, including GETs. Add the relevant read permission separately. Legacy API-only key restrictions remain unchanged. No user is impersonated.
+
+Requests accept only customerName (required, 255 characters), optional customerEmail (255), customerPhone (50), customerAddress (500), notes (1000), issueDate, dueDate (invoice) or validUntilDate (quotation), and items. Notes can carry reference text. Dates are required, end date cannot precede issue date, and supported years are 1900–9999. Each of 1–200 items requires a nonblank description (255), quantity and unitPrice. Body limit is 262144 characters. Unknown fields, duplicate JSON members and trailing JSON are rejected; this strict parsing is local to these API endpoints. Clients cannot set IDs, tenant, number, status, totals, tax, currency, attribution or timestamps.
+
+Quantity and money values are **decimal strings**, with no exponent, sign, grouping or leading zeroes except zero itself, and at most two fractional digits. Zero is permitted by the existing domain. Quantity and unitPrice cannot exceed `9999999999.99`; calculated line and document totals must also fit that bound. Numeric JSON money is rejected with 400; invalid decimal strings or overflowing totals return 422. Responses return money strings at scale two and numeric Long IDs.
+
+The existing service applies **15% tax to every line**, and API-created drafts inherit that behavior through the same entity calculation methods. No client tax rate is accepted. Stored line totals can sum to a different value from the stored document total because of rounding; the document total is authoritative. Example: two lines at quantity `1.00`, price `0.03` yield line sum `0.06` and document total `0.07`. There is no document currency column or request currency field. A tenant with multi-currency enabled receives 422 `MULTI_CURRENCY_TENANT_UNSUPPORTED` on new creation; a currency property is unknown JSON and returns 400.
+
+```bash
+curl -i -X POST "$BASE/api/v1/invoices" \
+  -H "X-API-Key: $API_KEY" -H "Content-Type: application/json" \
+  -H "Idempotency-Key: invoice-order-42" \
+  --data '{"customerName":"Example customer","issueDate":"2026-11-15","dueDate":"2026-12-15","notes":"Order 42","items":[{"description":"Service","quantity":"1.00","unitPrice":"100.00"}]}'
+# Retry after timeout or 5xx: repeat this exact request with invoice-order-42.
+
+curl -i -X POST "$BASE/api/v1/quotations" \
+  -H "X-API-Key: $API_KEY" -H "Content-Type: application/json" \
+  -H "Idempotency-Key: quotation-order-42" \
+  --data '{"customerName":"Example customer","issueDate":"2026-11-15","validUntilDate":"2026-12-15","items":[{"description":"Service","quantity":"1.00","unitPrice":"100.00"}]}'
+```
+
+Both return 201 with a `Location` header such as `/api/v1/invoices/123` and `{"data":...}` using the corresponding read DTO, including lines and stored totals. Status is always DRAFT. V14 allocates `API-INV-000001` and `API-QUO-000001`, separately per tenant and document type. These are **not the UI series**; API rows nevertheless advance the UI's existing count-based allocator, which can cause skipped UI numbers. No existing number constraints or allocator code changed. Gaps are acceptable in API allocation; no promise of statutory gapless numbering is made.
+
+### Idempotency and retries
+
+`Idempotency-Key` is required: 1–128 visible ASCII characters (code points 33–126, no spaces), case-sensitive. Scope is the tenant, across endpoints and keys. The hash includes method, endpoint and JSON with sorted object properties; whitespace and property order do not matter, array order and decimal-string spelling do. Repeating the same key/body replays stored status, body and Location without writing another document or audit event. Another authorized key in the same tenant shares that key namespace. Another tenant cannot collide with or replay it.
+
+The document, sequence, audit and idempotency result commit in one transaction. A non-waiting tenant row lock protects concurrent requests and lazy sequence creation across instances; a row lock also protects sequence allocation. Contention, including distinct concurrent writes for the same tenant, returns 409 `IDEMPOTENCY_IN_PROGRESS`. Retry with the same key and jittered backoff. Different tenants allocate independently.
+
+Keys expire 24 hours after successful creation. An hourly API-package cleanup removes expired rows using UTC time; lazy expiry also works without cleanup. Reusing an expired key can create a new document. Retry safely with the same key on timeouts and 5xx **within that window**; after expiry, reconcile the resource before retrying. Never reuse a key for a different body. Completed replay is still allowed if the tenant later enables multi-currency, but requires write scope, active tenant access and the writes switch.
+
+| Status | Code / cause |
+| --- | --- |
+| 400 | INVALID_REQUEST: malformed/unknown/controlled fields, numeric money, duplicate JSON, invalid dates or oversized body |
+| 400 | IDEMPOTENCY_KEY_REQUIRED or INVALID_IDEMPOTENCY_KEY |
+| 401 | UNAUTHENTICATED |
+| 403 | FORBIDDEN: missing scope or tenant access; API_WRITES_DISABLED: deployment switch off |
+| 409 | IDEMPOTENCY_IN_PROGRESS: tenant write lock busy or incomplete stored result |
+| 422 | IDEMPOTENCY_KEY_REUSED: different body or endpoint |
+| 422 | INVALID_MONEY, VALIDATION_FAILED, MULTI_CURRENCY_TENANT_UNSUPPORTED |
+| 500 | INTERNAL_ERROR: transaction fails; retry with the same key |
+
+V14 is an additive new table only. To roll back deployment, disable writes and roll back application code while retaining V13/V14 rows; dropping the sequence after use risks number reuse. No backfill or destructive down migration is required. Payslips, webhook delivery, provisioning and expense POSTs are not part of this phase.
