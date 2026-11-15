@@ -32,6 +32,12 @@ public class ApiKeyFilter extends OncePerRequestFilter {
                     var context = SecurityContextHolder.createEmptyContext();
                     context.setAuthentication(new ApiKeyAuthentication(principal, authorities));
                     SecurityContextHolder.setContext(context); TenantContext.setTenantId(principal.getTenantId());
+                    String path=request.getServletPath();
+                    if(path==null||path.isEmpty()) path=request.getRequestURI().substring(request.getContextPath().length());
+                    if (scopes.equals(java.util.Set.of("billing:write")) && !(request.getMethod().equals("POST")
+                            && java.util.Set.of("/api/v1/invoices", "/api/v1/quotations").contains(path))) {
+                        ApiProblems.write(mapper, response, 403, "FORBIDDEN", "Required API scope is missing"); return;
+                    }
                 } catch (org.springframework.security.core.AuthenticationException ex) {
                     ApiProblems.write(mapper, response, 401, "UNAUTHENTICATED", "A valid API key is required"); return;
                 } catch (RuntimeException ex) {

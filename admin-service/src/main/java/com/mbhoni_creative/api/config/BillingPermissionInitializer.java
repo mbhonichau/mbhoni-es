@@ -16,7 +16,7 @@ public class BillingPermissionInitializer implements ApplicationRunner {
         for (String name : WorkforcePermissions.API_ONLY) {
             if (!name.startsWith("API_BILLING_")) continue;
             jdbc.update("INSERT INTO permissions(name, description) VALUES (?, ?) ON DUPLICATE KEY UPDATE name = name",
-                    name, name.endsWith("WRITE") ? "Reserved for Phase 3b; no write scope granted" : "Read tenant-issued billing documents through v1");
+                    name, name.endsWith("WRITE") ? "Create invoice and quotation drafts through v1 when billing writes are enabled" : "Read tenant-issued billing documents through v1");
         }
     }
 }
