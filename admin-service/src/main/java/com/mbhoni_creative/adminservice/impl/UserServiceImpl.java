@@ -38,6 +38,7 @@ public class UserServiceImpl implements UserService {
     private final TenantSecurityService tenantSecurityService;
     private final NotificationService notificationService;
     private final AuditLogService auditLogService;
+    private final com.mbhoni_creative.adminrepository.TenantQuotaRepository quotaRepository;
 
     public UserServiceImpl(UserRepository userRepository,
                            RoleRepository roleRepository,
@@ -46,7 +47,7 @@ public class UserServiceImpl implements UserService {
                            PasswordEncoder passwordEncoder,
                            TenantSecurityService tenantSecurityService,
                            NotificationService notificationService,
-                           AuditLogService auditLogService) {
+                           AuditLogService auditLogService, com.mbhoni_creative.adminrepository.TenantQuotaRepository quotaRepository) {
 
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
@@ -56,6 +57,7 @@ public class UserServiceImpl implements UserService {
         this.tenantSecurityService = tenantSecurityService;
         this.notificationService = notificationService;
         this.auditLogService = auditLogService;
+        this.quotaRepository = quotaRepository;
     }
 
     @Override
@@ -159,6 +161,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         enforceTenantAccess(user);
+        com.mbhoni_creative.config.OwnerProtection.requireSelfForOwner(user);
 
         userRepository.findByUsername(dto.getUsername())
                 .filter(existing -> !existing.getId().equals(user.getId()))
@@ -190,6 +193,9 @@ public class UserServiceImpl implements UserService {
 
         if (tenantSecurityService.isGlobalAdmin()) {
             Tenant newTenant = resolveTenant(dto);
+            if (com.mbhoni_creative.config.OwnerProtection.isOwner(user)
+                    && (newTenant == null || !newTenant.getId().equals(originalTenant.getId())))
+                throw new org.springframework.security.access.AccessDeniedException("Transfer ownership before moving the Owner");
 
             if (newTenant != null &&
                 (originalTenant == null || !originalTenant.getId().equals(newTenant.getId()))) {
@@ -203,7 +209,7 @@ public class UserServiceImpl implements UserService {
             user.setPassword(passwordEncoder.encode(dto.getPassword()));
         }
 
-        user.setRoles(mapRoles(dto, user.getTenant()));
+        if (!com.mbhoni_creative.config.OwnerProtection.isOwner(user)) user.setRoles(mapRoles(dto, user.getTenant()));
 
         userRepository.save(user);
         
@@ -224,6 +230,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         enforceTenantAccess(user);
+        com.mbhoni_creative.config.OwnerProtection.rejectOwnerRemoval(user);
 
         userRepository.delete(user);
         
@@ -244,6 +251,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         enforceTenantAccess(user);
+        com.mbhoni_creative.config.OwnerProtection.requireSelfForOwner(user);
 
         user.setPassword(passwordEncoder.encode(newPassword));
         user.setPasswordChangeRequired(false);
@@ -344,6 +352,7 @@ public class UserServiceImpl implements UserService {
     }
 
     private void validateRolesForTenant(Set<Role> selectedRoles, Tenant targetTenant) {
+        com.mbhoni_creative.config.OwnerProtection.rejectOwnerAssignment(selectedRoles);
 
         Long targetTenantId = targetTenant != null ? targetTenant.getId() : null;
 
@@ -406,14 +415,12 @@ public class UserServiceImpl implements UserService {
             return;
         }
 
+        tenantRepository.lockById(tenant.getId()).orElseThrow(() -> new IllegalStateException("Tenant not found"));
+
         TenantSubscription subscription = tenantSubscriptionRepository.findByTenant(tenant)
                 .orElse(null);
 
-        if (subscription == null ||
-            subscription.getPlan() == null ||
-            subscription.getPlan().getMaxUsers() == null) {
-            return;
-        }
+        if (subscription == null || subscription.getPlan() == null) throw new IllegalStateException("Tenant subscription required");
         
         if (subscription.getStatus() == SubscriptionStatus.SUSPENDED ||
         	    subscription.getStatus() == SubscriptionStatus.CANCELLED) {
@@ -422,12 +429,15 @@ public class UserServiceImpl implements UserService {
         	    );
         	}
 
-        int maxUsers = subscription.getPlan().getMaxUsers();
-        long currentUsers = userRepository.countByTenant(tenant);
+        if (!tenant.isActive()) throw new IllegalStateException("Tenant is inactive");
+        Integer maxUsers = quotaRepository.findByTenantId(tenant.getId()).map(com.mbhoni_creative.adminentity.TenantQuota::getMaxUsers)
+                .orElse(subscription.getPlan().getMaxUsers());
+        if (maxUsers == null) return;
+        long currentUsers = userRepository.countByTenantAndActiveTrue(tenant);
 
         if (currentUsers >= maxUsers) {
             throw new RuntimeException(
-                    "User limit reached for this tenant's subscription plan. Limit: " + maxUsers
+                    "Active seat limit reached (" + maxUsers + "). Existing users retain access; upgrade or deactivate a user before adding another."
             );
         }
     }

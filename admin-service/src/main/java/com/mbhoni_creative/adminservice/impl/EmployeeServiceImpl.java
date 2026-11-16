@@ -26,6 +26,8 @@ import com.mbhoni_creative.adminrepository.OrganizationUnitRepository;
 import com.mbhoni_creative.adminrepository.TenantRepository;
 import com.mbhoni_creative.adminservice.EmployeeService;
 import com.mbhoni_creative.adminservice.FieldDefinitionService;
+import com.mbhoni_creative.config.TenantAccessService;
+import org.springframework.security.access.AccessDeniedException;
 
 @Service
 @Transactional
@@ -37,6 +39,9 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final FieldDefinitionService fieldDefinitionService;
     private final EmployeeFieldValueRepository fieldValueRepository;
     private final com.mbhoni_creative.adminrepository.PayslipRepository payslipRepository;
+    private final TenantAccessService tenantAccessService;
+    private final com.mbhoni_creative.config.OrganizationAccessService organizationAccess;
+    private final com.mbhoni_creative.adminrepository.UserRepository users;
 
     public EmployeeServiceImpl(
             EmployeeRepository employeeRepository,
@@ -44,37 +49,67 @@ public class EmployeeServiceImpl implements EmployeeService {
             OrganizationUnitRepository orgUnitRepository,
             FieldDefinitionService fieldDefinitionService,
             EmployeeFieldValueRepository fieldValueRepository,
-            com.mbhoni_creative.adminrepository.PayslipRepository payslipRepository) {
+            com.mbhoni_creative.adminrepository.PayslipRepository payslipRepository,
+            TenantAccessService tenantAccessService, com.mbhoni_creative.config.OrganizationAccessService organizationAccess,
+            com.mbhoni_creative.adminrepository.UserRepository users) {
         this.employeeRepository = employeeRepository;
         this.tenantRepository = tenantRepository;
         this.orgUnitRepository = orgUnitRepository;
         this.fieldDefinitionService = fieldDefinitionService;
         this.fieldValueRepository = fieldValueRepository;
         this.payslipRepository = payslipRepository;
+        this.tenantAccessService = tenantAccessService;
+        this.organizationAccess = organizationAccess;
+        this.users = users;
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<Employee> getEmployeesByTenant(Long tenantId) {
-        return tenantId != null ? employeeRepository.findByTenantId(tenantId) : employeeRepository.findAll();
+        tenantId = tenantAccessService.resolveAccessibleTenantId(tenantId);
+        return (tenantId != null ? employeeRepository.findByTenantId(tenantId) : employeeRepository.findAll()).stream()
+                .filter(e -> organizationAccess.canAccess(e.getOrganizationUnit())).toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public Employee getEmployeeById(Long id) {
-        return employeeRepository.findById(id)
+        Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Employee not found with ID: " + id));
+        requireEmployeeAccess(employee);
+        return employee;
     }
 
     @Override
     @Transactional(readOnly = true)
     public Employee getEmployeeByNumber(String employeeNumber) {
-        return employeeRepository.findByEmployeeNumber(employeeNumber)
+        Employee employee = employeeRepository.findByEmployeeNumber(employeeNumber)
                 .orElseThrow(() -> new RuntimeException("Employee not found with number: " + employeeNumber));
+        requireEmployeeAccess(employee);
+        return employee;
     }
 
     @Override
     public Employee saveEmployee(Long tenantId, Long orgUnitId, Long managerId, Employee employee) {
+        tenantAccessService.requireAccess(tenantId);
+        Tenant tenant = tenantRepository.lockById(tenantId).orElseThrow(() -> new IllegalArgumentException("Tenant not found"));
+        if (employee.getId() != null) {
+            Employee existing = getEmployeeById(employee.getId());
+            if (existing.getTenant() == null || !tenantId.equals(existing.getTenant().getId())) {
+                throw new AccessDeniedException("Employee does not belong to the requested tenant");
+            }
+        }
+        OrganizationUnit requestedOrg = orgUnitId == null ? null : orgUnitRepository.findById(orgUnitId).orElseThrow();
+        if (requestedOrg != null && (requestedOrg.getTenant() == null || !tenantId.equals(requestedOrg.getTenant().getId())))
+            throw new AccessDeniedException("Organization must belong to the employee tenant");
+        organizationAccess.requireAccess(requestedOrg);
+        Employee requestedManager = managerId == null ? null : getEmployeeById(managerId);
+        java.util.Set<Long> visitedManagers = new java.util.HashSet<>();
+        for (Employee manager = requestedManager; manager != null; manager = manager.getManager()) {
+            if (manager.getTenant() == null || !tenantId.equals(manager.getTenant().getId())) throw new AccessDeniedException("Manager must belong to the employee tenant");
+            if (!visitedManagers.add(manager.getId()) || (employee.getId() != null && employee.getId().equals(manager.getId())))
+                throw new IllegalArgumentException("Employee manager cycle");
+        }
         // Enforce immutable compliance state-machine & system core invariants
         if (employee.getFirstName() == null || employee.getFirstName().isBlank()) {
             throw new IllegalArgumentException("First Name is a mandatory system core invariant and cannot be empty.");
@@ -118,38 +153,24 @@ public class EmployeeServiceImpl implements EmployeeService {
                 existing.setBackgroundCheckStatus(employee.getBackgroundCheckStatus());
             }
 
-            if (orgUnitId != null) {
-                OrganizationUnit orgUnit = orgUnitRepository.findById(orgUnitId).orElse(null);
-                existing.setOrganizationUnit(orgUnit);
-            } else {
-                existing.setOrganizationUnit(null);
-            }
-
-            if (managerId != null) {
-                Employee manager = employeeRepository.findById(managerId).orElse(null);
-                existing.setManager(manager);
-            } else {
-                existing.setManager(null);
-            }
+            existing.setOrganizationUnit(requestedOrg);
+            existing.setManager(requestedManager);
 
             validateComplianceStatusGates(existing);
 
             return employeeRepository.save(existing);
         }
 
-        Tenant tenant = tenantRepository.findById(tenantId)
-                .orElseThrow(() -> new RuntimeException("Tenant not found with ID: " + tenantId));
+        if (employee.getUser() != null) {
+            Long userId = employee.getUser().getId();
+            if (userId == null) throw new IllegalArgumentException("Employee user must already exist");
+            employee.setUser(users.findByIdAndTenantId(userId, tenantId)
+                    .orElseThrow(() -> new AccessDeniedException("Employee user must belong to this tenant")));
+        }
         employee.setTenant(tenant);
 
-        if (orgUnitId != null) {
-            OrganizationUnit orgUnit = orgUnitRepository.findById(orgUnitId).orElse(null);
-            employee.setOrganizationUnit(orgUnit);
-        }
-
-        if (managerId != null) {
-            Employee manager = employeeRepository.findById(managerId).orElse(null);
-            employee.setManager(manager);
-        }
+        employee.setOrganizationUnit(requestedOrg);
+        employee.setManager(requestedManager);
 
         if (employee.getBackgroundCheckStatus() == BackgroundCheckStatus.PASSED) {
             if (employee.getStatus() == null) {
@@ -185,7 +206,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         Employee employee = getEmployeeById(id);
 
         // Cascade disassociate managed employees
-        List<Employee> managed = employeeRepository.findAll().stream()
+        List<Employee> managed = employeeRepository.findByTenantId(employee.getTenant().getId()).stream()
                 .filter(e -> e.getManager() != null && e.getManager().getId().equals(id))
                 .collect(Collectors.toList());
         for (Employee emp : managed) {
@@ -280,6 +301,11 @@ public class EmployeeServiceImpl implements EmployeeService {
                 }
             }
         }
+    }
+
+    private void requireEmployeeAccess(Employee employee) {
+        tenantAccessService.requireAccess(employee.getTenant() != null ? employee.getTenant().getId() : null);
+        organizationAccess.requireAccess(employee.getOrganizationUnit());
     }
 
     private void validateComplianceStatusGates(Employee employee) {

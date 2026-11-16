@@ -1,0 +1,104 @@
+diff --git a/admin-service/docs/api/README.md b/admin-service/docs/api/README.md
+index 1483f74..6cbd328 100644
+--- a/admin-service/docs/api/README.md
++++ b/admin-service/docs/api/README.md
+@@ -187,0 +188,77 @@ Missing credentials: 401 UNAUTHENTICATED. Missing scope: 403 FORBIDDEN. Malforme
++
++## Phase 3a tenant billing reads
++
++Phase 3a is GET-only. `/api/v1/invoices` represents **TenantInvoice, the tenant's customer invoices**, not Stripe subscription `Invoice` records. Billing accounts, payment details and Stripe identifiers are outside this API. No POST, PUT, PATCH, DELETE, sending, approval, payment, voiding or quotation conversion is exposed.
++
++| Permission | Scope in Phase 3a | Behavior |
++| --- | --- | --- |
++| API_BILLING_READ | billing:read | All six billing GET endpoints |
++| API_BILLING_WRITE | None yet | Reserved for Phase 3b; does not enable reads or writes |
++
++Both permission names are included in the single `WorkforcePermissions.API_ONLY` constant along with the three workforce permissions. The unchanged legacy filter rejects keys containing only names from this set, including billing-only keys. Mixed keys retain legacy access. The catalogue initializers add names only; no existing key or role receives grants. Workforce initialization continues to seed its three workforce names; BillingPermissionInitializer handles the billing names separately. No dependency, entity, existing controller, UI owner check or global AuditorAware has changed.
++
++| GET endpoint | Result and filters |
++| --- | --- |
++| /api/v1/invoices | Tenant customer invoices with stored line items; status, dateFrom/dateTo (issueDate), updatedSince, page, size |
++| /api/v1/invoices/{id} | Invoice and stored line items |
++| /api/v1/quotations | Quotations with stored line items; status, dateFrom/dateTo (issueDate), updatedSince, page, size |
++| /api/v1/quotations/{id} | Quotation and stored line items |
++| /api/v1/expenses | Expenses; dateFrom/dateTo (expenseDate), updatedSince, page, size |
++| /api/v1/expenses/{id} | Expense; no status or line items exist in this model |
++
++IDs are JSON numbers and positive numeric path parameters. Lists sort by id ascending, use page=0 and size=25 by default, and reject size outside 1–100. Date ranges include both endpoints; reversed ranges are invalid. Status names are case-sensitive. Unknown/duplicate list parameters are rejected. There is no customer ID relation: customer details and expense categories/vendors are strings, so customerId is unsupported and returns INVALID_FILTER. Expenses reject status rather than inventing a lifecycle. The three models have no employee/org-unit relations, so there are no linked isolated records to filter; tenant scoping is enforced on every parent and item query. No organization association is inferred from names, notes or descriptions.
++
++updatedSince uses the server-local convention documented above, with an inclusive >= boundary. Invoice and quotation filtering includes either the parent updatedAt or any line item's updatedAt; responses report their latest timestamp. Expense filtering uses its own updatedAt. A foreign tenant's parent cannot contribute items or timestamps. Deletions have no tombstones. Use overlap, deduplicate by ID, and periodically take full snapshots; offset pages can move during concurrent updates. Null timestamps do not match a supplied watermark.
++
++### Stored money and currency
++
++All amounts, quantities and tax rates are decimal strings from stored BigDecimal values, never JSON floating-point numbers. GET does not recalculate, re-round, or normalize unknown currency. No authoritative single operating-currency field was found in Tenant, TenantSettings, IndustryProfile or BillingAccount. A country or multi-currency toggle is not a currency label. Therefore **currency is omitted**: amounts are in the tenant's operating currency with no per-document label. Reads work even when multiCurrencyEnabled is true. A nullable persisted currency field is a recommended later migration, not applied here.
++
++The stored document total is authoritative. Stored line totals may sum to a different amount because the existing code rounds each line but calculates document tax from unrounded line bases. Examples verified for both invoices and quotations:
++
++| Input at the existing 15 percent default | Sum of stored line totals | Stored document total |
++| --- | --- | --- |
++| 2 lines, quantity 1.00, price 0.03 | 0.06 | 0.07 |
++| 100 lines, quantity 1.00, price 0.03 | 3.00 | 3.45 |
++| 3 lines, quantity 0.33, price 0.05 | 0.06 | 0.06 |
++
++The existing UI save service constructs invoice and quotation lines with a **15.00% tax default for every line**, without a VAT-registered, tax-exempt or zero-rate decision from tenant settings. This is unsuitable for exempt, zero-rated or non-VAT cases and requires a separate business fix. Phase 3a only returns stored data and changes no tax rules.
++
++### Disclosure and errors
++
++Invoice/quotation responses expose ID, number, customer name, status, dates, stored totals, updatedAt and explicit line DTOs. Invoices also expose stored amountPaid. Expense responses expose ID, expenseDate, vendor, category, reference, amount, taxAmount and updatedAt. Excluded: customer contact/address/tax numbers, internal notes, payment terms, expense paymentMethod, billing-account details, bank/payment credentials, gateway tokens/Stripe IDs, raw entity relationships, convertedInvoiceId, cost/margin figures and createdBy/updatedBy/createdAt. Line descriptions and counterparty names are intentionally business data returned under billing:read; they are not logged by these endpoints.
++
++401 UNAUTHENTICATED means no valid key; 403 FORBIDDEN means missing read scope. Invalid IDs, statuses, dates or unsupported filters return 400 INVALID_FILTER; invalid paging returns 400 INVALID_PAGE_PARAMS. Missing and foreign resources are indistinguishable 404 INVOICE_NOT_FOUND, QUOTATION_NOT_FOUND or EXPENSE_NOT_FOUND. Every GET is read-only and creates no session, cookie, settings, document or idempotency row.
++
++### Read examples
++
++```bash
++curl -H "X-API-Key: $API_KEY" "$BASE/api/v1/invoices?status=DRAFT&dateFrom=2026-01-01&size=25"
++curl -H "X-API-Key: $API_KEY" "$BASE/api/v1/invoices/1"
++```
++```json
++{"data":{"id":1,"number":"INV-2026-001","customer":"Example customer","status":"DRAFT","issueDate":"2026-01-01","dueDate":"2026-02-01","subtotal":"10.00","taxAmount":"1.50","totalAmount":"11.50","amountPaid":"0.00","updatedAt":"2026-01-01T10:00:00","items":[{"id":1,"description":"Service","quantity":"1.00","unitPrice":"10.00","taxRate":"15.00","totalAmount":"11.50"}]}}
++```
++```bash
++curl -H "X-API-Key: $API_KEY" "$BASE/api/v1/quotations?updatedSince=2026-01-01T00:00:00"
++curl -H "X-API-Key: $API_KEY" "$BASE/api/v1/quotations/1"
++```
++```json
++{"data":{"id":1,"number":"QT-2026-001","customer":"Example customer","status":"DRAFT","issueDate":"2026-01-01","validUntilDate":"2026-01-15","subtotal":"10.00","taxAmount":"1.50","totalAmount":"11.50","updatedAt":"2026-01-01T10:00:00","items":[{"id":1,"description":"Service","quantity":"1.00","unitPrice":"10.00","taxRate":"15.00","totalAmount":"11.50"}]}}
++```
++```bash
++curl -H "X-API-Key: $API_KEY" "$BASE/api/v1/expenses?dateFrom=2026-01-01&dateTo=2026-01-31"
++curl -H "X-API-Key: $API_KEY" "$BASE/api/v1/expenses/1"
++```
++```json
++{"data":{"id":1,"expenseDate":"2026-01-01","vendor":"Example vendor","category":"SUPPLIES","reference":"REF1","amount":"1250.50","taxAmount":"100.00","updatedAt":"2026-01-01T10:00:00"}}
++```
++List responses wrap the same DTOs in an array and add `"page":{"number":0,"size":25,"totalElements":1}`. Dates, IDs and values above are illustrative.
++
++### V13 storage and Phase 3b boundary
++
++V13 creates only api_idempotency and its expiry index. It stores tenant_id, api_key_id, a case-sensitive binary idempotency_key, SHA-256 request_hash, response_status/body/location, resource_id, created_at and expires_at. UNIQUE(tenant_id,idempotency_key) gives tenant-wide key identity across integrations. The tenant FK cascades tenant deletion; api_key_id is retained as historical attribution without a key-deletion cascade. A key is intended to be 1–128 printable ASCII characters; storage uses VARBINARY(128) to avoid MySQL collation folding. These header limits, canonicalization, replay, in-flight conflicts and the proposed 24-hour lifetime are **not active endpoint contracts yet**: no POST or idempotency writer exists in Phase 3a. No cleanup job is started for the unused table. V14, expiry/retry handling and atomic document creation are Phase 3b work.
++
++The v1 Authentication now reports API_KEY:<id> through getName(), so the unchanged JPA auditor can attribute future v1 writes. A real-JPA regression verifies API attribution and unchanged UI username attribution. No audit write is made on GET. Future create operations must also record key ID, tenant, endpoint, idempotency key and resource ID with the existing audit service.
++
++**Expense writes are not drafts.** In the existing model a new expense immediately contributes to the expense page's totalExpenses and netProfit calculation. That page currently uses paid Stripe subscription invoices for revenue. This report-impact concern must be reviewed before enabling expense POSTs in Phase 3b. No expense write is available now.
+diff --git a/admin-service/src/main/java/com/mbhoni_creative/api/config/WorkforcePermissionInitializer.java b/admin-service/src/main/java/com/mbhoni_creative/api/config/WorkforcePermissionInitializer.java
+index 32173e4..10aae96 100644
+--- a/admin-service/src/main/java/com/mbhoni_creative/api/config/WorkforcePermissionInitializer.java
++++ b/admin-service/src/main/java/com/mbhoni_creative/api/config/WorkforcePermissionInitializer.java
+@@ -17,0 +18,2 @@ public class WorkforcePermissionInitializer implements ApplicationRunner {
++            // Billing catalogue entries are initialized separately; writes are reserved for Phase 3b.
++            if (name.startsWith("API_BILLING_")) continue;
+diff --git a/admin-service/src/main/java/com/mbhoni_creative/api/security/ApiKeyFilter.java b/admin-service/src/main/java/com/mbhoni_creative/api/security/ApiKeyFilter.java
+index a775ea0..6395776 100644
+--- a/admin-service/src/main/java/com/mbhoni_creative/api/security/ApiKeyFilter.java
++++ b/admin-service/src/main/java/com/mbhoni_creative/api/security/ApiKeyFilter.java
+@@ -33 +33 @@ public class ApiKeyFilter extends OncePerRequestFilter {
+-                    context.setAuthentication(new UsernamePasswordAuthenticationToken(principal, null, authorities));
++                    context.setAuthentication(new ApiKeyAuthentication(principal, authorities));
+diff --git a/admin-service/src/main/java/com/mbhoni_creative/api/security/ApiScopes.java b/admin-service/src/main/java/com/mbhoni_creative/api/security/ApiScopes.java
+index dfd7539..4c59d8e 100644
+--- a/admin-service/src/main/java/com/mbhoni_creative/api/security/ApiScopes.java
++++ b/admin-service/src/main/java/com/mbhoni_creative/api/security/ApiScopes.java
+@@ -17 +17,2 @@ public final class ApiScopes {
+-            "API_REFERENCE_READ", Set.of("reference:read"));
++            "API_REFERENCE_READ", Set.of("reference:read"),
++            "API_BILLING_READ", Set.of("billing:read"));

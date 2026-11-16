@@ -25,6 +25,8 @@ public class TenantSecurityService {
             return customUser.getTenantId();
         }
 
+        if (principal instanceof ApiKeyPrincipal apiKey) return apiKey.getTenantId();
+
         return null;
     }
 

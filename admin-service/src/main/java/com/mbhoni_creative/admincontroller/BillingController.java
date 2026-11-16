@@ -36,6 +36,7 @@ import com.mbhoni_creative.config.TenantAccessService;
 @RequestMapping("/billing")
 public class BillingController {
 
+    @org.springframework.beans.factory.annotation.Autowired private com.mbhoni_creative.billing.StripeInvoiceService stripeInvoices;
     private final BillingService billingService;
     private final TenantService tenantService;
     private final TenantSecurityService tenantSecurityService;
@@ -164,57 +165,6 @@ public class BillingController {
         return "billing/invoices";
     }
 
-    @PostMapping("/invoices/create")
-    @PreAuthorize("hasAuthority('BILLING_CREATE')")
-    public String createInvoice(
-            @RequestParam Long tenantId,
-            @RequestParam BigDecimal subtotal,
-            @RequestParam(defaultValue = "0") BigDecimal taxAmount,
-            @RequestParam(required = false) LocalDate issueDate,
-            @RequestParam(required = false) LocalDate dueDate,
-            @RequestParam(required = false) String notes,
-            RedirectAttributes redirectAttributes) {
-
-        tenantAccessService.requireAccess(tenantId);
-        billingService.createInvoice(
-                tenantId,
-                subtotal,
-                taxAmount,
-                issueDate,
-                dueDate,
-                notes
-        );
-
-        redirectAttributes.addFlashAttribute("successMessage", "Invoice created successfully.");
-
-        return "redirect:/billing/invoices";
-    }
-
-    @PostMapping("/payments/create")
-    @PreAuthorize("hasAuthority('BILLING_EDIT')")
-    public String recordPayment(
-            @RequestParam Long invoiceId,
-            @RequestParam BigDecimal amount,
-            @RequestParam PaymentMethod paymentMethod,
-            @RequestParam(required = false) String reference,
-            @RequestParam(required = false) String notes,
-            RedirectAttributes redirectAttributes) {
-
-        Invoice invoice = billingService.getInvoiceById(invoiceId);
-        requireInvoiceAccess(invoice);
-        billingService.recordPayment(
-                invoiceId,
-                amount,
-                paymentMethod,
-                reference,
-                notes
-        );
-
-        redirectAttributes.addFlashAttribute("successMessage", "Payment recorded successfully.");
-
-        return "redirect:/billing/invoices";
-    }
-    
     @PostMapping("/invoices/view")
     @PreAuthorize("hasAuthority('BILLING_VIEW')")
     public String invoiceDetail(
@@ -230,31 +180,13 @@ public class BillingController {
         return "billing/invoice-detail";
     }
     
-    @PostMapping("/invoices/generate")
-    @PreAuthorize("hasAuthority('BILLING_CREATE')")
-    public String generateInvoiceFromSubscription(
-            @RequestParam Long tenantId,
-            @RequestParam(required = false) LocalDate issueDate,
-            @RequestParam(required = false) LocalDate dueDate,
-            @RequestParam(required = false) String notes,
-            RedirectAttributes redirectAttributes) {
-
-        tenantAccessService.requireAccess(tenantId);
-        billingService.generateInvoiceFromSubscription(
-                tenantId,
-                issueDate,
-                dueDate,
-                notes
-        );
-
-        redirectAttributes.addFlashAttribute(
-                "successMessage",
-                "Subscription invoice generated successfully."
-        );
-
+    @PostMapping("/invoices/sync")
+    @PreAuthorize("hasAuthority('BILLING_VIEW')")
+    public String synchronizeInvoices(@RequestParam Long tenantId, RedirectAttributes redirectAttributes) {
+        stripeInvoices.refresh(tenantId);
+        redirectAttributes.addFlashAttribute("successMessage", "Subscription invoices synchronized from Stripe.");
         return "redirect:/billing/invoices";
     }
-    
     @PostMapping("/invoices/refresh-overdue")
     @PreAuthorize("hasAuthority('BILLING_EDIT')")
     public String refreshOverdueInvoices(
@@ -427,6 +359,14 @@ public class BillingController {
             @ModelAttribute Expense expense,
             RedirectAttributes redirectAttributes) {
 
+        if (expense.getId() != null) {
+            Expense stored = expenseRepository.findById(expense.getId()).orElseThrow();
+            tenantAccessService.requireAccess(stored.getTenant() == null ? null : stored.getTenant().getId());
+            if (expense.getTenant() != null && (stored.getTenant() == null || !stored.getTenant().getId().equals(expense.getTenant().getId())))
+                throw new org.springframework.security.access.AccessDeniedException("Expense tenant cannot be reassigned");
+            expense.setTenant(stored.getTenant());
+        }
+
         Long tenantId = tenantSecurityService.getCurrentTenantId();
         if (expense.getTenant() != null) {
             tenantAccessService.requireAccess(expense.getTenant().getId());
@@ -470,3 +410,4 @@ public class BillingController {
                 invoice != null && invoice.getTenant() != null ? invoice.getTenant().getId() : null);
     }
 }
+

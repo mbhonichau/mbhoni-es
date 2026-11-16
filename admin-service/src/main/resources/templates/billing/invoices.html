@@ -99,101 +99,18 @@
                 </form>
             </section>
             
-            <section class="form-panel mb-4" sec:authorize="hasAuthority('BILLING_CREATE')">
-			    <h3 class="panel-title">Generate From Subscription</h3>
-			
-			    <form th:action="@{/billing/invoices/generate}" method="post">
-			        <div class="form-grid">
-			            <div>
-			                <label class="form-label">Tenant</label>
-			                <select name="tenantId" class="form-select" required>
-			                    <option value="">Choose tenant</option>
-			                    <option th:each="tenant : ${tenants}"
-			                            th:value="${tenant.id}"
-			                            th:text="${tenant.name}">
-			                        Tenant
-			                    </option>
-			                </select>
-			            </div>
-			
-			            <div>
-			                <label class="form-label">Issue Date</label>
-			                <input type="date" name="issueDate" class="form-control">
-			            </div>
-			
-			            <div>
-			                <label class="form-label">Due Date</label>
-			                <input type="date" name="dueDate" class="form-control">
-			            </div>
-			        </div>
-			
-			        <div class="mt-4">
-			            <label class="form-label">Notes</label>
-			            <textarea name="notes" class="form-control" rows="2"
-			                      placeholder="Optional invoice note"></textarea>
-			        </div>
-			
-			        <div class="form-actions">
-			            <button type="submit" class="btn btn-primary">
-			                <i class="bi bi-arrow-repeat"></i>
-			                Generate Invoice
-			            </button>
-			        </div>
-			    </form>
-			</section>
-
-            <section class="form-panel mb-4" sec:authorize="hasAuthority('BILLING_CREATE')">
-                <h3 class="panel-title">Create Manual Invoice</h3>
-
-                <form th:action="@{/billing/invoices/create}" method="post">
-                    <div class="form-grid">
-                        <div>
-                            <label class="form-label">Tenant</label>
-                            <select name="tenantId" class="form-select" required>
-                                <option value="">Choose tenant</option>
-                                <option th:each="tenant : ${tenants}"
-                                        th:value="${tenant.id}"
-                                        th:text="${tenant.name}">
-                                    Tenant
-                                </option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label class="form-label">Subtotal</label>
-                            <input type="number" name="subtotal" class="form-control" min="0" step="0.01" required>
-                        </div>
-
-                        <div>
-                            <label class="form-label">Tax Amount</label>
-                            <input type="number" name="taxAmount" class="form-control" min="0" step="0.01" value="0">
-                        </div>
-
-                        <div>
-                            <label class="form-label">Issue Date</label>
-                            <input type="date" name="issueDate" class="form-control">
-                        </div>
-
-                        <div>
-                            <label class="form-label">Due Date</label>
-                            <input type="date" name="dueDate" class="form-control">
-                        </div>
-                    </div>
-
-                    <div class="mt-4">
-                        <label class="form-label">Notes</label>
-                        <textarea name="notes" class="form-control" rows="2"></textarea>
-                    </div>
-
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-receipt"></i>
-                            Create Invoice
-                        </button>
-                    </div>
+            <section class="form-panel mb-4">
+                <h3 class="panel-title">Subscription invoices</h3>
+                <p>Stripe calculates subscription charges and tax. Open an invoice to pay or download it.</p>
+                <form th:action="@{/billing/invoices/sync}" method="post">
+                    <label class="form-label">Tenant</label>
+                    <select name="tenantId" class="form-select" required>
+                        <option th:each="tenant : ${tenants}" th:value="${tenant.id}" th:text="${tenant.name}"></option>
+                    </select>
+                    <button type="submit" class="btn btn-primary mt-3">Refresh from Stripe</button>
                 </form>
+                <a th:href="@{/tenant/invoices}">Create customer invoices in tenant bookkeeping</a>
             </section>
-
             <section class="data-panel">
                 <div class="table-responsive">
                     <table class="table align-middle mb-0 admin-table">
@@ -235,11 +152,11 @@
                             </td>
 
                             <td>
-                                <strong th:text="'R ' + ${invoice.totalAmount}">R 0.00</strong>
+                                <strong th:text="${invoice.currency != null ? invoice.currency : 'Unspecified currency'} + ' ' + ${invoice.totalAmount}">R 0.00</strong>
                             </td>
 
                             <td>
-                                <span th:text="'R ' + ${invoice.amountPaid}">R 0.00</span>
+                                <span th:text="${invoice.currency != null ? invoice.currency : 'Unspecified currency'} + ' ' + ${invoice.amountPaid}">R 0.00</span>
                             </td>
 
                             <td>
@@ -309,3 +226,5 @@
 <script th:src="@{/js/sidebar.js}"></script>
 </body>
 </html>
+
+

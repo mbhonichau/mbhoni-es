@@ -8,6 +8,7 @@ import com.mbhoni_creative.adminentity.LookupCategory;
 
 @Repository
 public interface LookupCategoryRepository extends JpaRepository<LookupCategory, Long> {
-    Optional<LookupCategory> findByCode(String code);
+    Optional<LookupCategory> findByCodeAndTenantId(String code, Long tenantId);
+    Optional<LookupCategory> findByCodeAndTenantIsNull(String code);
     List<LookupCategory> findByTenantIdOrTenantIsNull(Long tenantId);
 }

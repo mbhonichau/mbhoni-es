@@ -1,0 +1,21 @@
+diff --git a/admin-service/src/test/java/com/mbhoni_creative/api/BillingReadContractTest.java b/admin-service/src/test/java/com/mbhoni_creative/api/BillingReadContractTest.java
+index a486f17..3daa72b 100644
+--- a/admin-service/src/test/java/com/mbhoni_creative/api/BillingReadContractTest.java
++++ b/admin-service/src/test/java/com/mbhoni_creative/api/BillingReadContractTest.java
+@@ -23 +23 @@ class BillingReadContractTest {
+-        assertTrue(ApiScopes.from(Set.of(write)).isEmpty(),"Writes are not enabled in Phase 3a");
++        assertEquals(Set.of("billing:write"),ApiScopes.from(Set.of(write)));
+diff --git a/admin-service/src/test/java/com/mbhoni_creative/api/WorkforcePermissionTest.java b/admin-service/src/test/java/com/mbhoni_creative/api/WorkforcePermissionTest.java
+index 6f13fbf..0aa0d2c 100644
+--- a/admin-service/src/test/java/com/mbhoni_creative/api/WorkforcePermissionTest.java
++++ b/admin-service/src/test/java/com/mbhoni_creative/api/WorkforcePermissionTest.java
+@@ -44 +44,8 @@ class WorkforcePermissionTest {
+-        for(String name:WorkforcePermissions.API_ONLY) assertTrue(ApiScopes.from(key(name).getPermissions()).stream().allMatch(s->s.endsWith(":read")));
++        for(String name:WorkforcePermissions.API_ONLY) {
++            var scopes=ApiScopes.from(key(name).getPermissions());
++            if(name.equals("API_BILLING_WRITE")) assertEquals(Set.of("billing:write"),scopes);
++            else assertTrue(scopes.stream().allMatch(s->s.endsWith(":read")));
++            assertTrue(WorkforcePermissions.v1Only(key(name)));
++        }
++        assertEquals(Set.of("billing:write"),ApiScopes.PERMISSION_SCOPES.values().stream()
++                .flatMap(Set::stream).filter(scope->scope.endsWith(":write")).collect(Collectors.toSet()));

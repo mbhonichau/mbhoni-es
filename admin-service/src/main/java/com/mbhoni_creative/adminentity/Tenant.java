@@ -10,6 +10,12 @@ public class Tenant extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "owner_user_id", unique = true)
+    private Long ownerUserId;
+
+    public Long getOwnerUserId() { return ownerUserId; }
+    public void setOwnerUserId(Long ownerUserId) { this.ownerUserId = ownerUserId; }
+
     @Column(nullable = false)
     private String name;
     

@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en"><head><meta charset="UTF-8"><title>Account status</title></head>
+<body><main><h1>Account status</h1>
+<p>Your organization is <strong th:text="${state.status}"></strong>.</p>
+<p th:if="${state.graceEndsAt != null}">Grace period ends: <span th:text="${state.graceEndsAt}"></span></p>
+<p th:if="${!owner}">Contact your organization Owner for billing assistance.</p>
+<section th:if="${owner and state.status.name() != 'CANCELLED'}">
+    <form th:if="${linked}" th:action="@{/account/billing/portal}" method="post"><button>View invoices, update payment or cancel</button></form>
+    <p th:unless="${linked}">Contact platform support to set up your paid subscription and payment card.</p>
+</section>
+<section th:if="${owner and state.status.name() == 'CANCELLED'}">
+    <p th:if="${state.retentionEndsAt != null}">Export retention ends: <span th:text="${state.retentionEndsAt}"></span></p>
+    <a th:href="@{/account/export}">Export organization data</a>
+</section>
+<form th:action="@{/logout}" method="post"><button>Sign out</button></form>
+</main></body></html>

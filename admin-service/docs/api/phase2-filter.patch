@@ -1,0 +1,15 @@
+diff --git a/admin-service/src/main/java/com/mbhoni_creative/config/ApiKeyAuthenticationFilter.java b/admin-service/src/main/java/com/mbhoni_creative/config/ApiKeyAuthenticationFilter.java
+index b577bcb..8bef823 100644
+--- a/admin-service/src/main/java/com/mbhoni_creative/config/ApiKeyAuthenticationFilter.java
++++ b/admin-service/src/main/java/com/mbhoni_creative/config/ApiKeyAuthenticationFilter.java
+@@ -58,0 +59,5 @@ public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
++        if (com.mbhoni_creative.api.security.WorkforcePermissions.v1Only(apiKey)) {
++            response.sendError(HttpServletResponse.SC_FORBIDDEN, "This API key is restricted to /api/v1");
++            return;
++        }
++
+@@ -69 +74,3 @@ public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
+-        authorities.add(new SimpleGrantedAuthority("API_KEY"));
++        if (!com.mbhoni_creative.api.security.WorkforcePermissions.v1Only(apiKey)) {
++            authorities.add(new SimpleGrantedAuthority("API_KEY"));
++        }

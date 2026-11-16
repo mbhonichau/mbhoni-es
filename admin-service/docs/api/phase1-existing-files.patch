@@ -1,0 +1,30 @@
+diff --git a/admin-service/pom.xml b/admin-service/pom.xml
+index 2015450..a74b341 100644
+--- a/admin-service/pom.xml
++++ b/admin-service/pom.xml
+@@ -22,0 +23,5 @@
++        <dependency>
++            <groupId>org.springdoc</groupId>
++            <artifactId>springdoc-openapi-starter-webmvc-api</artifactId>
++            <version>2.8.17</version>
++        </dependency>
+diff --git a/admin-service/src/main/java/com/mbhoni_creative/config/ApiKeyAuthenticationFilter.java b/admin-service/src/main/java/com/mbhoni_creative/config/ApiKeyAuthenticationFilter.java
+index d499b81..b577bcb 100644
+--- a/admin-service/src/main/java/com/mbhoni_creative/config/ApiKeyAuthenticationFilter.java
++++ b/admin-service/src/main/java/com/mbhoni_creative/config/ApiKeyAuthenticationFilter.java
+@@ -25,0 +26,5 @@ public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
++    @Override
++    protected boolean shouldNotFilter(HttpServletRequest request) {
++        return com.mbhoni_creative.api.security.ApiPaths.matches(request);
++    }
++
+diff --git a/admin-service/src/main/java/com/mbhoni_creative/config/TenantContextFilter.java b/admin-service/src/main/java/com/mbhoni_creative/config/TenantContextFilter.java
+index 70fe2b9..baa53db 100644
+--- a/admin-service/src/main/java/com/mbhoni_creative/config/TenantContextFilter.java
++++ b/admin-service/src/main/java/com/mbhoni_creative/config/TenantContextFilter.java
+@@ -26,0 +27,5 @@ public class TenantContextFilter extends OncePerRequestFilter {
++    @Override
++    protected boolean shouldNotFilter(HttpServletRequest request) {
++        return com.mbhoni_creative.api.security.ApiPaths.matches(request);
++    }
++

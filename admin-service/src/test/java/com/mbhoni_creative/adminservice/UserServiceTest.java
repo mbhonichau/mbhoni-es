@@ -55,6 +55,7 @@ class UserServiceTest {
 
     @Mock
     private AuditLogService auditLogService;
+    @Mock private com.mbhoni_creative.adminrepository.TenantQuotaRepository quotaRepository;
 
     @InjectMocks
     private UserServiceImpl userService;
@@ -89,6 +90,10 @@ class UserServiceTest {
         when(userRepository.existsByEmail(anyString())).thenReturn(false);
         when(tenantSecurityService.isGlobalAdmin()).thenReturn(true);
         when(tenantRepository.findById(1L)).thenReturn(Optional.of(tenant));
+        when(tenantRepository.lockById(1L)).thenReturn(Optional.of(tenant));
+        com.mbhoni_creative.adminentity.TenantSubscription subscription = new com.mbhoni_creative.adminentity.TenantSubscription();
+        subscription.setPlan(new com.mbhoni_creative.adminentity.SubscriptionPlan());
+        when(tenantSubscriptionRepository.findByTenant(tenant)).thenReturn(Optional.of(subscription));
         when(passwordEncoder.encode(anyString())).thenReturn("hashedPassword");
 
         userService.saveUser(dto);
@@ -114,6 +119,53 @@ class UserServiceTest {
         String tempPass = userService.generateTemporaryPassword();
         assertNotNull(tempPass);
         assertEquals(12, tempPass.length());
+    }
+    @Test void trialSeatCapBlocksSixthUserBeforePersistingOrSendingWelcome() {
+        UserDto dto = new UserDto(); dto.setUsername("sixth"); dto.setEmail("sixth@example.com"); dto.setTenantId(1L);
+        when(tenantSecurityService.isGlobalAdmin()).thenReturn(true);
+        when(tenantRepository.findById(1L)).thenReturn(Optional.of(tenant));
+        when(tenantRepository.lockById(1L)).thenReturn(Optional.of(tenant));
+        var plan = new com.mbhoni_creative.adminentity.SubscriptionPlan(); plan.setMaxUsers(5);
+        var subscription = new com.mbhoni_creative.adminentity.TenantSubscription(); subscription.setPlan(plan);
+        subscription.setStatus(com.mbhoni_creative.adminentity.SubscriptionStatus.TRIAL);
+        when(tenantSubscriptionRepository.findByTenant(tenant)).thenReturn(Optional.of(subscription));
+        when(userRepository.countByTenantAndActiveTrue(tenant)).thenReturn(5L);
+        assertThrows(RuntimeException.class, () -> userService.saveUser(dto));
+        var ordered = org.mockito.Mockito.inOrder(tenantRepository, userRepository);
+        ordered.verify(tenantRepository).lockById(1L); ordered.verify(userRepository).countByTenantAndActiveTrue(tenant);
+        org.mockito.Mockito.verify(userRepository, org.mockito.Mockito.never()).save(any());
+        org.mockito.Mockito.verifyNoInteractions(notificationService);
+    }
+
+    @Test void downgradedOverCapTenantCanReadExistingUserButCannotAddAnother() {
+        when(tenantSecurityService.isGlobalAdmin()).thenReturn(true);
+        when(userRepository.findById(100L)).thenReturn(Optional.of(user));
+        assertEquals(100L, userService.getUserById(100L).getId());
+        var dto = new UserDto(); dto.setUsername("new"); dto.setEmail("new@example.com"); dto.setTenantId(1L);
+        when(tenantRepository.findById(1L)).thenReturn(Optional.of(tenant));
+        when(tenantRepository.lockById(1L)).thenReturn(Optional.of(tenant));
+        var plan = new com.mbhoni_creative.adminentity.SubscriptionPlan(); plan.setMaxUsers(5);
+        var subscription = new com.mbhoni_creative.adminentity.TenantSubscription(); subscription.setPlan(plan);
+        when(tenantSubscriptionRepository.findByTenant(tenant)).thenReturn(Optional.of(subscription));
+        when(userRepository.countByTenantAndActiveTrue(tenant)).thenReturn(10L);
+        assertTrue(assertThrows(RuntimeException.class, () -> userService.saveUser(dto)).getMessage().contains("Existing users retain access"));
+        org.mockito.Mockito.verify(userRepository, org.mockito.Mockito.never()).save(any());
+        org.mockito.Mockito.verify(userRepository, org.mockito.Mockito.never()).delete(any());
+    }
+
+    @Test void inactiveUsersDoNotConsumeAvailableSeats() {
+        var dto = new UserDto(); dto.setUsername("new"); dto.setEmail("new@example.com"); dto.setPassword("Secret123!"); dto.setTenantId(1L);
+        when(tenantSecurityService.isGlobalAdmin()).thenReturn(true);
+        when(tenantRepository.findById(1L)).thenReturn(Optional.of(tenant));
+        when(tenantRepository.lockById(1L)).thenReturn(Optional.of(tenant));
+        var plan = new com.mbhoni_creative.adminentity.SubscriptionPlan(); plan.setMaxUsers(5);
+        var subscription = new com.mbhoni_creative.adminentity.TenantSubscription(); subscription.setPlan(plan);
+        when(tenantSubscriptionRepository.findByTenant(tenant)).thenReturn(Optional.of(subscription));
+        when(userRepository.countByTenantAndActiveTrue(tenant)).thenReturn(4L);
+        when(passwordEncoder.encode(anyString())).thenReturn("hashed");
+        userService.saveUser(dto);
+        verify(userRepository).save(any());
+        org.mockito.Mockito.verify(userRepository, org.mockito.Mockito.never()).countByTenant(any());
     }
 
     @Test

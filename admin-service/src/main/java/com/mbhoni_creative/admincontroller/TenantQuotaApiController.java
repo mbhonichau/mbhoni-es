@@ -17,49 +17,28 @@ public class TenantQuotaApiController {
     private final TenantQuotaRepository tenantQuotaRepository;
     private final TenantRepository tenantRepository;
     private final TenantAccessService tenantAccessService;
+    private final com.mbhoni_creative.billing.TenantQuotaService quotaService;
 
     public TenantQuotaApiController(
             TenantQuotaRepository tenantQuotaRepository,
             TenantRepository tenantRepository,
-            TenantAccessService tenantAccessService) {
+            TenantAccessService tenantAccessService, com.mbhoni_creative.billing.TenantQuotaService quotaService) {
         this.tenantQuotaRepository = tenantQuotaRepository;
         this.tenantRepository = tenantRepository;
         this.tenantAccessService = tenantAccessService;
+        this.quotaService = quotaService;
     }
 
     @GetMapping
     @PreAuthorize("hasAuthority('TENANT_VIEW') or hasAuthority('API_KEY')")
     public ResponseEntity<TenantQuota> getQuota(@PathVariable Long tenantId) {
-        tenantAccessService.requireAccess(tenantId);
-        TenantQuota quota = tenantQuotaRepository.findByTenantId(tenantId)
-                .orElseGet(() -> {
-                    Tenant tenant = tenantRepository.findById(tenantId)
-                            .orElseThrow(() -> new RuntimeException("Tenant not found with ID: " + tenantId));
-                    TenantQuota newQuota = new TenantQuota();
-                    newQuota.setTenant(tenant);
-                    return tenantQuotaRepository.save(newQuota);
-                });
-        return ResponseEntity.ok(quota);
+        return ResponseEntity.ok(quotaService.get(tenantId));
     }
 
     @PutMapping
     @PreAuthorize("hasAuthority('TENANT_EDIT')")
-    public ResponseEntity<TenantQuota> updateQuota(@PathVariable Long tenantId, @RequestBody TenantQuota quotaDetails) {
-        tenantAccessService.requireAccess(tenantId);
-        TenantQuota quota = tenantQuotaRepository.findByTenantId(tenantId)
-                .orElseGet(() -> {
-                    Tenant tenant = tenantRepository.findById(tenantId)
-                            .orElseThrow(() -> new RuntimeException("Tenant not found with ID: " + tenantId));
-                    TenantQuota newQuota = new TenantQuota();
-                    newQuota.setTenant(tenant);
-                    return newQuota;
-                });
-
-        if (quotaDetails.getMaxUsers() != null) quota.setMaxUsers(quotaDetails.getMaxUsers());
-        if (quotaDetails.getMaxApiRequestsPerMinute() != null) quota.setMaxApiRequestsPerMinute(quotaDetails.getMaxApiRequestsPerMinute());
-        if (quotaDetails.getMaxStorageGb() != null) quota.setMaxStorageGb(quotaDetails.getMaxStorageGb());
-        if (quotaDetails.getCustomQuotasJson() != null) quota.setCustomQuotasJson(quotaDetails.getCustomQuotasJson());
-
-        return ResponseEntity.ok(tenantQuotaRepository.save(quota));
+    public ResponseEntity<TenantQuota> updateQuota(@PathVariable Long tenantId, @RequestBody TenantQuota quotaDetails,
+            @RequestParam String reason) {
+        return ResponseEntity.ok(quotaService.override(tenantId, quotaDetails, reason));
     }
 }

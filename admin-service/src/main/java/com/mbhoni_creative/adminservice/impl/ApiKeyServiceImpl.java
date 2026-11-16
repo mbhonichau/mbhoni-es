@@ -93,7 +93,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
 
     @Override
     public List<Permission> getAllPermissions() {
-        return permissionRepository.findByNameIn(ALLOWED_API_PERMISSIONS);
+        return permissionRepository.findByNameIn(allowedApiPermissions());
     }
 
     @Override
@@ -201,12 +201,18 @@ public class ApiKeyServiceImpl implements ApiKeyService {
         Set<Permission> permissions = new HashSet<>(permissionRepository.findAllById(permissionIds));
 
         for (Permission permission : permissions) {
-            if (!ALLOWED_API_PERMISSIONS.contains(permission.getName())) {
+            if (!allowedApiPermissions().contains(permission.getName())) {
                 throw new RuntimeException("Permission is not allowed for API keys: " + permission.getName());
             }
         }
 
         return permissions;
+    }
+
+    private static Set<String> allowedApiPermissions() {
+        Set<String> allowed = new HashSet<>(ALLOWED_API_PERMISSIONS);
+        allowed.addAll(com.mbhoni_creative.api.security.WorkforcePermissions.API_ONLY);
+        return allowed;
     }
 
     private String normalizeName(String name) {

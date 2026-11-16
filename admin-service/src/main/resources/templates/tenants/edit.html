@@ -60,6 +60,8 @@
                                 <input class="form-check-input" type="checkbox" th:field="*{active}" id="activeSwitch">
                                 <label for="activeSwitch">Tenant is active</label>
                             </div>
+                            <label for="changeReason" class="form-label mt-2">Reason for activation change (platform administrators only)</label>
+                            <textarea id="changeReason" th:field="*{changeReason}" class="form-control"></textarea>
                         </div>
                     </div>
 

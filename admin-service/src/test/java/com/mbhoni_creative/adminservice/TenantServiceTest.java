@@ -59,6 +59,7 @@ class TenantServiceTest {
 
     @Mock
     private AuditLogService auditLogService;
+    @Mock private com.mbhoni_creative.billing.TenantPurgeService purge;
 
     @InjectMocks
     private TenantServiceImpl tenantService;
@@ -152,13 +153,10 @@ class TenantServiceTest {
     @Test
     void testDeleteTenant_Success() {
         when(tenantSecurityService.isGlobalAdmin()).thenReturn(true);
-        when(tenantRepository.findById(1L)).thenReturn(Optional.of(tenant));
-        when(entityManager.createQuery(any(String.class))).thenReturn(query);
-        when(entityManager.createNativeQuery(any(String.class))).thenReturn(query);
-        when(query.setParameter(any(String.class), any())).thenReturn(query);
+        when(purge.purgeExpired(1L)).thenReturn(true);
 
         tenantService.deleteTenant(1L);
 
-        verify(tenantRepository).delete(tenant);
+        verify(purge).purgeExpired(1L);
     }
 }

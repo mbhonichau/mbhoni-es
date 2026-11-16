@@ -15,12 +15,14 @@ public class ServiceCatalogServiceImpl implements ServiceCatalogService {
 
     private final ServiceCatalogRepository serviceRepository;
     private final ServiceSlaRepository slaRepository;
+    private final com.mbhoni_creative.config.TenantSecurityService security;
 
     public ServiceCatalogServiceImpl(
             ServiceCatalogRepository serviceRepository,
-            ServiceSlaRepository slaRepository) {
+            ServiceSlaRepository slaRepository, com.mbhoni_creative.config.TenantSecurityService security) {
         this.serviceRepository = serviceRepository;
         this.slaRepository = slaRepository;
+        this.security = security;
     }
 
     @Override
@@ -38,11 +40,13 @@ public class ServiceCatalogServiceImpl implements ServiceCatalogService {
 
     @Override
     public ServiceCatalog saveService(ServiceCatalog serviceCatalog) {
+        requirePlatformAdmin();
         return serviceRepository.save(serviceCatalog);
     }
 
     @Override
     public ServiceSla addSla(Long serviceCatalogId, ServiceSla sla) {
+        requirePlatformAdmin();
         ServiceCatalog serviceCatalog = serviceRepository.findById(serviceCatalogId)
                 .orElseThrow(() -> new RuntimeException("Service not found with ID: " + serviceCatalogId));
         sla.setServiceCatalog(serviceCatalog);
@@ -53,5 +57,8 @@ public class ServiceCatalogServiceImpl implements ServiceCatalogService {
     @Transactional(readOnly = true)
     public List<ServiceSla> getSlasByServiceId(Long serviceCatalogId) {
         return slaRepository.findByServiceCatalogId(serviceCatalogId);
+    }
+    private void requirePlatformAdmin() {
+        if (!security.isGlobalAdmin()) throw new org.springframework.security.access.AccessDeniedException("Shared service catalog requires platform admin");
     }
 }

@@ -28,17 +28,21 @@ public class TenantOnboardingFieldServiceImpl implements TenantOnboardingFieldSe
     private final IndustryProfileFieldRepository industryFieldRepository;
     private final TenantRepository tenantRepository;
     private final TenantSecurityService tenantSecurityService;
+    private final com.mbhoni_creative.config.TenantAccessService access;
+    private final com.mbhoni_creative.config.TenantGovernance governance;
 
     public TenantOnboardingFieldServiceImpl(
             TenantOnboardingFieldRepository onboardingFieldRepository,
             IndustryProfileFieldRepository industryFieldRepository,
             TenantRepository tenantRepository,
-            TenantSecurityService tenantSecurityService) {
+            TenantSecurityService tenantSecurityService, com.mbhoni_creative.config.TenantAccessService access,
+            com.mbhoni_creative.config.TenantGovernance governance) {
 
         this.onboardingFieldRepository = onboardingFieldRepository;
         this.industryFieldRepository = industryFieldRepository;
         this.tenantRepository = tenantRepository;
         this.tenantSecurityService = tenantSecurityService;
+        this.access = access; this.governance = governance;
     }
 
     @Override
@@ -57,6 +61,7 @@ public class TenantOnboardingFieldServiceImpl implements TenantOnboardingFieldSe
     @Override
     @Transactional
     public OnboardingSchemaResponse getOnboardingSchemaForTenant(Long tenantId) {
+        assertAccess(tenantId);
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new RuntimeException("Tenant not found ID: " + tenantId));
 
@@ -86,6 +91,7 @@ public class TenantOnboardingFieldServiceImpl implements TenantOnboardingFieldSe
     @Transactional
     public void saveOrUpdateFields(Long tenantId, List<TenantOnboardingFieldDto> dtos) {
         assertAccess(tenantId);
+        governance.requireDefaultsWrite(tenantId);
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new RuntimeException("Tenant not found ID: " + tenantId));
 
@@ -128,6 +134,7 @@ public class TenantOnboardingFieldServiceImpl implements TenantOnboardingFieldSe
     @Transactional
     public TenantOnboardingFieldDto addCustomField(Long tenantId, TenantOnboardingFieldDto dto) {
         assertAccess(tenantId);
+        governance.requireDefaultsWrite(tenantId);
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new RuntimeException("Tenant not found ID: " + tenantId));
 
@@ -157,6 +164,7 @@ public class TenantOnboardingFieldServiceImpl implements TenantOnboardingFieldSe
     @Transactional
     public void deleteField(Long tenantId, Long fieldId) {
         assertAccess(tenantId);
+        governance.requireDefaultsWrite(tenantId);
         onboardingFieldRepository.findById(fieldId).ifPresent(field -> {
             if (field.getTenant() != null && field.getTenant().getId().equals(tenantId)) {
                 onboardingFieldRepository.delete(field);
@@ -167,6 +175,7 @@ public class TenantOnboardingFieldServiceImpl implements TenantOnboardingFieldSe
     @Override
     @Transactional
     public void seedDefaultFieldsForTenant(Long tenantId) {
+        assertAccess(tenantId);
         List<TenantOnboardingField> existing = onboardingFieldRepository.findByTenantIdOrderByDisplayOrderAsc(tenantId);
         if (!existing.isEmpty()) {
             return;
@@ -180,13 +189,19 @@ public class TenantOnboardingFieldServiceImpl implements TenantOnboardingFieldSe
 
         // If tenant has an assigned industry profile, apply industry presets over defaults
         if (tenant.getIndustryProfile() != null) {
-            applyIndustryProfileFields(tenantId, tenant.getIndustryProfile().getId());
+            applyIndustryFields(tenantId, tenant.getIndustryProfile().getId());
         }
     }
 
     @Override
     @Transactional
     public void applyIndustryProfileFields(Long tenantId, Long industryProfileId) {
+        assertAccess(tenantId);
+        governance.requireDefaultsWrite(tenantId);
+        applyIndustryFields(tenantId, industryProfileId);
+    }
+
+    private void applyIndustryFields(Long tenantId, Long industryProfileId) {
         List<IndustryProfileField> templateFields = industryFieldRepository
                 .findByIndustryProfileIdOrderByDisplayOrderAsc(industryProfileId);
 
@@ -281,12 +296,6 @@ public class TenantOnboardingFieldServiceImpl implements TenantOnboardingFieldSe
     }
 
     private void assertAccess(Long tenantId) {
-        if (tenantSecurityService.isGlobalAdmin()) {
-            return;
-        }
-        Long currentTenantId = tenantSecurityService.getCurrentTenantId();
-        if (currentTenantId == null || !currentTenantId.equals(tenantId)) {
-            throw new RuntimeException("Access denied: Tenant ID " + tenantId);
-        }
+        access.requireAccess(tenantId);
     }
 }

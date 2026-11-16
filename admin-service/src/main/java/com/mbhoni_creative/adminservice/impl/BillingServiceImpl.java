@@ -38,6 +38,8 @@ public class BillingServiceImpl implements BillingService {
     private final TenantSubscriptionRepository tenantSubscriptionRepository;
     private final NotificationService notificationService;
     private final TenantSecurityService tenantSecurityService;
+    private final com.mbhoni_creative.billing.SubscriptionLifecycle lifecycle;
+    private final com.mbhoni_creative.config.TenantGovernance governance;
 
     public BillingServiceImpl(
             BillingAccountRepository billingAccountRepository,
@@ -46,7 +48,8 @@ public class BillingServiceImpl implements BillingService {
             TenantRepository tenantRepository,
             TenantSubscriptionRepository tenantSubscriptionRepository,
             NotificationService notificationService,
-            TenantSecurityService tenantSecurityService) {
+            TenantSecurityService tenantSecurityService,
+            com.mbhoni_creative.billing.SubscriptionLifecycle lifecycle, com.mbhoni_creative.config.TenantGovernance governance) {
 
         this.billingAccountRepository = billingAccountRepository;
         this.invoiceRepository = invoiceRepository;
@@ -55,10 +58,13 @@ public class BillingServiceImpl implements BillingService {
         this.tenantSubscriptionRepository = tenantSubscriptionRepository;
         this.notificationService = notificationService;
         this.tenantSecurityService = tenantSecurityService;
+        this.lifecycle = lifecycle;
+        this.governance = governance;
     }
 
     @Override
     public List<BillingAccount> getAllBillingAccounts() {
+        governance.requireBillingOwner(tenantSecurityService.getCurrentTenantId());
         if (tenantSecurityService.isGlobalAdmin()) {
             return billingAccountRepository.findAll();
         }
@@ -87,6 +93,8 @@ public class BillingServiceImpl implements BillingService {
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new RuntimeException("Tenant not found"));
 
+        enforceTenantAccess(tenant);
+
         BillingAccount account = billingAccountRepository.findByTenant(tenant)
                 .orElseGet(BillingAccount::new);
 
@@ -107,6 +115,7 @@ public class BillingServiceImpl implements BillingService {
 
     @Override
     public List<Invoice> getAllInvoices() {
+        governance.requireBillingOwner(tenantSecurityService.getCurrentTenantId());
         if (tenantSecurityService.isGlobalAdmin()) {
             return invoiceRepository.findAll();
         }
@@ -127,95 +136,6 @@ public class BillingServiceImpl implements BillingService {
     }
 
     @Override
-    @Transactional
-    public Invoice createInvoice(
-            Long tenantId,
-            BigDecimal subtotal,
-            BigDecimal taxAmount,
-            LocalDate issueDate,
-            LocalDate dueDate,
-            String notes) {
-
-        Tenant tenant = tenantRepository.findById(tenantId)
-                .orElseThrow(() -> new RuntimeException("Tenant not found"));
-
-        TenantSubscription subscription = tenantSubscriptionRepository.findByTenant(tenant)
-                .orElse(null);
-
-        Invoice invoice = new Invoice();
-
-        invoice.setTenant(tenant);
-        invoice.setSubscription(subscription);
-        invoice.setInvoiceNumber(generateInvoiceNumber());
-        invoice.setStatus(InvoiceStatus.ISSUED);
-        invoice.setIssueDate(issueDate != null ? issueDate : LocalDate.now());
-        invoice.setDueDate(dueDate != null ? dueDate : LocalDate.now().plusDays(7));
-        invoice.setSubtotal(subtotal);
-        invoice.setTaxAmount(taxAmount);
-
-        BigDecimal total = safe(subtotal).add(safe(taxAmount));
-        invoice.setTotalAmount(total);
-        invoice.setAmountPaid(BigDecimal.ZERO);
-        invoice.setNotes(notes);
-
-        return invoiceRepository.save(invoice);
-    }
-
-    @Override
-    @Transactional
-    public Payment recordPayment(
-            Long invoiceId,
-            BigDecimal amount,
-            PaymentMethod paymentMethod,
-            String reference,
-            String notes) {
-
-        Invoice invoice = getInvoiceById(invoiceId);
-
-        Payment payment = new Payment();
-
-        payment.setInvoice(invoice);
-        payment.setAmount(amount);
-        payment.setPaymentMethod(paymentMethod);
-        payment.setStatus(PaymentStatus.SUCCESSFUL);
-        payment.setPaymentProvider(PaymentProvider.MANUAL);
-        payment.setProviderStatus("MANUAL_RECORDED");
-        payment.setPaidAt(LocalDateTime.now());
-        payment.setReference(reference);
-        payment.setNotes(notes);
-
-        Payment savedPayment = paymentRepository.save(payment);
-
-        BigDecimal newAmountPaid = invoice.getAmountPaid().add(safe(amount));
-        invoice.setAmountPaid(newAmountPaid);
-
-        if (newAmountPaid.compareTo(invoice.getTotalAmount()) >= 0) {
-            invoice.setStatus(InvoiceStatus.PAID);
-        } else if (newAmountPaid.compareTo(BigDecimal.ZERO) > 0) {
-            invoice.setStatus(InvoiceStatus.PARTIALLY_PAID);
-        }
-
-        invoiceRepository.save(invoice);
-
-        return savedPayment;
-    }
-
-    private String generateInvoiceNumber() {
-
-        String invoiceNumber;
-
-        do {
-            invoiceNumber = "INV-" + System.currentTimeMillis();
-        } while (invoiceRepository.existsByInvoiceNumber(invoiceNumber));
-
-        return invoiceNumber;
-    }
-
-    private BigDecimal safe(BigDecimal value) {
-        return value != null ? value : BigDecimal.ZERO;
-    }
-    
-    @Override
     public List<Payment> getPaymentsForInvoice(Long invoiceId) {
 
         Invoice invoice = getInvoiceById(invoiceId);
@@ -225,56 +145,8 @@ public class BillingServiceImpl implements BillingService {
     
     @Override
     @Transactional
-    public Invoice generateInvoiceFromSubscription(
-            Long tenantId,
-            LocalDate issueDate,
-            LocalDate dueDate,
-            String notes) {
-
-        Tenant tenant = tenantRepository.findById(tenantId)
-                .orElseThrow(() -> new RuntimeException("Tenant not found"));
-
-        TenantSubscription subscription = tenantSubscriptionRepository.findByTenant(tenant)
-                .orElseThrow(() -> new RuntimeException("Tenant has no active subscription"));
-
-        if (subscription.getPlan() == null) {
-            throw new RuntimeException("Tenant subscription has no plan assigned");
-        }
-
-        BigDecimal subtotal;
-
-        switch (subscription.getBillingCycle()) {
-            case ANNUAL:
-                subtotal = subscription.getPlan().getAnnualPrice();
-                break;
-            case MONTHLY:
-            default:
-                subtotal = subscription.getPlan().getMonthlyPrice();
-                break;
-        }
-
-        BigDecimal taxAmount = subtotal.multiply(new BigDecimal("0.15"));
-
-        Invoice invoice = new Invoice();
-
-        invoice.setTenant(tenant);
-        invoice.setSubscription(subscription);
-        invoice.setInvoiceNumber(generateInvoiceNumber());
-        invoice.setStatus(InvoiceStatus.ISSUED);
-        invoice.setIssueDate(issueDate != null ? issueDate : LocalDate.now());
-        invoice.setDueDate(dueDate != null ? dueDate : LocalDate.now().plusDays(7));
-        invoice.setSubtotal(subtotal);
-        invoice.setTaxAmount(taxAmount);
-        invoice.setTotalAmount(subtotal.add(taxAmount));
-        invoice.setAmountPaid(BigDecimal.ZERO);
-        invoice.setNotes(notes != null ? notes : "Generated from subscription plan");
-
-        return invoiceRepository.save(invoice);
-    }
-    
-    @Override
-    @Transactional
     public int refreshOverdueInvoices() {
+        requirePlatformAdmin();
 
         List<Invoice> overdueInvoices = invoiceRepository.findByStatusInAndDueDateBefore(
                 List.of(
@@ -305,6 +177,7 @@ public class BillingServiceImpl implements BillingService {
     
     @Override
     public boolean tenantHasOverdueInvoices(Long tenantId) {
+        governance.requireBillingOwner(tenantId);
         return invoiceRepository.existsByTenantIdAndStatus(
                 tenantId,
                 InvoiceStatus.OVERDUE
@@ -314,33 +187,13 @@ public class BillingServiceImpl implements BillingService {
     @Override
     @Transactional
     public int suspendOverdueSubscriptions() {
-
-        List<Invoice> overdueInvoices = invoiceRepository.findByStatus(InvoiceStatus.OVERDUE);
-
+        requirePlatformAdmin();
         int suspendedCount = 0;
-
-        for (Invoice invoice : overdueInvoices) {
-
-            if (invoice.getTenant() == null) {
-                continue;
-            }
-
-            TenantSubscription subscription = tenantSubscriptionRepository
-                    .findByTenantId(invoice.getTenant().getId())
-                    .orElse(null);
-
-            if (subscription == null) {
-                continue;
-            }
-
-            if (subscription.getStatus() == SubscriptionStatus.SUSPENDED) {
-                continue;
-            }
-
-            subscription.setStatus(SubscriptionStatus.SUSPENDED);
-            tenantSubscriptionRepository.save(subscription);
-
-            suspendedCount++;
+        for (Long tenantId : tenantSubscriptionRepository.findLifecycleCandidateTenantIds()) {
+            TenantSubscription subscription = tenantSubscriptionRepository.lockByTenantId(tenantId).orElseThrow();
+            SubscriptionStatus before = subscription.getStatus();
+            lifecycle.reconcile(subscription);
+            if (before != SubscriptionStatus.SUSPENDED && subscription.getStatus() == SubscriptionStatus.SUSPENDED) suspendedCount++;
         }
 
         return suspendedCount;
@@ -348,6 +201,7 @@ public class BillingServiceImpl implements BillingService {
     
     @Override
     public BillingDashboardView getBillingDashboard() {
+        governance.requireBillingOwner(tenantSecurityService.getCurrentTenantId());
 
         List<Invoice> invoices;
         if (tenantSecurityService.isGlobalAdmin()) {
@@ -414,6 +268,7 @@ public class BillingServiceImpl implements BillingService {
     }
 
     private void enforceTenantAccess(Tenant tenant) {
+        governance.requireBillingOwner(tenant == null ? null : tenant.getId());
         if (tenantSecurityService.isGlobalAdmin()) {
             return;
         }
@@ -422,4 +277,9 @@ public class BillingServiceImpl implements BillingService {
             throw new RuntimeException("Access denied");
         }
     }
+
+    private void requirePlatformAdmin() {
+        if (!tenantSecurityService.isGlobalAdmin()) throw new org.springframework.security.access.AccessDeniedException("Platform administrator required");
+    }
 }
+

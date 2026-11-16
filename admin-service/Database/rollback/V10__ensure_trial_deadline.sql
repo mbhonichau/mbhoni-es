@@ -1,0 +1,4 @@
+-- Manual rollback only, with the application stopped and the column exported first.
+-- If trial_ends_at existed before V10 (Hibernate-managed installations), KEEP it.
+-- Execute this statement only when deployment preflight proves V10 added the column:
+-- ALTER TABLE tenant_subscriptions DROP COLUMN trial_ends_at;

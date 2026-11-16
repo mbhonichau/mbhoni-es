@@ -1,6 +1,7 @@
 <th:block xmlns:th="http://www.thymeleaf.org" th:fragment="navbar">
 
 <div th:replace="~{fragments/preloader :: preloader}"></div>
+<div class="alert alert-warning" role="alert" th:if="${billingWarning != null}" th:text="${billingWarning}"></div>
 
 <header class="admin-topbar">
     <button class="icon-button d-lg-none" id="mobileSidebarToggle" type="button">

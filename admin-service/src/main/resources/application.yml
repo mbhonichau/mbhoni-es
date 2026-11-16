@@ -98,6 +98,24 @@ management:
 
 app:
   admin-email: ${APP_ADMIN_EMAIL:}
+  lifecycle:
+    trial-days: ${TENANT_TRIAL_DAYS:14}
+    payment-grace-days: ${TENANT_PAYMENT_GRACE_DAYS:7}
+    suspended-grace-days: ${TENANT_SUSPENDED_GRACE_DAYS:7}
+    retention-days: ${TENANT_EXPORT_RETENTION_DAYS:30}
+    reconcile-ms: ${TENANT_RECONCILE_MS:60000}
+  stripe:
+    secret-key: ${STRIPE_SECRET_KEY:}
+    webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
+    portal-return-url: ${STRIPE_PORTAL_RETURN_URL:}
+    portal-configuration: ${STRIPE_PORTAL_CONFIGURATION:}
+    # Supply case-sensitive price-plans mappings in deployment configuration, e.g.
+    # price-plans:
+    #   price_ABC123: STANDARD
+  bootstrap:
+    admin-username: ${BOOTSTRAP_ADMIN_USERNAME:}
+    admin-email: ${BOOTSTRAP_ADMIN_EMAIL:}
+    admin-password: ${BOOTSTRAP_ADMIN_PASSWORD:}
 
 server:
   port: 8080

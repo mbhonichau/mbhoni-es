@@ -33,29 +33,5 @@ public interface BillingService {
     
     BillingDashboardView getBillingDashboard();
 
-    Invoice createInvoice(
-            Long tenantId,
-            BigDecimal subtotal,
-            BigDecimal taxAmount,
-            LocalDate issueDate,
-            LocalDate dueDate,
-            String notes
-    );
-
-    Payment recordPayment(
-            Long invoiceId,
-            BigDecimal amount,
-            PaymentMethod paymentMethod,
-            String reference,
-            String notes
-    );
-    
-    Invoice generateInvoiceFromSubscription(
-            Long tenantId,
-            LocalDate issueDate,
-            LocalDate dueDate,
-            String notes
-    );
-    
-    
 }
+

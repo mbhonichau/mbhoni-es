@@ -1,0 +1,18 @@
+diff --git a/admin-service/src/main/java/com/mbhoni_creative/api/config/ApiSecurityConfig.java b/admin-service/src/main/java/com/mbhoni_creative/api/config/ApiSecurityConfig.java
+index 1e20c53..73f9bd5 100644
+--- a/admin-service/src/main/java/com/mbhoni_creative/api/config/ApiSecurityConfig.java
++++ b/admin-service/src/main/java/com/mbhoni_creative/api/config/ApiSecurityConfig.java
+@@ -19 +19 @@ public class ApiSecurityConfig {
+-        return http.securityMatcher("/api/v1/**", "/api/docs/**", "/api/openapi.json")
++        return http.securityMatcher(ApiPaths.MATCHER)
+diff --git a/admin-service/src/main/java/com/mbhoni_creative/api/security/ApiPaths.java b/admin-service/src/main/java/com/mbhoni_creative/api/security/ApiPaths.java
+index dcb2940..1b0ed3d 100644
+--- a/admin-service/src/main/java/com/mbhoni_creative/api/security/ApiPaths.java
++++ b/admin-service/src/main/java/com/mbhoni_creative/api/security/ApiPaths.java
+@@ -6,0 +7,2 @@ public final class ApiPaths {
++    /** One rule for chain selection and component-filter exclusions. */
++    public static final org.springframework.security.web.util.matcher.RequestMatcher MATCHER = ApiPaths::matchesPath;
+@@ -7,0 +10,3 @@ public final class ApiPaths {
++        return MATCHER.matches(request);
++    }
++    private static boolean matchesPath(HttpServletRequest request) {

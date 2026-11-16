@@ -56,6 +56,8 @@ public class EmployeeViewController {
 
     private final FieldDefinitionService fieldDefinitionService;
     private final EmployeeFieldValueService fieldValueService;
+    private final com.mbhoni_creative.config.TenantAccessService tenantAccess;
+    private final com.mbhoni_creative.config.OrganizationAccessService organizationAccess;
 
     public EmployeeViewController(
             EmployeeService employeeService,
@@ -68,7 +70,9 @@ public class EmployeeViewController {
             PayslipWordService wordService,
             TenantOnboardingFieldService onboardingFieldService,
             FieldDefinitionService fieldDefinitionService,
-            EmployeeFieldValueService fieldValueService) {
+            EmployeeFieldValueService fieldValueService,
+            com.mbhoni_creative.config.TenantAccessService tenantAccess,
+            com.mbhoni_creative.config.OrganizationAccessService organizationAccess) {
         this.employeeService = employeeService;
         this.orgUnitService = orgUnitService;
         this.tenantService = tenantService;
@@ -80,6 +84,8 @@ public class EmployeeViewController {
         this.onboardingFieldService = onboardingFieldService;
         this.fieldDefinitionService = fieldDefinitionService;
         this.fieldValueService = fieldValueService;
+        this.tenantAccess = tenantAccess;
+        this.organizationAccess = organizationAccess;
     }
 
     @GetMapping
@@ -297,6 +303,9 @@ public class EmployeeViewController {
         Long effectiveTenantId = tenantId != null ? tenantId : (tenantService.getAllTenants().isEmpty() ? null : tenantService.getAllTenants().get(0).getId());
         List<Employee> employees = effectiveTenantId != null ? employeeService.getEmployeesByTenant(effectiveTenantId) : List.of();
 
+        payslips = payslips.stream().filter(p -> p.getTenant() != null && p.getEmployee() != null
+                && p.getEmployee().getTenant() != null && p.getTenant().getId().equals(p.getEmployee().getTenant().getId())
+                && organizationAccess.canAccess(p.getEmployee().getOrganizationUnit())).toList();
         model.addAttribute("payslips", payslips);
         model.addAttribute("employees", employees);
         model.addAttribute("newPayslip", new Payslip());
@@ -311,6 +320,12 @@ public class EmployeeViewController {
             RedirectAttributes redirectAttributes) {
 
         Employee emp = employeeService.getEmployeeById(employeeId);
+        if (payslip.getId() != null) {
+            Payslip stored = payslipRepository.findById(payslip.getId()).orElseThrow();
+            requirePayslipAccess(stored);
+            if (!stored.getTenant().getId().equals(emp.getTenant().getId()))
+                throw new org.springframework.security.access.AccessDeniedException("Payslips cannot move between tenants");
+        }
         payslip.setEmployee(emp);
         if (emp != null && emp.getTenant() != null) {
             payslip.setTenant(emp.getTenant());
@@ -334,7 +349,8 @@ public class EmployeeViewController {
     @GetMapping("/payslips/{id}/print")
     @PreAuthorize("@tenantEntitlementService.isModuleEnabled('EMPLOYEE') and (hasAuthority('EMPLOYEE_VIEW') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_TENANT_ADMIN'))")
     public String printPayslip(@PathVariable Long id, Model model) {
-        Payslip payslip = payslipRepository.findById(id).orElse(null);
+        Payslip payslip = payslipRepository.findById(id).orElseThrow();
+        requirePayslipAccess(payslip);
         model.addAttribute("payslip", payslip);
 
         if (payslip != null && payslip.getTenant() != null) {
@@ -358,6 +374,15 @@ public class EmployeeViewController {
         }
 
         return "employees/payslip-print";
+    }
+
+    private void requirePayslipAccess(Payslip payslip) {
+        tenantAccess.requireAccess(payslip.getTenant() == null ? null : payslip.getTenant().getId());
+        if (payslip.getEmployee() == null || payslip.getEmployee().getTenant() == null
+                || !payslip.getTenant().getId().equals(payslip.getEmployee().getTenant().getId()))
+            throw new org.springframework.security.access.AccessDeniedException("Invalid payslip employee scope");
+        employeeService.getEmployeeById(payslip.getEmployee().getId());
+        organizationAccess.requireAccess(payslip.getEmployee().getOrganizationUnit());
     }
 
     // =====================================================

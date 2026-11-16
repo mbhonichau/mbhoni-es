@@ -29,6 +29,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByEmail(String email);
     
     long countByTenant(Tenant tenant);
+    long countByTenantAndActiveTrue(Tenant tenant);
     
     long countByTenantId(Long tenantId);
+
+    @org.springframework.data.jpa.repository.Query("select count(u) from User u where u.isGlobalAdmin = true")
+    long countPlatformAdministrators();
 }

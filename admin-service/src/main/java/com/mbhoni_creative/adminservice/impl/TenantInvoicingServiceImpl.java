@@ -21,30 +21,38 @@ public class TenantInvoicingServiceImpl implements TenantInvoicingService {
     private final TenantInvoiceRepository invoiceRepository;
     private final TenantQuotationRepository quotationRepository;
     private final TenantRepository tenantRepository;
+    private final com.mbhoni_creative.config.TenantGovernance governance;
 
     public TenantInvoicingServiceImpl(
             TenantInvoiceRepository invoiceRepository,
             TenantQuotationRepository quotationRepository,
-            TenantRepository tenantRepository) {
+            TenantRepository tenantRepository, com.mbhoni_creative.config.TenantGovernance governance) {
         this.invoiceRepository = invoiceRepository;
         this.quotationRepository = quotationRepository;
         this.tenantRepository = tenantRepository;
+        this.governance = governance;
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<TenantInvoice> getInvoicesForTenant(Long tenantId) {
+        governance.requireBillingOwner(tenantId);
         return invoiceRepository.findByTenantIdOrderByIdDesc(tenantId);
     }
 
     @Override
     @Transactional(readOnly = true)
     public TenantInvoice getInvoiceById(Long id) {
-        return invoiceRepository.findById(id).orElse(null);
+        TenantInvoice invoice = invoiceRepository.findById(id).orElseThrow();
+        governance.requireBillingOwner(invoice.getTenant() == null ? null : invoice.getTenant().getId());
+        return invoice;
     }
 
     @Override
     public TenantInvoice saveInvoice(Long tenantId, TenantInvoice invoice, List<String> descriptions, List<BigDecimal> quantities, List<BigDecimal> unitPrices) {
+        governance.requireBillingOwner(tenantId);
+        if (invoice.getId() != null && !java.util.Objects.equals(getInvoiceById(invoice.getId()).getTenant().getId(), tenantId))
+            throw new org.springframework.security.access.AccessDeniedException("Invoice tenant cannot be reassigned");
         Tenant tenant = tenantRepository.findById(tenantId).orElseThrow(() -> new IllegalArgumentException("Invalid Tenant ID"));
         invoice.setTenant(tenant);
 
@@ -91,23 +99,30 @@ public class TenantInvoicingServiceImpl implements TenantInvoicingService {
 
     @Override
     public void deleteInvoice(Long id) {
+        getInvoiceById(id);
         invoiceRepository.deleteById(id);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<TenantQuotation> getQuotationsForTenant(Long tenantId) {
+        governance.requireBillingOwner(tenantId);
         return quotationRepository.findByTenantIdOrderByIdDesc(tenantId);
     }
 
     @Override
     @Transactional(readOnly = true)
     public TenantQuotation getQuotationById(Long id) {
-        return quotationRepository.findById(id).orElse(null);
+        TenantQuotation quotation = quotationRepository.findById(id).orElseThrow();
+        governance.requireBillingOwner(quotation.getTenant() == null ? null : quotation.getTenant().getId());
+        return quotation;
     }
 
     @Override
     public TenantQuotation saveQuotation(Long tenantId, TenantQuotation quotation, List<String> descriptions, List<BigDecimal> quantities, List<BigDecimal> unitPrices) {
+        governance.requireBillingOwner(tenantId);
+        if (quotation.getId() != null && !java.util.Objects.equals(getQuotationById(quotation.getId()).getTenant().getId(), tenantId))
+            throw new org.springframework.security.access.AccessDeniedException("Quotation tenant cannot be reassigned");
         Tenant tenant = tenantRepository.findById(tenantId).orElseThrow(() -> new IllegalArgumentException("Invalid Tenant ID"));
         quotation.setTenant(tenant);
 
@@ -174,6 +189,7 @@ public class TenantInvoicingServiceImpl implements TenantInvoicingService {
 
     @Override
     public void deleteQuotation(Long id) {
+        getQuotationById(id);
         quotationRepository.deleteById(id);
     }
 }

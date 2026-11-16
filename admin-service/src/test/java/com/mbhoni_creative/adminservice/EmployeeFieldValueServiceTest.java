@@ -26,6 +26,7 @@ import com.mbhoni_creative.adminservice.impl.EmployeeFieldValueServiceImpl;
 
 @ExtendWith(MockitoExtension.class)
 class EmployeeFieldValueServiceTest {
+    @Mock private com.mbhoni_creative.config.OrganizationAccessService organizationAccess;
 
     @Mock
     private EmployeeFieldValueRepository fieldValueRepository;
@@ -35,6 +36,10 @@ class EmployeeFieldValueServiceTest {
 
     @Mock
     private FieldDefinitionService fieldDefinitionService;
+
+    @org.mockito.Spy
+    private com.mbhoni_creative.config.TenantAccessService tenantAccessService =
+            new com.mbhoni_creative.config.TenantAccessService(new com.mbhoni_creative.config.TenantSecurityService());
 
     @InjectMocks
     private EmployeeFieldValueServiceImpl fieldValueService;
@@ -51,6 +56,11 @@ class EmployeeFieldValueServiceTest {
     void setUp() {
         tenant = new Tenant();
         tenant.setId(100L);
+        com.mbhoni_creative.adminentity.User caller = new com.mbhoni_creative.adminentity.User();
+        caller.setTenant(tenant);
+        var principal = new com.mbhoni_creative.config.CustomUserPrincipal(caller);
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
 
         employee = new Employee();
         employee.setId(500L);
@@ -97,6 +107,9 @@ class EmployeeFieldValueServiceTest {
         gpsField.setDataType(DataType.GPS_COORD);
         gpsField.setRequired(false);
     }
+
+    @org.junit.jupiter.api.AfterEach
+    void clearAuthentication() { org.springframework.security.core.context.SecurityContextHolder.clearContext(); }
 
     @Test
     void testSaveValues_ServerSideRequiredFieldEnforcement_ThrowsWhenMissing() {

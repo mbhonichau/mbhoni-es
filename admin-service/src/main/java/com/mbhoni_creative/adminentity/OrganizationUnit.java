@@ -12,6 +12,15 @@ public class OrganizationUnit extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
+    private boolean isolated;
+    @Column(nullable = false)
+    private boolean restrictParentVisibility;
+    public boolean isIsolated() { return isolated; }
+    public void setIsolated(boolean value) { isolated = value; }
+    public boolean isRestrictParentVisibility() { return restrictParentVisibility; }
+    public void setRestrictParentVisibility(boolean value) { restrictParentVisibility = value; }
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tenant_id", nullable = false)
     private Tenant tenant;
@@ -27,10 +36,14 @@ public class OrganizationUnit extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_unit_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private OrganizationUnit parentUnit;
 
     @OneToMany(mappedBy = "parentUnit", cascade = CascadeType.ALL)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private List<OrganizationUnit> childUnits = new ArrayList<>();
+
+    public Long getParentUnitId() { return parentUnit == null ? null : parentUnit.getId(); }
 
     @Column(name = "cost_center", length = 50)
     private String costCenter;

@@ -46,7 +46,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public PasswordEncoder passwordEncoder() {
+    public static PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
@@ -66,10 +66,13 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http,
+            com.mbhoni_creative.adminrepository.TenantSubscriptionRepository subscriptions,
+            com.mbhoni_creative.billing.SubscriptionLifecycle lifecycle, TenantGovernance governance, java.time.Clock clock) throws Exception {
 
         http
             .authenticationProvider(authenticationProvider())
+            .csrf(csrf -> csrf.ignoringRequestMatchers("/api/webhooks/stripe"))
 
             .addFilterBefore(
                     apiKeyAuthenticationFilter,
@@ -80,8 +83,10 @@ public class SecurityConfig {
                     tenantContextFilter,
                     UsernamePasswordAuthenticationFilter.class
             )
+            .addFilterAfter(new com.mbhoni_creative.billing.TenantLifecycleFilter(subscriptions, lifecycle, governance, clock), TenantContextFilter.class)
 
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers(HttpMethod.POST, "/api/webhooks/stripe").permitAll()
                 .requestMatchers(
                         "/login",
                         "/register",
@@ -92,7 +97,6 @@ public class SecurityConfig {
                         "/js/**",
                         "/images/**",
                         "/vendor/**",
-                        "/api/public/**",
                         "/swagger-ui.html",
                         "/swagger-ui/**",
                         "/v3/api-docs/**",

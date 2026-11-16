@@ -66,12 +66,14 @@ public class UserRoleAssignmentServiceImpl implements UserRoleAssignmentService 
     @Override
     public void updateUserRoles(Long userId, Set<Long> roleIds) {
         User user = getUserWithAccessCheck(userId);
+        com.mbhoni_creative.config.OwnerProtection.rejectOwnerRemoval(user);
 
         Set<Long> safeRoleIds = roleIds == null ? Collections.emptySet() : roleIds;
 
         List<Role> selectedRoles = safeRoleIds.isEmpty()
                 ? Collections.emptyList()
                 : roleRepository.findByIdIn(safeRoleIds);
+        com.mbhoni_creative.config.OwnerProtection.rejectOwnerAssignment(selectedRoles);
 
         Long tenantId = user.getTenant() != null ? user.getTenant().getId() : null;
 

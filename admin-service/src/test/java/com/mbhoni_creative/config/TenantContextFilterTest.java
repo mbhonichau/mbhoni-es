@@ -28,6 +28,28 @@ import jakarta.servlet.ServletException;
 
 @ExtendWith(MockitoExtension.class)
 class TenantContextFilterTest {
+    @Test void deletedAccountCannotBecomeReplacementWithSameUsername() throws Exception {
+        User old = new User(); old.setId(7L); old.setUsername("reused");
+        User replacement = new User(); replacement.setId(8L); replacement.setUsername("reused"); replacement.setGlobalAdmin(true);
+        var principal = new CustomUserPrincipal(old);
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
+        org.mockito.Mockito.when(userRepository.findById(7L)).thenReturn(Optional.empty());
+        lenient().when(userRepository.findByUsername("reused")).thenReturn(Optional.of(replacement));
+        var response = new MockHttpServletResponse();
+        filter.doFilterInternal(new MockHttpServletRequest(), response, filterChain);
+        assertEquals(401, response.getStatus()); assertNull(SecurityContextHolder.getContext().getAuthentication());
+        org.mockito.Mockito.verifyNoInteractions(filterChain);
+        org.mockito.Mockito.verify(userRepository, org.mockito.Mockito.never()).findByUsername("reused");
+    }
+    @Test void disabledAccountSessionIsRevoked() throws Exception {
+        User user = new User(); user.setId(7L); user.setUsername("disabled"); user.setActive(false);
+        var principal = new CustomUserPrincipal(user);
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
+        org.mockito.Mockito.when(userRepository.findById(7L)).thenReturn(Optional.of(user));
+        var response = new MockHttpServletResponse(); filter.doFilterInternal(new MockHttpServletRequest(), response, filterChain);
+        assertEquals(401, response.getStatus()); assertNull(SecurityContextHolder.getContext().getAuthentication());
+        org.mockito.Mockito.verifyNoInteractions(filterChain);
+    }
 
     @Mock
     private UserRepository userRepository;
@@ -60,13 +82,13 @@ class TenantContextFilterTest {
     @Test
     void resolvesTenantHeaderForGlobalAdmin() throws ServletException, IOException {
         User user = new User();
-        user.setUsername("admin");
+        user.setId(7L); user.setUsername("admin");
         user.setGlobalAdmin(true);
         CustomUserPrincipal principal = new CustomUserPrincipal(user);
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
 
-        lenient().when(userRepository.findByUsername(anyString())).thenReturn(Optional.of(user));
+        lenient().when(userRepository.findById(7L)).thenReturn(Optional.of(user));
 
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader("X-Tenant-ID", "42");
@@ -84,7 +106,7 @@ class TenantContextFilterTest {
         tenant.setId(10L);
 
         User user = new User();
-        user.setUsername("tenantuser");
+        user.setId(7L); user.setUsername("tenantuser");
         user.setTenant(tenant);
         user.setGlobalAdmin(false);
 
@@ -92,7 +114,7 @@ class TenantContextFilterTest {
         UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(auth);
 
-        lenient().when(userRepository.findByUsername(anyString())).thenReturn(Optional.of(user));
+        lenient().when(userRepository.findById(7L)).thenReturn(Optional.of(user));
 
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
